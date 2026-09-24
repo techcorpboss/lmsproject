@@ -10,7 +10,8 @@ import {
   MenuFoldOutlined, MenuUnfoldOutlined, BellOutlined, ApartmentOutlined,
   RobotOutlined, AuditOutlined, FileTextOutlined, CloudSyncOutlined,
   HistoryOutlined, CheckCircleOutlined, ExclamationCircleOutlined,
-  BankOutlined, SolutionOutlined, SettingOutlined
+  BankOutlined, SolutionOutlined, SettingOutlined,
+  CommentOutlined, RocketOutlined, PlaySquareOutlined, LinkOutlined
 } from '@ant-design/icons';
 import LoginPage from './components/LoginPage';
 import AcademicLmsWorkspace from './components/AcademicLmsWorkspace';
@@ -27,6 +28,9 @@ import ExamAppraisalView from './components/enterprise/ExamAppraisalView';
 import MoetGradebookView from './components/enterprise/MoetGradebookView';
 import InstitutionalCatalogView from './components/enterprise/InstitutionalCatalogView';
 import LecturerDirectoryView from './components/enterprise/LecturerDirectoryView';
+import ScormXapiCenterView from './components/enterprise/ScormXapiCenterView';
+import LtiToolsHubView from './components/enterprise/LtiToolsHubView';
+import LessonQaAndAssignmentView from './components/enterprise/LessonQaAndAssignmentView';
 
 // Admin Views
 import UserManagementView from './components/admin/UserManagementView';
@@ -231,6 +235,21 @@ function App() {
             key: 'lms_workspace',
             icon: <BookOutlined />,
             label: isTeacherOrAdmin ? 'Soạn & Quản Lý 15 Tuần' : 'Lớp Học Phần (15 Tuần)'
+          },
+          {
+            key: 'lesson_qa_assignments',
+            icon: <CommentOutlined style={{ color: '#6366f1' }} />,
+            label: 'Diễn Đàn Q&A & Bài Tập Tự Luận'
+          },
+          {
+            key: 'scorm_xapi_center',
+            icon: <RocketOutlined style={{ color: '#fa541c' }} />,
+            label: 'Học Liệu SCORM & xAPI'
+          },
+          {
+            key: 'lti_tools_hub',
+            icon: <ApartmentOutlined style={{ color: '#52c41a' }} />,
+            label: 'Công Cụ LTI 1.3 (3rd Party)'
           },
           ...(isTeacherOrAdmin ? [
             {
@@ -531,6 +550,21 @@ function App() {
                 lecturerName={currentUser.role === 'teacher' ? currentUser.full_name : 'TS. Hoàng Đức Em'}
               />
             </div>
+          )}
+
+          {/* Màn hình 1.1: Diễn đàn Q&A Từng Bài Học & Bài Tập Tự Luận */}
+          {activeMenuKey === 'lesson_qa_assignments' && (
+            <LessonQaAndAssignmentView currentUser={currentUser} />
+          )}
+
+          {/* Màn hình 1.2: Học liệu Chuẩn SCORM 1.2 / 2004 & xAPI (Tin Can / cmi5) */}
+          {activeMenuKey === 'scorm_xapi_center' && (
+            <ScormXapiCenterView currentUser={currentUser} />
+          )}
+
+          {/* Màn hình 1.3: Cổng tích hợp công cụ giáo dục bên thứ ba LTI 1.3 / LTI Advantage */}
+          {activeMenuKey === 'lti_tools_hub' && (
+            <LtiToolsHubView currentUser={currentUser} />
           )}
 
           {/* Màn hình 2: Phân công giảng dạy */}

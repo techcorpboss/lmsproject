@@ -14,6 +14,7 @@ const syncRoutes = require('./routes/sync.routes');
 const academicLmsRoutes = require('./routes/academicLms.routes');
 const adminRoutes = require('./routes/admin.routes');
 const academicEnterpriseRoutes = require('./routes/academicEnterprise.routes');
+const lmsStandardsRoutes = require('./routes/lmsStandards.routes');
 
 const app = express();
 const server = http.createServer(app);
@@ -41,7 +42,7 @@ app.get('/', (req, res) => {
     service: 'TechCorp LMS & E-Testing Microservice',
     domain: 'lms.techcorp.info.vn',
     version: '2.0.0-PRO',
-    standards: ['SCORM-Ready', 'IMS QTI 2.1', 'AI-Proctoring-v2'],
+    standards: ['SCORM 1.2', 'SCORM 2004', 'xAPI (Tin Can)', 'cmi5', 'LTI 1.3 Advantage', 'IMS QTI 2.1'],
     server_time: new Date()
   });
 });
@@ -54,6 +55,8 @@ app.use('/api/sync', syncRoutes);
 app.use('/api/academic/lms', academicLmsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/academic/enterprise', academicEnterpriseRoutes);
+app.use('/api/standards', lmsStandardsRoutes);
+app.use('/api/academic/lms/standards', lmsStandardsRoutes);
 
 // Socket.io Real-time Proctoring Hub (Trung tâm Giám sát thi thời gian thực)
 const activeExamRooms = new Map(); // roomId -> Set of student sockets
