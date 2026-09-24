@@ -130,9 +130,10 @@ function App() {
   return (
     <Layout style={{ minHeight: '100vh', background: '#f5f7fa' }}>
       {/* HEADER HIỆN ĐẠI CHUẨN QUỐC TẾ */}
+      {/* HEADER HIỆN ĐẠI CHUẨN QUỐC TẾ */}
       <Header
         style={{
-          background: '#001529',
+          background: '#07162c',
           padding: '0 28px',
           display: 'flex',
           alignItems: 'center',
@@ -140,38 +141,80 @@ function App() {
           position: 'sticky',
           top: 0,
           zIndex: 1000,
-          boxShadow: '0 2px 10px rgba(0,0,0,0.15)'
+          height: 'auto',
+          minHeight: 74,
+          lineHeight: 'normal',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+          borderBottom: '1px solid rgba(255,255,255,0.1)'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '8px 0' }}>
+          {/* Logo TechCorp chủ đạo cho toàn ứng dụng */}
           <div
             style={{
-              width: 38,
-              height: 38,
-              borderRadius: 8,
-              background: 'linear-gradient(135deg, #1677ff 0%, #0958d9 100%)',
+              width: 52,
+              height: 52,
+              borderRadius: 12,
+              background: '#ffffff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#fff',
-              fontWeight: 800,
-              fontSize: 18,
-              boxShadow: '0 2px 6px rgba(22,119,255,0.4)'
+              padding: 4,
+              boxShadow: '0 3px 12px rgba(0,0,0,0.25)',
+              overflow: 'hidden',
+              flexShrink: 0
             }}
           >
-            T
+            <img
+              src="/logo-techcorp.png"
+              alt="TechCorp Logo"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain'
+              }}
+            />
           </div>
-          <div>
-            <Text strong style={{ color: '#fff', fontSize: 16, display: 'block', lineHeight: 1.2 }}>
-              TECHCORP LMS & E-TESTING
-            </Text>
-            <Text style={{ color: '#8c8c8c', fontSize: 11 }}>
-              <GlobalOutlined /> lms.techcorp.info.vn • Chuẩn ISO 21001 & AUN-QA 4.0
-            </Text>
+
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span
+                style={{
+                  color: '#ffffff',
+                  fontSize: 18,
+                  fontWeight: 800,
+                  letterSpacing: '0.5px',
+                  lineHeight: 1.3
+                }}
+              >
+                TECHCORP LMS & E-TESTING
+              </span>
+              <span
+                style={{
+                  background: 'linear-gradient(135deg, #fa8c16 0%, #d46b08 100%)',
+                  color: '#ffffff',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: '2px 8px',
+                  borderRadius: 10,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.4px',
+                  boxShadow: '0 2px 6px rgba(250, 140, 22, 0.35)'
+                }}
+              >
+                PRO EDITION
+              </span>
+            </div>
+            <div style={{ color: '#94a3b8', fontSize: 12, marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <GlobalOutlined style={{ color: '#38bdf8' }} />
+              <span style={{ color: '#bae0ff', fontWeight: 500 }}>lms.techcorp.info.vn</span>
+              <span style={{ color: '#475569' }}>•</span>
+              <span>Chuẩn Bộ GD&ĐT (TT 08/2021) & Quốc Tế (ISO 21001 / AUN-QA)</span>
+            </div>
           </div>
         </div>
 
-        <Space size="middle">
+        <Space size="middle" align="middle">
           {getRoleTag(currentUser.role)}
 
           <Dropdown menu={userMenu} placement="bottomRight" arrow>
@@ -183,18 +226,21 @@ function App() {
                 alignItems: 'center',
                 gap: 10,
                 background: 'rgba(255,255,255,0.08)',
-                borderRadius: 20,
-                padding: '4px 14px',
-                height: 38
+                borderRadius: 24,
+                padding: '6px 16px',
+                height: 42,
+                border: '1px solid rgba(255,255,255,0.12)'
               }}
             >
               <Avatar
+                size={30}
                 style={{
-                  backgroundColor: currentUser.role === 'admin' ? '#faad14' : currentUser.role === 'teacher' ? '#52c41a' : '#1677ff'
+                  backgroundColor: currentUser.role === 'admin' ? '#faad14' : currentUser.role === 'teacher' ? '#52c41a' : '#1677ff',
+                  fontWeight: 700
                 }}
                 icon={<UserOutlined />}
               />
-              <span style={{ fontWeight: 500 }}>{currentUser.full_name}</span>
+              <span style={{ fontWeight: 600, fontSize: 13 }}>{currentUser.full_name}</span>
             </Button>
           </Dropdown>
         </Space>
@@ -208,8 +254,14 @@ function App() {
       </Content>
 
       {/* FOOTER */}
-      <Footer style={{ textAlign: 'center', color: '#8c8c8c', fontSize: 13, padding: '20px 0' }}>
-        © 2026 TechCorp Higher Education Platform. Nền tảng Đào tạo E-Learning & Khảo thí Trực tuyến chuẩn Quốc tế.
+      <Footer style={{ textAlign: 'center', color: '#64748b', fontSize: 13, padding: '24px 0', background: '#f1f5f9', borderTop: '1px solid #e2e8f0' }}>
+        <Space direction="vertical" size={4}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <img src="/logo-techcorp.png" alt="TechCorp Logo" style={{ height: 24, objectFit: 'contain' }} />
+            <Text strong style={{ color: '#1e293b' }}>TechCorp Technology & Higher Education Platform</Text>
+          </div>
+          <div>© 2026 TechCorp. Nền tảng Đào tạo E-Learning & Khảo thí Trực tuyến chuẩn Quốc tế (ISO 21001 / AUN-QA).</div>
+        </Space>
       </Footer>
     </Layout>
   );

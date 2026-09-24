@@ -86,6 +86,30 @@ export default function LoginPage({ onLoginSuccess }) {
           {/* CỘT TRÁI: GIỚI THIỆU HỆ THỐNG ĐẲNG CẤP QUỐC TẾ */}
           <Col xs={24} md={13}>
             <div style={{ color: '#fff', padding: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+                <div
+                  style={{
+                    background: '#ffffff',
+                    borderRadius: 14,
+                    padding: '6px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.25)'
+                  }}
+                >
+                  <img
+                    src="/logo-techcorp.png"
+                    alt="TechCorp Logo"
+                    style={{ width: 44, height: 44, objectFit: 'contain' }}
+                  />
+                  <div>
+                    <div style={{ color: '#002b66', fontSize: 16, fontWeight: 900, lineHeight: 1.1 }}>TECHCORP</div>
+                    <div style={{ color: '#fa8c16', fontSize: 10, fontWeight: 700, letterSpacing: 0.5 }}>EDUCATION & TECH</div>
+                  </div>
+                </div>
+              </div>
+
               <Space direction="horizontal" style={{ marginBottom: 16 }}>
                 <Tag color="#1677ff" style={{ fontSize: 13, padding: '4px 12px', borderRadius: 20 }}>
                   CHUẨN QUỐC TẾ ISO 21001 & AUN-QA 4.0
@@ -134,24 +158,17 @@ export default function LoginPage({ onLoginSuccess }) {
               styles={{ body: { padding: '36px 32px' } }}
             >
               <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                <div
+                <img
+                  src="/logo-techcorp.png"
+                  alt="TechCorp Logo"
                   style={{
-                    width: 52,
-                    height: 52,
-                    borderRadius: 12,
-                    background: 'linear-gradient(135deg, #1677ff 0%, #0958d9 100%)',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    fontSize: 26,
-                    fontWeight: 'bold',
-                    boxShadow: '0 6px 16px rgba(22,119,255,0.35)',
-                    marginBottom: 12
+                    width: 76,
+                    height: 76,
+                    objectFit: 'contain',
+                    marginBottom: 10,
+                    filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.12))'
                   }}
-                >
-                  <GlobalOutlined />
-                </div>
+                />
                 <Title level={3} style={{ margin: 0, fontWeight: 700 }}>Đăng Nhập Cổng Đào Tạo</Title>
                 <Text type="secondary" style={{ fontSize: 13 }}>lms.techcorp.info.vn — Hệ thống xác thực tập trung</Text>
               </div>
