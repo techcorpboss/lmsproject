@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
+import { Card, Tabs, Space } from 'antd';
 import {
-  Row, Col, Card, Typography, Space, Tag, Button, Statistic,
-  Tabs, Alert, Table, Badge, Divider
-} from 'antd';
-import {
-  DashboardOutlined, BookOutlined, EditOutlined, DatabaseOutlined,
-  ThunderboltOutlined, VideoCameraOutlined, SettingOutlined,
-  CheckCircleOutlined, GlobalOutlined, CloudServerOutlined
+  BookOutlined, UserOutlined, TeamOutlined, ApartmentOutlined,
+  CloudSyncOutlined, DatabaseOutlined, DashboardOutlined, HistoryOutlined,
+  VideoCameraOutlined, ThunderboltOutlined, EditOutlined
 } from '@ant-design/icons';
 import AcademicLmsWorkspace from './AcademicLmsWorkspace';
 import CourseHierarchySelector from './CourseHierarchySelector';
@@ -15,7 +12,14 @@ import QuestionBankView from './QuestionBankView';
 import ExamGeneratorView from './ExamGeneratorView';
 import LiveProctoringView from './LiveProctoringView';
 
-const { Title, Text, Paragraph } = Typography;
+// Enterprise Admin Components
+import UserManagementView from './admin/UserManagementView';
+import StudentDirectoryView from './admin/StudentDirectoryView';
+import CurriculumManagerView from './admin/CurriculumManagerView';
+import ErpSyncHubView from './admin/ErpSyncHubView';
+import BackupRestoreView from './admin/BackupRestoreView';
+import SystemMonitorView from './admin/SystemMonitorView';
+import AuditLogView from './admin/AuditLogView';
 
 export default function AdminWorkspace({ currentUser }) {
   const [selectedSectionId, setSelectedSectionId] = useState(1);
@@ -30,20 +34,20 @@ export default function AdminWorkspace({ currentUser }) {
         role="LECTURER"
       />
 
-      {/* 2. TABS QUẢN TRỊ TOÀN DIỆN */}
+      {/* 2. TABS QUẢN TRỊ TOÀN DIỆN CHO ADMIN */}
       <Card style={{ borderRadius: 12 }}>
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
           type="card"
-          size="large"
+          size="middle"
           items={[
             {
               key: 'lms_full',
               label: (
                 <Space>
                   <BookOutlined style={{ color: '#10b981' }} />
-                  <b>Quản Trị Soạn Bài Giảng (LMS 15 Tuần)</b>
+                  <b>Soạn & Quản Lý Bài Giảng 15 Tuần</b>
                 </Space>
               ),
               children: (
@@ -55,11 +59,81 @@ export default function AdminWorkspace({ currentUser }) {
               )
             },
             {
+              key: 'users',
+              label: (
+                <Space>
+                  <UserOutlined style={{ color: '#1677ff' }} />
+                  <span>Quản Lý Tài Khoản</span>
+                </Space>
+              ),
+              children: <UserManagementView />
+            },
+            {
+              key: 'students',
+              label: (
+                <Space>
+                  <TeamOutlined style={{ color: '#13c2c2' }} />
+                  <span>Danh Sách Học Viên</span>
+                </Space>
+              ),
+              children: <StudentDirectoryView />
+            },
+            {
+              key: 'curriculum',
+              label: (
+                <Space>
+                  <ApartmentOutlined style={{ color: '#722ed1' }} />
+                  <span>Khung Chương Trình Đào Tạo</span>
+                </Space>
+              ),
+              children: <CurriculumManagerView />
+            },
+            {
+              key: 'erp_sync',
+              label: (
+                <Space>
+                  <CloudSyncOutlined style={{ color: '#fa8c16' }} />
+                  <b>Liên Thông ERP (qldt.techcorp.info.vn)</b>
+                </Space>
+              ),
+              children: <ErpSyncHubView />
+            },
+            {
+              key: 'backup',
+              label: (
+                <Space>
+                  <DatabaseOutlined style={{ color: '#eb2f96' }} />
+                  <span>Sao Lưu & Backup Dữ Liệu</span>
+                </Space>
+              ),
+              children: <BackupRestoreView />
+            },
+            {
+              key: 'monitoring',
+              label: (
+                <Space>
+                  <DashboardOutlined style={{ color: '#faad14' }} />
+                  <span>Giám Sát Hệ Thống</span>
+                </Space>
+              ),
+              children: <SystemMonitorView />
+            },
+            {
+              key: 'audit_logs',
+              label: (
+                <Space>
+                  <HistoryOutlined style={{ color: '#52c41a' }} />
+                  <span>Nhật Ký Audit Log</span>
+                </Space>
+              ),
+              children: <AuditLogView />
+            },
+            {
               key: 'proctoring',
               label: (
                 <Space>
                   <VideoCameraOutlined style={{ color: '#ff4d4f' }} />
-                  <span>Trung Tâm Giám Thị AI (Live)</span>
+                  <span>Giám Thị AI (Live)</span>
                 </Space>
               ),
               children: <LiveProctoringView />
@@ -69,7 +143,7 @@ export default function AdminWorkspace({ currentUser }) {
               label: (
                 <Space>
                   <DatabaseOutlined style={{ color: '#1677ff' }} />
-                  <span>Ngân Hàng Câu Hỏi (Thang Bloom)</span>
+                  <span>Ngân Hàng Câu Hỏi</span>
                 </Space>
               ),
               children: <QuestionBankView />
@@ -79,7 +153,7 @@ export default function AdminWorkspace({ currentUser }) {
               label: (
                 <Space>
                   <ThunderboltOutlined style={{ color: '#722ed1' }} />
-                  <span>Động Cơ Ma Trận Sinh Đề</span>
+                  <span>Sinh Đề Tự Động</span>
                 </Space>
               ),
               children: <ExamGeneratorView />
@@ -93,40 +167,6 @@ export default function AdminWorkspace({ currentUser }) {
                 </Space>
               ),
               children: <OnlineExamRoom currentUser={currentUser} />
-            },
-            {
-              key: 'settings',
-              label: (
-                <Space>
-                  <SettingOutlined />
-                  <span>Cấu Hình Tên Miền & Liên Thông ERP</span>
-                </Space>
-              ),
-              children: (
-                <div style={{ padding: 16 }}>
-                  <Title level={4}>Thông Số Hạ Tầng Nền Tảng Độc Lập</Title>
-                  <Divider />
-                  <Row gutter={[24, 24]}>
-                    <Col span={12}>
-                      <Card title="Cấu hình Kết Nối Máy Chủ (Ubuntu)" size="small">
-                        <p><b>Tên miền chính thức:</b> <code>https://lms.techcorp.info.vn</code></p>
-                        <p><b>Backend Service:</b> <code>NodeJS v20 Express (Port 5009)</code></p>
-                        <p><b>Quản trị tiến trình:</b> <code>PM2 Cluster Mode (instances: 2)</code></p>
-                        <p><b>Cơ sở dữ liệu:</b> <code>MySQL 8.0 (lms_db)</code></p>
-                        <p><b>Web Server / Proxy:</b> <code>Nginx Reverse Proxy + SSL Let's Encrypt</code></p>
-                      </Card>
-                    </Col>
-                    <Col span={12}>
-                      <Card title="Liên Thông Với TCU COMPASS ERP" size="small">
-                        <p><b>Hệ thống ERP gốc:</b> <code>https://qldt.techcorp.info.vn</code></p>
-                        <p><b>Cơ chế xác thực:</b> <code>Single Sign-On (SSO JWT 256-bit)</code></p>
-                        <p><b>Đồng bộ dữ liệu:</b> <code>Secure Webhook /api/sync/push-grades-to-erp</code></p>
-                        <p><b>Trạng thái liên thông:</b> <Badge status="success" text="Đang hoạt động thông suốt" /></p>
-                      </Card>
-                    </Col>
-                  </Row>
-                </div>
-              )
             }
           ]}
         />
