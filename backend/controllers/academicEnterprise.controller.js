@@ -5,25 +5,197 @@ const aiService = require('../services/aiService');
 
 // ==================== 1. CÁC DANH MỤC CƠ SỞ CHUẨN ĐẠI HỌC ====================
 
-// 1.1. Danh mục Giảng viên
+// 1.1. Danh mục Giảng viên (Đầy đủ Thông tin Cơ bản & Chuyên môn)
 let lecturersCatalog = [
-  { id: 2, code: 'GV001', username: 'teacher', full_name: 'TS. Hoàng Đức Em', title: 'Tiến sĩ', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', department: 'Bộ môn Kỹ thuật Phần mềm', email: 'em.hd@techcorp.edu.vn', phone: '0912.345.678', active_courses_count: 2 },
-  { id: 5, code: 'GV002', username: 'tuan.tm', full_name: 'PGS. TS. Trần Mạnh Tuấn', title: 'Phó Giáo sư, Tiến sĩ', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', department: 'Ban Chủ nhiệm Khoa CNTT', email: 'tuan.tm@techcorp.edu.vn', phone: '0903.112.233', active_courses_count: 1 },
-  { id: 6, code: 'GV003', username: 'an.nv', full_name: 'TS. Nguyễn Văn An', title: 'Tiến sĩ', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', department: 'Trưởng bộ môn Kỹ thuật Phần mềm', email: 'an.nv@techcorp.edu.vn', phone: '0988.776.655', active_courses_count: 1 },
-  { id: 7, code: 'GV004', username: 'anh.cq', full_name: 'ThS. Chu Quỳnh Anh', title: 'Thạc sĩ', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', department: 'Bộ môn Khoa học Máy tính', email: 'anh.cq@techcorp.edu.vn', phone: '0977.123.456', active_courses_count: 1 },
-  { id: 8, code: 'GV005', username: 'dang.lh', full_name: 'TS. Lê Hải Đăng', title: 'Tiến sĩ', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', department: 'Trưởng bộ môn An toàn Thông tin', email: 'dang.lh@techcorp.edu.vn', phone: '0933.456.789', active_courses_count: 1 },
-  { id: 9, code: 'GV006', username: 'hong.nt', full_name: 'TS. Nguyễn Thị Hồng', title: 'Tiến sĩ', faculty_id: 'KT', faculty_name: 'Khoa Kinh Tế & QTKD', department: 'Trưởng Khoa Kinh tế', email: 'hong.nt@techcorp.edu.vn', phone: '0918.667.889', active_courses_count: 1 },
-  { id: 10, code: 'GV007', username: 'nam.v', full_name: 'ThS. Vũ Nam', title: 'Thạc sĩ', faculty_id: 'KT', faculty_name: 'Khoa Kinh Tế & QTKD', department: 'Bộ môn Quản trị Kinh doanh', email: 'nam.v@techcorp.edu.vn', phone: '0989.112.334', active_courses_count: 1 }
+  {
+    id: 1,
+    code: 'GV001',
+    username: 'teacher',
+    full_name: 'TS. Hoàng Đức Em',
+    gender: 'Nam',
+    birth_date: '15/08/1984',
+    title: 'Tiến sĩ',
+    academic_rank: 'Không',
+    faculty_id: 'CNTT',
+    faculty_name: 'Khoa Công Nghệ Thông Tin',
+    department: 'Bộ môn Kỹ thuật Phần mềm',
+    email: 'em.hd@techcorp.edu.vn',
+    phone: '0912.345.678',
+    specialization: 'Kỹ thuật Phần mềm & Kiến trúc Hệ thống Phân tán',
+    experience_years: 14,
+    assigned_courses: ['Nhập môn Lập trình C/C++', 'Cơ sở Dữ liệu'],
+    research_interests: 'AI trong Giáo dục, Clean Code, Microservices, CI/CD DevOps',
+    status: 'Đang công tác',
+    active_courses_count: 2
+  },
+  {
+    id: 2,
+    code: 'GV002',
+    username: 'tuan.tm',
+    full_name: 'PGS. TS. Trần Mạnh Tuấn',
+    gender: 'Nam',
+    birth_date: '10/02/1976',
+    title: 'Tiến sĩ',
+    academic_rank: 'Phó Giáo sư',
+    faculty_id: 'CNTT',
+    faculty_name: 'Khoa Công Nghệ Thông Tin',
+    department: 'Ban Chủ nhiệm Khoa CNTT',
+    email: 'tuan.tm@techcorp.edu.vn',
+    phone: '0903.112.233',
+    specialization: 'Khoa học Máy tính & Trí tuệ Nhân tạo',
+    experience_years: 22,
+    assigned_courses: ['Học máy Nâng cao', 'Trí tuệ Nhân tạo', 'Thị giác Máy tính'],
+    research_interests: 'Deep Learning, Xử lý ảnh y tế, Hệ thống đa tác tử (Multi-Agent)',
+    status: 'Đang công tác',
+    active_courses_count: 2
+  },
+  {
+    id: 3,
+    code: 'GV003',
+    username: 'an.nv',
+    full_name: 'TS. Nguyễn Văn An',
+    gender: 'Nam',
+    birth_date: '24/11/1981',
+    title: 'Tiến sĩ',
+    academic_rank: 'Không',
+    faculty_id: 'CNTT',
+    faculty_name: 'Khoa Công Nghệ Thông Tin',
+    department: 'Trưởng bộ môn Kỹ thuật Phần mềm',
+    email: 'an.nv@techcorp.edu.vn',
+    phone: '0988.776.655',
+    specialization: 'Công nghệ Phần mềm & Kiểm thử Chất lượng (QA/QC)',
+    experience_years: 16,
+    assigned_courses: ['Công nghệ Phần mềm', 'Lập trình Hướng đối tượng C++'],
+    research_interests: 'Mô hình hóa phần mềm, Agile/Scrum, An toàn bảo mật ứng dụng',
+    status: 'Đang công tác',
+    active_courses_count: 1
+  },
+  {
+    id: 4,
+    code: 'GV004',
+    username: 'anh.cq',
+    full_name: 'ThS. Chu Quỳnh Anh',
+    gender: 'Nữ',
+    birth_date: '08/06/1989',
+    title: 'Thạc sĩ',
+    academic_rank: 'Không',
+    faculty_id: 'CNTT',
+    faculty_name: 'Khoa Công Nghệ Thông Tin',
+    department: 'Bộ môn Khoa học Máy tính',
+    email: 'anh.cq@techcorp.edu.vn',
+    phone: '0977.123.456',
+    specialization: 'Cấu trúc Dữ liệu & Giải thuật',
+    experience_years: 9,
+    assigned_courses: ['Cấu trúc Dữ liệu & Giải thuật', 'Nhập môn Lập trình'],
+    research_interests: 'Tối ưu hóa đồ thị, Data Science, Python AI',
+    status: 'Đang công tác',
+    active_courses_count: 1
+  },
+  {
+    id: 5,
+    code: 'GV005',
+    username: 'dang.lh',
+    full_name: 'TS. Lê Hải Đăng',
+    gender: 'Nam',
+    birth_date: '03/09/1983',
+    title: 'Tiến sĩ',
+    academic_rank: 'Không',
+    faculty_id: 'CNTT',
+    faculty_name: 'Khoa Công Nghệ Thông Tin',
+    department: 'Trưởng bộ môn An toàn Thông tin',
+    email: 'dang.lh@techcorp.edu.vn',
+    phone: '0933.456.789',
+    specialization: 'An toàn Thông tin & Mật mã Ứng dụng',
+    experience_years: 15,
+    assigned_courses: ['Mạng Máy tính', 'An toàn Thông tin & An ninh Mạng'],
+    research_interests: 'Mật mã hậu lượng tử, Blockchain, Network Security',
+    status: 'Đang công tác',
+    active_courses_count: 1
+  },
+  {
+    id: 6,
+    code: 'GV006',
+    username: 'hong.nt',
+    full_name: 'TS. Nguyễn Thị Hồng',
+    gender: 'Nữ',
+    birth_date: '19/05/1979',
+    title: 'Tiến sĩ',
+    academic_rank: 'Không',
+    faculty_id: 'KT',
+    faculty_name: 'Khoa Kinh Tế & QTKD',
+    department: 'Trưởng Khoa Kinh tế',
+    email: 'hong.nt@techcorp.edu.vn',
+    phone: '0918.667.889',
+    specialization: 'Quản trị Kinh doanh & Kinh tế Phát triển',
+    experience_years: 18,
+    assigned_courses: ['Quản trị Học Đại cương', 'Kinh tế Vi mô'],
+    research_interests: 'Khởi nghiệp đổi mới sáng tạo, Quản trị chiến lược doanh nghiệp',
+    status: 'Đang công tác',
+    active_courses_count: 1
+  },
+  {
+    id: 7,
+    code: 'GV007',
+    username: 'nam.v',
+    full_name: 'ThS. Vũ Nam',
+    gender: 'Nam',
+    birth_date: '14/12/1987',
+    title: 'Thạc sĩ',
+    academic_rank: 'Không',
+    faculty_id: 'KT',
+    faculty_name: 'Khoa Kinh Tế & QTKD',
+    department: 'Bộ môn Quản trị Kinh doanh',
+    email: 'nam.v@techcorp.edu.vn',
+    phone: '0989.112.334',
+    specialization: 'Marketing Số & Thương mại Điện tử',
+    experience_years: 8,
+    assigned_courses: ['Kinh tế Vĩ mô', 'Nguyên lý Kế toán Doanh nghiệp'],
+    research_interests: 'E-commerce, Digital Marketing, Hành vi người tiêu dùng số',
+    status: 'Đang công tác',
+    active_courses_count: 1
+  }
 ];
 
-// 1.2. Danh mục Lớp học
+// 1.2. Danh mục Khoa / Viện
+let facultiesCatalog = [
+  { id: 1, code: 'CNTT', name: 'Khoa Công Nghệ Thông Tin', dean: 'PGS. TS. Trần Mạnh Tuấn', established_year: 2008, phone: '(024) 3754.7511', email: 'cntt@techcorp.edu.vn', majors_count: 4, lecturers_count: 32, status: 'Hoạt động' },
+  { id: 2, code: 'KT', name: 'Khoa Kinh Tế & Quản Trị Kinh Doanh', dean: 'TS. Nguyễn Thị Hồng', established_year: 2010, phone: '(024) 3754.7522', email: 'kinhte@techcorp.edu.vn', majors_count: 2, lecturers_count: 24, status: 'Hoạt động' },
+  { id: 3, code: 'NN', name: 'Khoa Ngoại Ngữ', dean: 'TS. Phạm Thu Hương', established_year: 2012, phone: '(024) 3754.7533', email: 'ngoainngu@techcorp.edu.vn', majors_count: 2, lecturers_count: 18, status: 'Hoạt động' },
+  { id: 4, code: 'DL', name: 'Khoa Du Lịch & Khách Sạn', dean: 'ThS. Đỗ Quang Vinh', established_year: 2015, phone: '(024) 3754.7544', email: 'dulich@techcorp.edu.vn', majors_count: 1, lecturers_count: 12, status: 'Hoạt động' },
+  { id: 5, code: 'KTNL', name: 'Khoa Kỹ Thuật Năng Lượng', dean: 'PGS. TS. Lê Văn Bách', established_year: 2018, phone: '(024) 3754.7555', email: 'nangluong@techcorp.edu.vn', majors_count: 1, lecturers_count: 14, status: 'Hoạt động' },
+  { id: 6, code: 'DDT', name: 'Khoa Điện - Điện Tử & Tự Động Hóa', dean: 'TS. Bùi Quốc Thái', established_year: 2016, phone: '(024) 3754.7566', email: 'dientu@techcorp.edu.vn', majors_count: 1, lecturers_count: 16, status: 'Hoạt động' }
+];
+
+// 1.3. Danh mục Ngành / Nghề đào tạo
+let majorsCatalog = [
+  { id: 1, code: '7480103', name: 'Kỹ thuật Phần mềm (Software Engineering)', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', degree_level: 'Đại học Chính quy', duration_years: '4.5 Năm', required_credits: 145, status: 'Đang đào tạo' },
+  { id: 2, code: '7480101', name: 'Khoa học Máy tính & AI (Computer Science & AI)', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', degree_level: 'Đại học Kỹ sư', duration_years: '4.5 Năm', required_credits: 118, status: 'Đang đào tạo' },
+  { id: 3, code: '7480201', name: 'Công nghệ Thông tin (Information Technology)', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', degree_level: 'Đại học Chính quy', duration_years: '4.0 Năm', required_credits: 135, status: 'Đang đào tạo' },
+  { id: 4, code: '7480104', name: 'Hệ thống Thông tin (Information Systems)', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', degree_level: 'Đại học Chính quy', duration_years: '4.0 Năm', required_credits: 130, status: 'Đang đào tạo' },
+  { id: 5, code: '7340101', name: 'Quản trị Kinh doanh (Business Administration)', faculty_id: 'KT', faculty_name: 'Khoa Kinh Tế & QTKD', degree_level: 'Đại học Chính quy', duration_years: '4.0 Năm', required_credits: 130, status: 'Đang đào tạo' },
+  { id: 6, code: '7220201', name: 'Ngôn ngữ Anh (English Studies)', faculty_id: 'NN', faculty_name: 'Khoa Ngoại Ngữ', degree_level: 'Đại học Chính quy', duration_years: '4.0 Năm', required_credits: 128, status: 'Đang đào tạo' },
+  { id: 7, code: '7810103', name: 'Quản trị Dịch vụ Du lịch & Lữ hành', faculty_id: 'DL', faculty_name: 'Khoa Du Lịch & Khách Sạn', degree_level: 'Đại học Chính quy', duration_years: '4.0 Năm', required_credits: 125, status: 'Đang đào tạo' },
+  { id: 8, code: '7520130', name: 'Kỹ thuật Năng lượng Tái tạo', faculty_id: 'KTNL', faculty_name: 'Khoa Kỹ Thuật Năng Lượng', degree_level: 'Đại học Kỹ sư', duration_years: '4.5 Năm', required_credits: 140, status: 'Đang đào tạo' },
+  { id: 9, code: '7510301', name: 'Kỹ thuật Điện - Điện tử & IoT', faculty_id: 'DDT', faculty_name: 'Khoa Điện - Điện Tử & Tự Động Hóa', degree_level: 'Đại học Kỹ sư', duration_years: '4.5 Năm', required_credits: 142, status: 'Đang đào tạo' }
+];
+
+// 1.4. Danh mục Khóa học
+let cohortsCatalog = [
+  { id: 1, cohort_code: 'K68', cohort_name: 'Khóa 68 (2024 - 2028)', start_year: 2024, end_year: 2028, training_system: 'Hệ Tín chỉ (TT 08)', total_students: 850, status: 'Đang đào tạo (Năm 2)' },
+  { id: 2, cohort_code: 'K67', cohort_name: 'Khóa 67 (2023 - 2027)', start_year: 2023, end_year: 2027, training_system: 'Hệ Tín chỉ (TT 08)', total_students: 820, status: 'Đang đào tạo (Năm 3)' },
+  { id: 3, cohort_code: 'K66', cohort_name: 'Khóa 66 (2022 - 2026)', start_year: 2022, end_year: 2026, training_system: 'Hệ Tín chỉ (TT 08)', total_students: 790, status: 'Đang đào tạo (Năm 4)' },
+  { id: 4, cohort_code: 'K65', cohort_name: 'Khóa 65 (2021 - 2025)', start_year: 2021, end_year: 2025, training_system: 'Hệ Tín chỉ (TT 08)', total_students: 760, status: 'Chuẩn bị tốt nghiệp' },
+  { id: 5, cohort_code: 'K69', cohort_name: 'Khóa 69 (2025 - 2029)', start_year: 2025, end_year: 2029, training_system: 'Hệ Tín chỉ (TT 08)', total_students: 900, status: 'Chuẩn bị tuyển sinh' }
+];
+
+// 1.5. Danh mục Lớp học
 let classesCatalog = [
-  { id: 1, class_code: '66.CNTT-1', class_name: 'Lớp 66.CNTT-1', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', major_id: 'CNPM', major_name: 'Kỹ thuật Phần mềm', cohort: 'K66', academic_year: '2026-2027', total_students: 42, advisor: 'TS. Hoàng Đức Em' },
-  { id: 2, class_code: '66.CNTT-2', class_name: 'Lớp 66.CNTT-2', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', major_id: 'CNPM', major_name: 'Kỹ thuật Phần mềm', cohort: 'K66', academic_year: '2026-2027', total_students: 40, advisor: 'ThS. Chu Quỳnh Anh' },
-  { id: 3, class_code: '66.HTTT-1', class_name: 'Lớp 66.HTTT-1', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', major_id: 'HTTT', major_name: 'Hệ thống Thông tin', cohort: 'K66', academic_year: '2026-2027', total_students: 45, advisor: 'TS. Hoàng Đức Em' },
-  { id: 4, class_code: '66.KHMT-1', class_name: 'Lớp 66.KHMT-1', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', major_id: 'KHMT', major_name: 'Khoa học Máy tính', cohort: 'K66', academic_year: '2026-2027', total_students: 38, advisor: 'TS. Lê Hải Đăng' },
-  { id: 5, class_code: '65.CNTT-1', class_name: 'Lớp 65.CNTT-1', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', major_id: 'CNPM', major_name: 'Kỹ thuật Phần mềm', cohort: 'K65', academic_year: '2025-2026', total_students: 38, advisor: 'TS. Nguyễn Văn An' },
-  { id: 6, class_code: '66.QTKD-1', class_name: 'Lớp 66.QTKD-1', faculty_id: 'KT', faculty_name: 'Khoa Kinh Tế & QTKD', major_id: 'QTKD', major_name: 'Quản trị Kinh doanh', cohort: 'K66', academic_year: '2026-2027', total_students: 50, advisor: 'ThS. Vũ Nam' }
+  { id: 1, class_code: '66.CNTT-1', class_name: 'Lớp 66.CNTT-1', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', major_id: 'CNPM', major_name: 'Kỹ thuật Phần mềm', cohort: 'K66', academic_year: '2026-2027', total_students: 42, advisor: 'TS. Hoàng Đức Em', room: 'P.401-A3' },
+  { id: 2, class_code: '66.CNTT-2', class_name: 'Lớp 66.CNTT-2', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', major_id: 'CNPM', major_name: 'Kỹ thuật Phần mềm', cohort: 'K66', academic_year: '2026-2027', total_students: 40, advisor: 'ThS. Chu Quỳnh Anh', room: 'P.402-A3' },
+  { id: 3, class_code: '66.HTTT-1', class_name: 'Lớp 66.HTTT-1', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', major_id: 'HTTT', major_name: 'Hệ thống Thông tin', cohort: 'K66', academic_year: '2026-2027', total_students: 45, advisor: 'TS. Hoàng Đức Em', room: 'P.501-A3' },
+  { id: 4, class_code: '66.KHMT-1', class_name: 'Lớp 66.KHMT-1', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', major_id: 'KHMT', major_name: 'Khoa học Máy tính', cohort: 'K66', academic_year: '2026-2027', total_students: 38, advisor: 'TS. Lê Hải Đăng', room: 'P.502-A3' },
+  { id: 5, class_code: '68.KHMT-1', class_name: 'Lớp 68.KHMT-1', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', major_id: 'KHMT_AI', major_name: 'Khoa học Máy tính & AI', cohort: 'K68', academic_year: '2024-2028', total_students: 44, advisor: 'PGS. TS. Trần Mạnh Tuấn', room: 'P.301-A2' },
+  { id: 6, class_code: '66.QTKD-1', class_name: 'Lớp 66.QTKD-1', faculty_id: 'KT', faculty_name: 'Khoa Kinh Tế & QTKD', major_id: 'QTKD', major_name: 'Quản trị Kinh doanh', cohort: 'K66', academic_year: '2026-2027', total_students: 50, advisor: 'ThS. Vũ Nam', room: 'P.201-B1' }
 ];
 
 // 1.3. Danh mục Môn học theo Khoa, Ngành và Học kỳ
@@ -161,17 +333,234 @@ let transcriptData = {
 
 // ==================== CÁC PHƯƠNG THỨC CONTROLLER ====================
 
-// 2.1. Lấy danh mục Giảng viên
+// 2.1. Quản lý danh mục Giảng viên (CRUD)
 exports.getLecturers = async (req, res) => {
   res.json({ success: true, data: lecturersCatalog });
 };
 
-// 2.2. Lấy danh mục Lớp học
+exports.createLecturer = async (req, res) => {
+  try {
+    const data = req.body;
+    const newLecturer = {
+      id: Date.now(),
+      code: data.code || `GV00${lecturersCatalog.length + 1}`,
+      username: data.username || `gv_${Date.now().toString().slice(-4)}`,
+      full_name: data.full_name,
+      gender: data.gender || 'Nam',
+      birth_date: data.birth_date || '01/01/1985',
+      title: data.title || 'Thạc sĩ',
+      academic_rank: data.academic_rank || 'Không',
+      faculty_id: data.faculty_id || 'CNTT',
+      faculty_name: data.faculty_name || 'Khoa Công Nghệ Thông Tin',
+      department: data.department || 'Bộ môn Kỹ thuật Phần mềm',
+      email: data.email || 'giangvien@techcorp.edu.vn',
+      phone: data.phone || '0900.000.000',
+      specialization: data.specialization || 'Công nghệ Thông tin',
+      experience_years: Number(data.experience_years) || 5,
+      assigned_courses: data.assigned_courses || [],
+      research_interests: data.research_interests || '',
+      status: data.status || 'Đang công tác',
+      active_courses_count: 1
+    };
+    lecturersCatalog.unshift(newLecturer);
+    res.json({ success: true, message: `Thêm mới giảng viên ${newLecturer.full_name} thành công!`, data: newLecturer });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.updateLecturer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = req.body;
+    const idx = lecturersCatalog.findIndex(l => String(l.id) === String(id));
+    if (idx !== -1) {
+      lecturersCatalog[idx] = { ...lecturersCatalog[idx], ...data };
+      res.json({ success: true, message: 'Cập nhật hồ sơ giảng viên thành công!', data: lecturersCatalog[idx] });
+    } else {
+      res.status(404).json({ success: false, message: 'Không tìm thấy giảng viên!' });
+    }
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.deleteLecturer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    lecturersCatalog = lecturersCatalog.filter(l => String(l.id) !== String(id));
+    res.json({ success: true, message: 'Đã xóa giảng viên khỏi danh mục!', data: lecturersCatalog });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+// 2.2. Quản lý Cơ cấu & Danh mục Cơ sở (Khoa, Ngành, Khóa, Lớp)
+exports.getInstitutionalCatalogs = async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      data: {
+        faculties: facultiesCatalog,
+        majors: majorsCatalog,
+        cohorts: cohortsCatalog,
+        classes: classesCatalog
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.saveFaculty = async (req, res) => {
+  try {
+    const data = req.body;
+    if (data.id) {
+      const idx = facultiesCatalog.findIndex(f => f.id === data.id);
+      if (idx !== -1) facultiesCatalog[idx] = { ...facultiesCatalog[idx], ...data };
+    } else {
+      facultiesCatalog.push({
+        id: Date.now(),
+        code: data.code,
+        name: data.name,
+        dean: data.dean || 'Chưa bổ nhiệm',
+        established_year: data.established_year || new Date().getFullYear(),
+        phone: data.phone || '',
+        email: data.email || '',
+        majors_count: Number(data.majors_count) || 0,
+        lecturers_count: Number(data.lecturers_count) || 0,
+        status: data.status || 'Hoạt động'
+      });
+    }
+    res.json({ success: true, message: 'Lưu thông tin Khoa/Viện thành công!', data: facultiesCatalog });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.deleteFaculty = async (req, res) => {
+  try {
+    const { id } = req.params;
+    facultiesCatalog = facultiesCatalog.filter(f => String(f.id) !== String(id));
+    res.json({ success: true, message: 'Đã xóa Khoa/Viện khỏi hệ thống!', data: facultiesCatalog });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.saveMajor = async (req, res) => {
+  try {
+    const data = req.body;
+    if (data.id) {
+      const idx = majorsCatalog.findIndex(m => m.id === data.id);
+      if (idx !== -1) majorsCatalog[idx] = { ...majorsCatalog[idx], ...data };
+    } else {
+      majorsCatalog.push({
+        id: Date.now(),
+        code: data.code,
+        name: data.name,
+        faculty_id: data.faculty_id || 'CNTT',
+        faculty_name: data.faculty_name || 'Khoa Công Nghệ Thông Tin',
+        degree_level: data.degree_level || 'Đại học Chính quy',
+        duration_years: data.duration_years || '4.0 Năm',
+        required_credits: Number(data.required_credits) || 130,
+        status: data.status || 'Đang đào tạo'
+      });
+    }
+    res.json({ success: true, message: 'Lưu thông tin Ngành đào tạo thành công!', data: majorsCatalog });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.deleteMajor = async (req, res) => {
+  try {
+    const { id } = req.params;
+    majorsCatalog = majorsCatalog.filter(m => String(m.id) !== String(id));
+    res.json({ success: true, message: 'Đã xóa Ngành đào tạo khỏi hệ thống!', data: majorsCatalog });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.saveCohort = async (req, res) => {
+  try {
+    const data = req.body;
+    if (data.id) {
+      const idx = cohortsCatalog.findIndex(c => c.id === data.id);
+      if (idx !== -1) cohortsCatalog[idx] = { ...cohortsCatalog[idx], ...data };
+    } else {
+      cohortsCatalog.push({
+        id: Date.now(),
+        cohort_code: data.cohort_code,
+        cohort_name: data.cohort_name,
+        start_year: Number(data.start_year) || new Date().getFullYear(),
+        end_year: Number(data.end_year) || new Date().getFullYear() + 4,
+        training_system: data.training_system || 'Hệ Tín chỉ (TT 08)',
+        total_students: Number(data.total_students) || 0,
+        status: data.status || 'Đang đào tạo'
+      });
+    }
+    res.json({ success: true, message: 'Lưu thông tin Khóa học thành công!', data: cohortsCatalog });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.deleteCohort = async (req, res) => {
+  try {
+    const { id } = req.params;
+    cohortsCatalog = cohortsCatalog.filter(c => String(c.id) !== String(id));
+    res.json({ success: true, message: 'Đã xóa Khóa học!', data: cohortsCatalog });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.saveClass = async (req, res) => {
+  try {
+    const data = req.body;
+    if (data.id) {
+      const idx = classesCatalog.findIndex(c => c.id === data.id);
+      if (idx !== -1) classesCatalog[idx] = { ...classesCatalog[idx], ...data };
+    } else {
+      classesCatalog.push({
+        id: Date.now(),
+        class_code: data.class_code,
+        class_name: data.class_name,
+        faculty_id: data.faculty_id || 'CNTT',
+        faculty_name: data.faculty_name || 'Khoa Công Nghệ Thông Tin',
+        major_id: data.major_id || 'CNPM',
+        major_name: data.major_name || 'Kỹ thuật Phần mềm',
+        cohort: data.cohort || 'K66',
+        academic_year: data.academic_year || '2026-2027',
+        total_students: Number(data.total_students) || 40,
+        advisor: data.advisor || 'Chưa phân công',
+        room: data.room || 'P.401-A3'
+      });
+    }
+    res.json({ success: true, message: 'Lưu thông tin Lớp học thành công!', data: classesCatalog });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.deleteClass = async (req, res) => {
+  try {
+    const { id } = req.params;
+    classesCatalog = classesCatalog.filter(c => String(c.id) !== String(id));
+    res.json({ success: true, message: 'Đã xóa Lớp học!', data: classesCatalog });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+// 2.3. Lấy danh mục Lớp học (đơn lẻ)
 exports.getClasses = async (req, res) => {
   res.json({ success: true, data: classesCatalog });
 };
 
-// 2.3. Lấy danh mục Môn học theo Khoa, Ngành, Học kỳ
+// 2.4. Lấy danh mục Môn học theo Khoa, Ngành, Học kỳ
 exports.getCoursesCatalog = async (req, res) => {
   const { faculty_id, major_id, semester } = req.query;
   let list = coursesCatalog;

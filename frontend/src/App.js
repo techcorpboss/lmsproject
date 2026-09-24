@@ -9,7 +9,8 @@ import {
   DashboardOutlined, TeamOutlined, SafetyCertificateOutlined, SwapOutlined,
   MenuFoldOutlined, MenuUnfoldOutlined, BellOutlined, ApartmentOutlined,
   RobotOutlined, AuditOutlined, FileTextOutlined, CloudSyncOutlined,
-  HistoryOutlined, CheckCircleOutlined, ExclamationCircleOutlined
+  HistoryOutlined, CheckCircleOutlined, ExclamationCircleOutlined,
+  BankOutlined, SolutionOutlined, SettingOutlined
 } from '@ant-design/icons';
 import LoginPage from './components/LoginPage';
 import AcademicLmsWorkspace from './components/AcademicLmsWorkspace';
@@ -24,6 +25,8 @@ import TeachingAssignmentView from './components/enterprise/TeachingAssignmentVi
 import AiAuthoringStudio from './components/enterprise/AiAuthoringStudio';
 import ExamAppraisalView from './components/enterprise/ExamAppraisalView';
 import MoetGradebookView from './components/enterprise/MoetGradebookView';
+import InstitutionalCatalogView from './components/enterprise/InstitutionalCatalogView';
+import LecturerDirectoryView from './components/enterprise/LecturerDirectoryView';
 
 // Admin Views
 import UserManagementView from './components/admin/UserManagementView';
@@ -205,9 +208,9 @@ function App() {
 
     const items = [
       {
-        key: 'grp_academic',
-        type: 'group',
-        label: !collapsed ? 'PHÂN HỆ ĐÀO TẠO & LMS' : '',
+        key: 'sub_academic',
+        icon: <BookOutlined style={{ color: '#1677ff' }} />,
+        label: 'Phân Hệ Đào Tạo & LMS',
         children: [
           {
             key: 'lms_workspace',
@@ -235,10 +238,29 @@ function App() {
           ] : [])
         ]
       },
+      ...(isTeacherOrAdmin ? [
+        {
+          key: 'sub_catalogs',
+          icon: <BankOutlined style={{ color: '#13c2c2' }} />,
+          label: 'Danh Mục & Cơ Cấu Trường',
+          children: [
+            {
+              key: 'institutional_catalogs',
+              icon: <ApartmentOutlined style={{ color: '#13c2c2' }} />,
+              label: 'Khoa, Ngành & Khóa, Lớp'
+            },
+            {
+              key: 'lecturer_directory',
+              icon: <SolutionOutlined style={{ color: '#52c41a' }} />,
+              label: 'Danh Sách Giảng Viên'
+            }
+          ]
+        }
+      ] : []),
       {
-        key: 'grp_ai_testing',
-        type: 'group',
-        label: !collapsed ? 'AI & KHẢO THÍ ĐIỆN TỬ' : '',
+        key: 'sub_ai_testing',
+        icon: <RobotOutlined style={{ color: '#722ed1' }} />,
+        label: 'AI & Khảo Thí Điện Tử',
         children: [
           ...(isTeacherOrAdmin ? [
             {
@@ -278,9 +300,9 @@ function App() {
 
     if (isAdmin) {
       items.push({
-        key: 'grp_admin_sys',
-        type: 'group',
-        label: !collapsed ? 'QUẢN TRỊ HỆ THỐNG' : '',
+        key: 'sub_admin_sys',
+        icon: <SettingOutlined style={{ color: '#fa8c16' }} />,
+        label: 'Quản Trị Hệ Thống',
         children: [
           {
             key: 'user_management',
@@ -390,6 +412,7 @@ function App() {
         <Menu
           theme="dark"
           mode="inline"
+          defaultOpenKeys={['sub_academic', 'sub_catalogs']}
           selectedKeys={[activeMenuKey]}
           onClick={({ key }) => setActiveMenuKey(key)}
           style={{ background: 'transparent', borderRight: 0, marginTop: 12 }}
@@ -500,6 +523,16 @@ function App() {
           {/* Màn hình 2: Phân công giảng dạy */}
           {activeMenuKey === 'hierarchy_assignment' && (
             <TeachingAssignmentView currentUser={currentUser} />
+          )}
+
+          {/* Màn hình 2.1: Khoa, Ngành & Khóa, Lớp */}
+          {activeMenuKey === 'institutional_catalogs' && (
+            <InstitutionalCatalogView />
+          )}
+
+          {/* Màn hình 2.2: Danh sách Giảng viên */}
+          {activeMenuKey === 'lecturer_directory' && (
+            <LecturerDirectoryView />
           )}
 
           {/* Màn hình 3: AI Teaching Studio */}
