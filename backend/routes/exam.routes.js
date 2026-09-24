@@ -159,9 +159,15 @@ router.post('/submit', async (req, res) => {
         score_10: finalScore,
         time_spent_seconds: time_spent_seconds || 0,
         violation_count: violation_count || 0,
-        submitted_at: new Date(),
         details
       },
+      message: 'Nộp bài thi thành công!'
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // 9. Chuẩn trao đổi đề thi quốc tế IMS QTI v2.1 / v3.0
 const examAdvanced = require('../controllers/examAdvanced.controller');
 router.get('/qti/export/:paperId', examAdvanced.exportPaperToQti);
