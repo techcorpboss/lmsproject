@@ -2,6 +2,83 @@
 // API Service cho Academic LMS 15 Tuần chuẩn Bộ GD&ĐT (TT 08/2021 & TT 23/2021)
 import apiClient from './apiClient';
 
+const generate15WeeksData = () => {
+  const titles = [
+    { title: 'Giới thiệu Tổng quan về Ngôn ngữ C/C++ & Môi trường Lập trình', desc: 'Cài đặt IDE (VSCode, GCC), cấu trúc chương trình C++, biên dịch và chạy file mã nguồn.' },
+    { title: 'Kiểu dữ liệu, Biến, Hằng số & Các Toán tử Cơ bản', desc: 'Toán tử số học, logic, quan hệ, thứ tự ưu tiên và ép kiểu dữ liệu an toàn.' },
+    { title: 'Cấu trúc Điều khiển Rẽ nhánh (if-else, switch-case)', desc: 'Xây dựng thuật toán phân nhánh điều kiện và kiểm thử ca kiểm thử biên.' },
+    { title: 'Cấu trúc Lặp & Vòng lặp nâng cao (for, while, do-while)', desc: 'Vòng lặp xác định và không xác định, lệnh break, continue và phòng ngừa lặp vô hạn.' },
+    { title: 'Hàm và Kỹ thuật Truyền tham số (Value, Reference, Pointer)', desc: 'Tổ chức module hóa chương trình, phạm vi biến (scope), tái sử dụng mã nguồn.' },
+    { title: 'Mảng Một Chiều & Thuật toán Cơ bản (Tìm kiếm, Sắp xếp)', desc: 'Khai báo, duyệt mảng, tìm max/min, Linear Search, Binary Search, Bubble Sort.' },
+    { title: 'Mảng Hai Chiều & Xử lý Ma trận Số học', desc: 'Cấu trúc ma trận, cộng/nhân ma trận, ma trận tam giác và ứng dụng đồ họa game.' },
+    { title: 'Kiểm tra Đánh giá Quá trình Giữa Kỳ & Ôn tập Thuật toán', desc: 'Thi trực tuyến trắc nghiệm & thực hành giải thuật tính điểm thành phần 1.' },
+    { title: 'Chuỗi Ký tự (C-Strings & std::string)', desc: 'Thư viện cstring, xử lý chuỗi động std::string, chuẩn hóa họ tên và tách từ.' },
+    { title: 'Con trỏ (Pointers) & Quản lý Bộ nhớ Động (new / delete)', desc: 'Địa chỉ ô nhớ, toán tử & và *, cấp phát động mảng 1D/2D, chống thất thoát RAM.' },
+    { title: 'Kiểu Dữ Liệu Có Cấu Trúc (struct, union, enum)', desc: 'Định nghĩa kiểu dữ liệu mới, quản lý danh sách sinh viên bằng mảng cấu trúc.' },
+    { title: 'Thao tác Tệp tin & Dòng dữ liệu (File I/O Streams)', desc: 'Thao tác ifstream, ofstream, đọc/ghi tệp nhị phân (.dat) và tệp văn bản (.txt).' },
+    { title: 'Nhập môn Lập trình Hướng đối tượng OOP (Class & Object)', desc: 'Khái niệm đóng gói (Encapsulation), thuộc tính (Attributes), phương thức (Methods), constructor/destructor.' },
+    { title: 'Thư viện Chuẩn STL (vector, map, set, algorithms)', desc: 'Sử dụng các container chuẩn của C++, tối ưu hóa hiệu năng và giải thuật thực tế.' },
+    { title: 'Tổng kết Học phần, Báo cáo Đồ án & Hướng dẫn Ôn thi Cuối kỳ', desc: 'Đánh giá tiến độ hoàn thành LMS, giải đáp thắc mắc và công bố danh sách đủ điều kiện dự thi.' }
+  ];
+
+  return titles.map((item, idx) => {
+    const weekNum = idx + 1;
+    const fullTitle = `Tuần ${weekNum}: ${item.title}`;
+    return {
+      id: 100 + weekNum,
+      week_number: weekNum,
+      title: fullTitle,
+      name: fullTitle,
+      description: item.desc,
+      order_index: weekNum,
+      materials: [
+        {
+          id: 1000 + weekNum * 2 - 1,
+          module_id: 100 + weekNum,
+          title: `Slide Bài Giảng: ${fullTitle}`,
+          material_type: 'SLIDE',
+          file_url: `https://slides.techcorp.edu.vn/it101-week${weekNum}.pdf`,
+          suggested_time_minutes: 30,
+          is_completed: false
+        },
+        {
+          id: 1000 + weekNum * 2,
+          module_id: 100 + weekNum,
+          title: `Video Bài Giảng: ${fullTitle}`,
+          material_type: 'VIDEO',
+          file_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+          suggested_time_minutes: 45,
+          is_completed: false
+        }
+      ],
+      quizzes: [
+        {
+          id: 500 + weekNum,
+          module_id: 100 + weekNum,
+          title: `Quiz Đánh Giá Quá Trình (Tuần ${weekNum}): ${item.title}`,
+          time_limit_minutes: 15,
+          max_attempts: 3,
+          weight: 10,
+          passing_score: 5.0,
+          passing_score_pct: 70,
+          questions: [
+            {
+              id: weekNum * 10 + 1,
+              content: `Mục tiêu trọng tâm của bài học Tuần ${weekNum} là gì?`,
+              answers: [
+                { id: 1, content: 'Nắm vững kiến thức nền tảng và vận dụng giải quyết bài toán thực tế', is_correct: true },
+                { id: 2, content: 'Chỉ học thuộc lòng định nghĩa', is_correct: false },
+                { id: 3, content: 'Bỏ qua phần thực hành và kiểm thử', is_correct: false },
+                { id: 4, content: 'Không cần làm bài tập củng cố', is_correct: false }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+  });
+};
+
 // Bộ nhớ đệm dữ liệu 15 tuần học chuẩn mẫu (Local Fallback & Real-time State)
 const defaultSectionData = {
   section: {
@@ -23,136 +100,7 @@ const defaultSectionData = {
     theory_hours: 30,
     practice_hours: 30
   },
-  modules: [
-    {
-      id: 101,
-      week_number: 1,
-      name: 'Tuần 1: Giới thiệu Tổng quan về Ngôn ngữ C/C++ & Môi trường Lập trình',
-      description: 'Cài đặt IDE (VSCode, GCC), cấu trúc chương trình C++, biên dịch và chạy file mã nguồn.',
-      order_index: 1,
-      materials: [
-        {
-          id: 1001,
-          module_id: 101,
-          title: 'Mã Nguồn Mẫu & Bài Tập Thực Hành Tuần 1',
-          material_type: 'CODE',
-          file_url: 'https://github.com/techcorp/cpp-intro',
-          suggested_time_minutes: 30,
-          is_completed: false
-        },
-        {
-          id: 1002,
-          module_id: 101,
-          title: 'Bài Giảng & Slide Tuần 1: Giới thiệu Tổng quan về Ngôn ngữ C/C++ & Môi trường Lập trình',
-          material_type: 'SLIDE',
-          file_url: 'https://slides.techcorp.edu.vn/cpp-week1.pdf',
-          suggested_time_minutes: 30,
-          is_completed: false
-        }
-      ],
-      quizzes: [
-        {
-          id: 501,
-          module_id: 101,
-          title: 'Quiz Củng Cố Kiến Thức Tuần 1: Giới thiệu Tổng quan về Ngôn ngữ C/C++ & Môi trường Lập trình',
-          time_limit_minutes: 15,
-          max_attempts: 3,
-          weight: 10,
-          passing_score: 70,
-          questions: [
-            {
-              id: 1,
-              content: 'Hàm nào là điểm khởi đầu bắt buộc của một chương trình viết bằng ngôn ngữ C/C++?',
-              answers: [
-                { id: 1, content: 'main()', is_correct: true },
-                { id: 2, content: 'start()', is_correct: false },
-                { id: 3, content: 'init()', is_correct: false },
-                { id: 4, content: 'run()', is_correct: false }
-              ]
-            },
-            {
-              id: 2,
-              content: 'Phần mở rộng mặc định của tệp mã nguồn C++ là gì?',
-              answers: [
-                { id: 5, content: '.cpp', is_correct: true },
-                { id: 6, content: '.c', is_correct: false },
-                { id: 7, content: '.cp', is_correct: false },
-                { id: 8, content: '.cplus', is_correct: false }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      id: 102,
-      week_number: 2,
-      name: 'Tuần 2: Kiểu dữ liệu, Biến, Hằng số & Các Toán tử Cơ bản',
-      description: 'Toán tử số học, logic, quan hệ, thứ tự ưu tiên và ép kiểu dữ liệu.',
-      order_index: 2,
-      materials: [
-        {
-          id: 1003,
-          module_id: 102,
-          title: 'Video Bài Giảng: Thiết kế Sơ đồ E-R và Kiểu Dữ Liệu Bộ Nhớ',
-          material_type: 'VIDEO',
-          file_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-          suggested_time_minutes: 45,
-          is_completed: false
-        },
-        {
-          id: 1004,
-          module_id: 102,
-          title: 'Slide Bài Giảng: Mô hình Dữ liệu Quan hệ & Chuẩn hóa CSDL',
-          material_type: 'SLIDE',
-          file_url: 'https://slides.techcorp.edu.vn/db-week2.pdf',
-          suggested_time_minutes: 30,
-          is_completed: false
-        }
-      ],
-      quizzes: [
-        {
-          id: 502,
-          module_id: 102,
-          title: 'Quiz Tuần 2: Đánh Giá Năng Lực Kiến Trúc CSDL & Kiểu Dữ Liệu (Chuẩn BGDĐT)',
-          time_limit_minutes: 20,
-          max_attempts: 2,
-          weight: 10,
-          passing_score: 70,
-          questions: [
-            {
-              id: 3,
-              content: 'Kích thước của kiểu dữ liệu int trong trình biên dịch GCC 64-bit thông thường là bao nhiêu bytes?',
-              answers: [
-                { id: 9, content: '4 bytes', is_correct: true },
-                { id: 10, content: '2 bytes', is_correct: false },
-                { id: 11, content: '8 bytes', is_correct: false }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      id: 103,
-      week_number: 3,
-      name: 'Tuần 3: Cấu trúc Điều khiển Rẽ nhánh (if-else, switch-case)',
-      description: 'Xây dựng thuật toán phân nhánh điều kiện và kiểm thử ca kiểm thử biên.',
-      order_index: 3,
-      materials: [
-        {
-          id: 1005,
-          module_id: 103,
-          title: 'Mã Nguồn Mẫu: 15 Bài Tập Cấu Trúc Rẽ Nhánh',
-          material_type: 'CODE',
-          file_url: 'https://github.com/techcorp/branching-exercises',
-          suggested_time_minutes: 40,
-          is_completed: false
-        }
-      ],
-      quizzes: []
-    }
-  ]
+  modules: generate15WeeksData()
 };
 
 const academicTrainingApi = {
@@ -162,11 +110,24 @@ const academicTrainingApi = {
       const res = await apiClient.get(`/academic/lms/sections/${sectionId}/modules`, {
         params: { studentId }
       });
-      if (res && res.success) return res;
+      if (res && res.success && res.data) {
+        if (res.data.modules && Array.isArray(res.data.modules)) {
+          res.data.modules.forEach(m => {
+            m.title = m.title || m.name || `Tuần ${m.week_number}`;
+            m.name = m.name || m.title;
+          });
+        }
+        return res;
+      }
     } catch (e) {
-      // Return structured default data
+      console.warn('[academicTrainingApi] Fallback to standard 15-week curriculum:', e.message);
     }
-    return { success: true, data: defaultSectionData };
+    const fallback = JSON.parse(JSON.stringify(defaultSectionData));
+    fallback.modules.forEach(m => {
+      m.title = m.title || m.name || `Tuần ${m.week_number}`;
+      m.name = m.name || m.title;
+    });
+    return { success: true, data: fallback };
   },
 
   // 2. Diễn đàn thảo luận

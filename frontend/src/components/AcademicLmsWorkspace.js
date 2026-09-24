@@ -1922,7 +1922,7 @@ int main() {
                 <Option value="ALL">🌟 Toàn Bộ 15 Tuần Học Đề Cương</Option>
                 {(lmsData.modules || []).map(m => (
                   <Option key={m.id} value={m.week_number}>
-                    Tuần {m.week_number}: {m.title.slice(0, 32)}...
+                    Tuần {m.week_number}: {((m.title || m.name || `Tuần ${m.week_number}`) + '').slice(0, 32)}...
                   </Option>
                 ))}
               </Select>
@@ -2003,7 +2003,7 @@ int main() {
                                     {isModuleLocked ? '🔒 KHÓA' : `TUẦN ${m.week_number}`}
                                   </Tag>
                                   <Text strong style={{ fontSize: 15, color: isModuleLocked ? '#64748b' : '#0f172a' }}>
-                                    {m.title}
+                                    {m.title || m.name}
                                   </Text>
                                   {isModuleLocked && (
                                     <Tag color="warning" icon={<LockOutlined />}>
