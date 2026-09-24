@@ -886,11 +886,191 @@ exports.signAppraisalMinutes = async (req, res) => {
   }
 };
 
-// 2.10. Sổ điểm sinh viên & cả lớp
+// 2.10. Sổ điểm sinh viên chi tiết theo từng học kỳ & toàn khóa tích lũy (TT 08/2021)
+const studentDetailedTranscripts = {
+  '1': {
+    student_id: 1,
+    student_code: '261IT001',
+    full_name: 'Trần Văn Nam',
+    birth_date: '15/08/2004',
+    gender: 'Nam',
+    email: 'nam.tv@techcorp.edu.vn',
+    class_name: '66.CNTT-1',
+    faculty_id: 'CNTT',
+    faculty_name: 'Khoa Công Nghệ Thông Tin',
+    major_id: 'CNPM',
+    major_code: '7480103',
+    major_name: 'Kỹ thuật Phần mềm (Software Engineering)',
+    cohort: 'K66',
+    training_system: 'Đại học Chính quy (Theo hệ thống tín chỉ TT 08/2021)',
+    advisor: 'TS. Hoàng Đức Em',
+    cumulative: {
+      total_credits_registered: 64,
+      total_credits_passed: 64,
+      cpa_10: 8.88,
+      cpa_4: 3.87,
+      academic_rank: 'XUẤT SẮC',
+      status: 'Bình thường (Đạt chuẩn TT 08/2021/TT-BGDĐT)'
+    },
+    semesters: [
+      {
+        semester_number: 1,
+        semester_name: 'Học kỳ 1 - Năm học 2024-2025',
+        academic_year: '2024-2025',
+        total_credits: 16,
+        passed_credits: 16,
+        gpa_10: 8.95,
+        gpa_4: 3.91,
+        academic_rank: 'XUẤT SẮC',
+        courses: [
+          { code: 'MLN101', name: 'Triết học Mác - Lênin', credits: 3, attendance_score: 9.0, assignment_score: 8.5, midterm_score: 8.0, final_exam_score: 8.5, course_score_10: 8.45, course_score_letter: 'B+', course_score_4: 3.5, course_result: 'ĐẠT (PASS)' },
+          { code: 'ENG101', name: 'Tiếng Anh Học Thuật 1 (B1)', credits: 3, attendance_score: 9.5, assignment_score: 9.0, midterm_score: 8.5, final_exam_score: 9.0, course_score_10: 8.95, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
+          { code: 'MATH101', name: 'Toán Cao Cấp 1 (Giải tích 1)', credits: 3, attendance_score: 9.0, assignment_score: 9.0, midterm_score: 9.0, final_exam_score: 9.0, course_score_10: 9.00, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
+          { code: 'MATH102', name: 'Đại Số Tuyến Tính & Hình Học', credits: 3, attendance_score: 10.0, assignment_score: 9.0, midterm_score: 8.5, final_exam_score: 9.0, course_score_10: 9.00, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
+          { code: 'IT101', name: 'Nhập Môn Lập Trình C/C++', credits: 4, attendance_score: 9.5, assignment_score: 9.0, midterm_score: 9.0, final_exam_score: 9.5, course_score_10: 9.35, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' }
+        ]
+      },
+      {
+        semester_number: 2,
+        semester_name: 'Học kỳ 2 - Năm học 2024-2025',
+        academic_year: '2024-2025',
+        total_credits: 15,
+        passed_credits: 15,
+        gpa_10: 8.66,
+        gpa_4: 3.80,
+        academic_rank: 'XUẤT SẮC',
+        courses: [
+          { code: 'MLN102', name: 'Kinh tế Chính trị Mác - Lênin', credits: 2, attendance_score: 9.0, assignment_score: 8.5, midterm_score: 8.0, final_exam_score: 8.0, course_score_10: 8.20, course_score_letter: 'B+', course_score_4: 3.5, course_result: 'ĐẠT (PASS)' },
+          { code: 'ENG102', name: 'Tiếng Anh Học Thuật 2 (B2)', credits: 3, attendance_score: 9.5, assignment_score: 8.5, midterm_score: 8.5, final_exam_score: 8.5, course_score_10: 8.65, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
+          { code: 'PHYS101', name: 'Vật Lý Đại Cương & Thí Nghiệm', credits: 3, attendance_score: 8.5, assignment_score: 8.0, midterm_score: 8.0, final_exam_score: 8.5, course_score_10: 8.30, course_score_letter: 'B+', course_score_4: 3.5, course_result: 'ĐẠT (PASS)' },
+          { code: 'IT201', name: 'Cơ Sở Dữ Liệu (Database Systems)', credits: 3, attendance_score: 10.0, assignment_score: 9.5, midterm_score: 9.0, final_exam_score: 9.0, course_score_10: 9.20, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
+          { code: 'IT301', name: 'Cấu Trúc Dữ Liệu & Giải Thuật', credits: 3, attendance_score: 9.5, assignment_score: 9.0, midterm_score: 8.5, final_exam_score: 9.0, course_score_10: 8.95, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
+          { code: 'PE101', name: 'Giáo Dục Thể Chất 1 (Bóng chuyền)', credits: 1, attendance_score: 10.0, assignment_score: 9.0, midterm_score: 9.0, final_exam_score: 9.0, course_score_10: 9.10, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' }
+        ]
+      },
+      {
+        semester_number: 3,
+        semester_name: 'Học kỳ 3 - Năm học 2025-2026',
+        academic_year: '2025-2026',
+        total_credits: 18,
+        passed_credits: 18,
+        gpa_10: 8.92,
+        gpa_4: 3.86,
+        academic_rank: 'XUẤT SẮC',
+        courses: [
+          { code: 'MLN103', name: 'Chủ Nghĩa Xã Hội Khoa Học', credits: 2, attendance_score: 9.0, assignment_score: 8.0, midterm_score: 8.0, final_exam_score: 8.0, course_score_10: 8.10, course_score_letter: 'B+', course_score_4: 3.5, course_result: 'ĐẠT (PASS)' },
+          { code: 'IT302', name: 'Kiến Trúc Máy Tính & Hợp Ngữ', credits: 3, attendance_score: 9.0, assignment_score: 8.5, midterm_score: 8.5, final_exam_score: 9.0, course_score_10: 8.80, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
+          { code: 'IT401', name: 'Mạng Máy Tính & Truyền Số Liệu', credits: 3, attendance_score: 9.5, assignment_score: 9.0, midterm_score: 9.0, final_exam_score: 9.0, course_score_10: 9.10, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
+          { code: 'SE301', name: 'Công Nghệ Phần Mềm & Quản Lý Dự Án', credits: 3, attendance_score: 10.0, assignment_score: 9.5, midterm_score: 9.5, final_exam_score: 9.5, course_score_10: 9.60, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
+          { code: 'SE302', name: 'Lập Trình Hướng Đối Tượng Nâng Cao (OOP)', credits: 4, attendance_score: 9.5, assignment_score: 9.0, midterm_score: 9.0, final_exam_score: 9.5, course_score_10: 9.30, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
+          { code: 'STAT101', name: 'Xác Suất Thống Kê & Phân Tích Dữ Liệu', credits: 3, attendance_score: 9.0, assignment_score: 8.0, midterm_score: 8.0, final_exam_score: 8.5, course_score_10: 8.35, course_score_letter: 'B+', course_score_4: 3.5, course_result: 'ĐẠT (PASS)' }
+        ]
+      },
+      {
+        semester_number: 4,
+        semester_name: 'Học kỳ 4 - Năm học 2025-2026',
+        academic_year: '2025-2026',
+        total_credits: 15,
+        passed_credits: 15,
+        gpa_10: 8.96,
+        gpa_4: 3.90,
+        academic_rank: 'XUẤT SẮC',
+        courses: [
+          { code: 'HCM101', name: 'Tư Tưởng Hồ Chí Minh', credits: 2, attendance_score: 9.5, assignment_score: 8.5, midterm_score: 8.5, final_exam_score: 8.5, course_score_10: 8.65, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
+          { code: 'IT402', name: 'Hệ Điều Hành (Operating Systems)', credits: 3, attendance_score: 9.0, assignment_score: 8.5, midterm_score: 8.5, final_exam_score: 9.0, course_score_10: 8.80, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
+          { code: 'SE401', name: 'Phát Triển Ứng Dụng Web Fullstack (MERN)', credits: 4, attendance_score: 10.0, assignment_score: 9.5, midterm_score: 9.5, final_exam_score: 9.5, course_score_10: 9.60, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
+          { code: 'AI202', name: 'Lập Trình Python Cho Khoa Học Dữ Liệu & AI', credits: 3, attendance_score: 9.5, assignment_score: 9.0, midterm_score: 9.0, final_exam_score: 9.0, course_score_10: 9.10, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
+          { code: 'IT303', name: 'An Toàn Thông Tin & Mật Mã Ứng Dụng', credits: 3, attendance_score: 9.0, assignment_score: 8.5, midterm_score: 8.0, final_exam_score: 8.5, course_score_10: 8.45, course_score_letter: 'B+', course_score_4: 3.5, course_result: 'ĐẠT (PASS)' }
+        ]
+      }
+    ]
+  }
+};
+
+// Aliases cho các ID người dùng khác nhau của sinh viên (id 3: đăng nhập, id 1: dữ liệu mẫu)
+studentDetailedTranscripts['3'] = studentDetailedTranscripts['1'];
+
 exports.getStudentTranscript = async (req, res) => {
-  const { studentId } = req.params;
-  const std = transcriptData.students.find(s => s.student_id === Number(studentId)) || transcriptData.students[0];
-  res.json({ success: true, data: { student: std, printed_at: new Date() } });
+  try {
+    const { studentId } = req.params;
+    const { semester } = req.query; // '1', '2', '3', '4', hoặc 'ALL'
+
+    let transcript = studentDetailedTranscripts[studentId] || studentDetailedTranscripts['1'];
+    if (!transcript) {
+      transcript = studentDetailedTranscripts['1'];
+    }
+
+    let filteredCourses = [];
+    let activeSemesterInfo = null;
+
+    if (semester && semester !== 'ALL') {
+      const semNum = Number(semester);
+      const targetSem = transcript.semesters.find(s => s.semester_number === semNum) || transcript.semesters[0];
+      filteredCourses = targetSem.courses.map(c => ({
+        ...c,
+        semester: targetSem.semester_number,
+        semester_name: targetSem.semester_name
+      }));
+      activeSemesterInfo = targetSem;
+    } else {
+      // Toàn bộ các học kỳ tích lũy
+      transcript.semesters.forEach(s => {
+        s.courses.forEach(c => {
+          filteredCourses.push({
+            ...c,
+            semester: s.semester_number,
+            semester_name: s.semester_name
+          });
+        });
+      });
+      activeSemesterInfo = {
+        semester_number: 'ALL',
+        semester_name: 'Toàn khóa tích lũy (Học kỳ 1 - 4)',
+        total_credits: transcript.cumulative.total_credits_registered,
+        passed_credits: transcript.cumulative.total_credits_passed,
+        gpa_10: transcript.cumulative.cpa_10,
+        gpa_4: transcript.cumulative.cpa_4,
+        academic_rank: transcript.cumulative.academic_rank
+      };
+    }
+
+    res.json({
+      success: true,
+      data: {
+        student: {
+          student_id: transcript.student_id,
+          student_code: transcript.student_code,
+          full_name: transcript.full_name,
+          birth_date: transcript.birth_date,
+          gender: transcript.gender,
+          faculty_id: transcript.faculty_id,
+          faculty_name: transcript.faculty_name,
+          major_id: transcript.major_id,
+          major_name: transcript.major_name,
+          cohort: transcript.cohort,
+          class_name: transcript.class_name,
+          training_system: transcript.training_system,
+          advisor: transcript.advisor,
+          email: transcript.email
+        },
+        semesters_list: transcript.semesters.map(s => ({
+          semester_number: s.semester_number,
+          semester_name: s.semester_name,
+          academic_year: s.academic_year,
+          credits: s.total_credits,
+          gpa_10: s.gpa_10,
+          gpa_4: s.gpa_4,
+          academic_rank: s.academic_rank
+        })),
+        active_semester: activeSemesterInfo,
+        courses: filteredCourses,
+        cumulative: transcript.cumulative,
+        printed_at: new Date().toISOString()
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 };
 
 exports.getClassTranscript = async (req, res) => {

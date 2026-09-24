@@ -34,8 +34,17 @@ export default function LoginPage({ onLoginSuccess }) {
     let mockUser = {
       id: 3,
       username: 'student',
-      full_name: 'Trần Văn Nam (Sinh viên K66-CNTT)',
+      student_code: '261IT001',
+      full_name: 'Trần Văn Nam',
       role: 'student',
+      faculty_id: 'CNTT',
+      faculty_name: 'Khoa Công Nghệ Thông Tin',
+      major_id: 'CNPM',
+      major_code: '7480103',
+      major_name: 'Kỹ thuật Phần mềm',
+      cohort: 'K66',
+      class_name: '66.CNTT-1',
+      birth_date: '15/08/2004',
       email: 'sinhvien@techcorp.info.vn'
     };
 

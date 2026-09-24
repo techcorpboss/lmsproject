@@ -208,32 +208,83 @@ export default function StudentDirectoryView() {
         onOk={() => form.submit()}
         okText="Lưu Hồ Sơ"
         cancelText="Hủy"
+        width={620}
       >
         <Form form={form} layout="vertical" onFinish={handleSaveStudent}>
-          <Form.Item name="student_code" label="Mã số sinh viên (MSSV)" rules={[{ required: true }]}>
-            <Input placeholder="VD: 261IT099" />
-          </Form.Item>
-          <Form.Item name="full_name" label="Họ và tên" rules={[{ required: true }]}>
-            <Input placeholder="VD: Lê Thị Ánh Tuyết" />
-          </Form.Item>
-          <Form.Item name="class_name" label="Lớp hành chính / chuyên ngành" rules={[{ required: true }]}>
-            <Input placeholder="VD: 66.CNTT-1" />
-          </Form.Item>
-          <Form.Item name="major" label="Chuyên ngành đào tạo" initialValue="Kỹ thuật Phần mềm">
-            <Select>
-              <Option value="Kỹ thuật Phần mềm">Kỹ thuật Phần mềm</Option>
-              <Option value="Hệ thống Thông tin">Hệ thống Thông tin</Option>
-              <Option value="Khoa học Máy tính">Khoa học Máy tính</Option>
-              <Option value="An toàn Thông tin">An toàn Thông tin</Option>
-            </Select>
-          </Form.Item>
-          <Form.Item name="cohort" label="Khóa đào tạo" initialValue="K66">
-            <Select>
-              <Option value="K66">K66 (2026-2030)</Option>
-              <Option value="K65">K65 (2025-2029)</Option>
-              <Option value="K64">K64 (2024-2028)</Option>
-            </Select>
-          </Form.Item>
+          <Row gutter={12}>
+            <Col span={12}>
+              <Form.Item name="student_code" label="Mã số sinh viên (MSSV)" rules={[{ required: true }]}>
+                <Input placeholder="VD: 261IT099" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="full_name" label="Họ và tên sinh viên" rules={[{ required: true }]}>
+                <Input placeholder="VD: Lê Thị Ánh Tuyết" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={12}>
+            <Col span={12}>
+              <Form.Item name="email" label="Địa chỉ Email" rules={[{ required: true, type: 'email' }]}>
+                <Input placeholder="tuyet.lta@techcorp.edu.vn" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="birth_date" label="Ngày sinh" initialValue="20/05/2004">
+                <Input placeholder="DD/MM/YYYY" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={12}>
+            <Col span={12}>
+              <Form.Item name="faculty_name" label="Khoa đào tạo" initialValue="Khoa Công Nghệ Thông Tin">
+                <Select>
+                  <Option value="Khoa Công Nghệ Thông Tin">Khoa Công Nghệ Thông Tin (CNTT)</Option>
+                  <Option value="Khoa Kinh Tế & QTKD">Khoa Kinh Tế & QTKD (KT)</Option>
+                  <Option value="Khoa Ngoại Ngữ">Khoa Ngoại Ngữ (NN)</Option>
+                  <Option value="Khoa Du Lịch & Khách Sạn">Khoa Du Lịch & Khách Sạn (DL)</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="major" label="Chuyên ngành đào tạo" initialValue="Kỹ thuật Phần mềm">
+                <Select>
+                  <Option value="Kỹ thuật Phần mềm">Kỹ thuật Phần mềm (7480103)</Option>
+                  <Option value="Khoa học Máy tính & AI">Khoa học Máy tính & AI (7480101)</Option>
+                  <Option value="Công nghệ Thông tin">Công nghệ Thông tin (7480201)</Option>
+                  <Option value="Hệ thống Thông tin">Hệ thống Thông tin (7480104)</Option>
+                  <Option value="Quản trị Kinh doanh">Quản trị Kinh doanh (7340101)</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={12}>
+            <Col span={12}>
+              <Form.Item name="cohort" label="Khóa đào tạo" initialValue="K66">
+                <Select>
+                  <Option value="K66">Khóa 66 (2022 - 2026)</Option>
+                  <Option value="K67">Khóa 67 (2023 - 2027)</Option>
+                  <Option value="K68">Khóa 68 (2024 - 2028)</Option>
+                  <Option value="K65">Khóa 65 (2021 - 2025)</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="class_name" label="Lớp hành chính / sinh hoạt" initialValue="66.CNTT-1" rules={[{ required: true }]}>
+                <Select>
+                  <Option value="66.CNTT-1">Lớp 66.CNTT-1</Option>
+                  <Option value="66.CNTT-2">Lớp 66.CNTT-2</Option>
+                  <Option value="66.HTTT-1">Lớp 66.HTTT-1</Option>
+                  <Option value="66.KHMT-1">Lớp 66.KHMT-1</Option>
+                  <Option value="68.KHMT-1">Lớp 68.KHMT-1</Option>
+                  <Option value="66.QTKD-1">Lớp 66.QTKD-1</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
         </Form>
       </Modal>
     </div>

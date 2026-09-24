@@ -87,14 +87,14 @@ let backupsStore = [
 
 // 3. Danh sách học viên mẫu theo quy chế đào tạo tín chỉ (TT 08/2021)
 let studentsStore = [
-  { id: 1, student_code: '261IT001', full_name: 'Trần Văn Nam', class_name: '66.CNTT-1', major: 'Kỹ thuật Phần mềm', cohort: 'K66', gpa: 3.65, credits_accumulated: 38, lms_progress_pct: 88, status: 'ACTIVE', email: 'nam.tv@techcorp.edu.vn' },
-  { id: 2, student_code: '261IT002', full_name: 'Nguyễn Thị Mai', class_name: '66.CNTT-1', major: 'Kỹ thuật Phần mềm', cohort: 'K66', gpa: 3.82, credits_accumulated: 42, lms_progress_pct: 95, status: 'ACTIVE', email: 'mai.nt@techcorp.edu.vn' },
-  { id: 3, student_code: '261IT003', full_name: 'Lê Hoàng Long', class_name: '66.CNTT-1', major: 'Kỹ thuật Phần mềm', cohort: 'K66', gpa: 3.20, credits_accumulated: 35, lms_progress_pct: 82, status: 'ACTIVE', email: 'long.lh@techcorp.edu.vn' },
-  { id: 4, student_code: '261IT004', full_name: 'Phạm Minh Tuấn', class_name: '66.CNTT-2', major: 'Hệ thống Thông tin', cohort: 'K66', gpa: 2.85, credits_accumulated: 32, lms_progress_pct: 74, status: 'ACTIVE', email: 'tuan.pm@techcorp.edu.vn' },
-  { id: 5, student_code: '261IT005', full_name: 'Vũ Hải Đăng', class_name: '66.CNTT-2', major: 'Hệ thống Thông tin', cohort: 'K66', gpa: 1.95, credits_accumulated: 22, lms_progress_pct: 45, status: 'ACADEMIC_WARNING_1', email: 'dang.vh@techcorp.edu.vn' },
-  { id: 6, student_code: '251IT010', full_name: 'Đỗ Thùy Linh', class_name: '65.CNTT-1', major: 'Khoa học Máy tính', cohort: 'K65', gpa: 3.55, credits_accumulated: 78, lms_progress_pct: 91, status: 'ACTIVE', email: 'linh.dt@techcorp.edu.vn' },
-  { id: 7, student_code: '251IT012', full_name: 'Ngô Quốc Bảo', class_name: '65.CNTT-1', major: 'Khoa học Máy tính', cohort: 'K65', gpa: 3.40, credits_accumulated: 75, lms_progress_pct: 86, status: 'ACTIVE', email: 'bao.nq@techcorp.edu.vn' },
-  { id: 8, student_code: '241IT008', full_name: 'Hoàng Kim Ngân', class_name: '64.CNTT-1', major: 'An toàn Thông tin', cohort: 'K64', gpa: 3.70, credits_accumulated: 112, lms_progress_pct: 96, status: 'ACTIVE', email: 'ngan.hk@techcorp.edu.vn' }
+  { id: 1, student_code: '261IT001', full_name: 'Trần Văn Nam', class_name: '66.CNTT-1', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', major_id: 'CNPM', major: 'Kỹ thuật Phần mềm', cohort: 'K66', gpa: 3.65, credits_accumulated: 38, lms_progress_pct: 88, status: 'ACTIVE', email: 'nam.tv@techcorp.edu.vn', birth_date: '15/08/2004' },
+  { id: 2, student_code: '261IT002', full_name: 'Nguyễn Thị Mai', class_name: '66.CNTT-1', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', major_id: 'CNPM', major: 'Kỹ thuật Phần mềm', cohort: 'K66', gpa: 3.82, credits_accumulated: 42, lms_progress_pct: 95, status: 'ACTIVE', email: 'mai.nt@techcorp.edu.vn', birth_date: '20/11/2004' },
+  { id: 3, student_code: '261IT003', full_name: 'Lê Hoàng Long', class_name: '66.CNTT-1', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', major_id: 'CNPM', major: 'Kỹ thuật Phần mềm', cohort: 'K66', gpa: 3.20, credits_accumulated: 35, lms_progress_pct: 82, status: 'ACTIVE', email: 'long.lh@techcorp.edu.vn', birth_date: '02/05/2004' },
+  { id: 4, student_code: '261IT004', full_name: 'Phạm Minh Tuấn', class_name: '66.CNTT-2', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', major_id: 'HTTT', major: 'Hệ thống Thông tin', cohort: 'K66', gpa: 2.85, credits_accumulated: 32, lms_progress_pct: 74, status: 'ACTIVE', email: 'tuan.pm@techcorp.edu.vn', birth_date: '12/03/2004' },
+  { id: 5, student_code: '261IT005', full_name: 'Vũ Hải Đăng', class_name: '66.CNTT-2', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', major_id: 'HTTT', major: 'Hệ thống Thông tin', cohort: 'K66', gpa: 1.95, credits_accumulated: 22, lms_progress_pct: 45, status: 'ACADEMIC_WARNING_1', email: 'dang.vh@techcorp.edu.vn', birth_date: '10/10/2004' },
+  { id: 6, student_code: '251IT010', full_name: 'Đỗ Thùy Linh', class_name: '65.CNTT-1', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', major_id: 'KHMT', major: 'Khoa học Máy tính', cohort: 'K65', gpa: 3.55, credits_accumulated: 78, lms_progress_pct: 91, status: 'ACTIVE', email: 'linh.dt@techcorp.edu.vn', birth_date: '25/07/2003' },
+  { id: 7, student_code: '251IT012', full_name: 'Ngô Quốc Bảo', class_name: '65.CNTT-1', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', major_id: 'KHMT', major: 'Khoa học Máy tính', cohort: 'K65', gpa: 3.40, credits_accumulated: 75, lms_progress_pct: 86, status: 'ACTIVE', email: 'bao.nq@techcorp.edu.vn', birth_date: '08/09/2003' },
+  { id: 8, student_code: '241IT008', full_name: 'Hoàng Kim Ngân', class_name: '64.CNTT-1', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', major_id: 'ATTT', major: 'An toàn Thông tin', cohort: 'K64', gpa: 3.70, credits_accumulated: 112, lms_progress_pct: 96, status: 'ACTIVE', email: 'ngan.hk@techcorp.edu.vn', birth_date: '18/02/2002' }
 ];
 
 // 4. Khung chương trình đào tạo đại học độc lập (Curriculum Framework)
@@ -160,7 +160,7 @@ exports.getUsers = async (req, res) => {
       dbUsers = [
         { id: 1, username: 'admin', email: 'admin@techcorp.info.vn', full_name: 'Quản trị viên Hệ thống (Admin)', role: 'admin', status: 'ACTIVE', created_at: new Date() },
         { id: 2, username: 'teacher', email: 'giangvien@techcorp.info.vn', full_name: 'TS. Nguyễn Văn An (Giảng viên)', role: 'teacher', status: 'ACTIVE', created_at: new Date() },
-        { id: 3, username: 'student', email: 'sinhvien@techcorp.info.vn', full_name: 'Trần Văn Nam (Sinh viên K66-CNTT)', role: 'student', status: 'ACTIVE', created_at: new Date() },
+        { id: 3, username: 'student', student_code: '261IT001', email: 'sinhvien@techcorp.info.vn', full_name: 'Trần Văn Nam', role: 'student', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', major_id: 'CNPM', major_name: 'Kỹ thuật Phần mềm', cohort: 'K66', class_name: '66.CNTT-1', birth_date: '15/08/2004', status: 'ACTIVE', created_at: new Date() },
         { id: 4, username: 'proctor', email: 'giamthi@techcorp.info.vn', full_name: 'Cán bộ Giám thị Khảo thí', role: 'proctor', status: 'ACTIVE', created_at: new Date() },
         { id: 5, username: 'emhd', email: 'em.hd@techcorp.edu.vn', full_name: 'TS. Hoàng Đức Em (Khoa CNTT)', role: 'teacher', status: 'ACTIVE', created_at: new Date() }
       ];
@@ -173,7 +173,7 @@ exports.getUsers = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    const { username, email, full_name, role, password } = req.body;
+    const { username, email, full_name, role, password, student_code, faculty_id, faculty_name, major_id, major_name, cohort, class_name, birth_date } = req.body;
     let newUser = null;
     try {
       newUser = await User.create({
@@ -181,7 +181,15 @@ exports.createUser = async (req, res) => {
         email,
         full_name,
         role: role || 'student',
-        password: password || '123456@'
+        password: password || '123456@',
+        student_code,
+        faculty_id,
+        faculty_name,
+        major_id,
+        major_name,
+        cohort,
+        class_name,
+        birth_date
       });
     } catch (e) {
       newUser = {
@@ -190,8 +198,41 @@ exports.createUser = async (req, res) => {
         email,
         full_name,
         role: role || 'student',
+        student_code: student_code || (role === 'student' ? `261IT${String(Date.now()).slice(-3)}` : null),
+        faculty_id: faculty_id || (role === 'student' ? 'CNTT' : null),
+        faculty_name: faculty_name || (role === 'student' ? 'Khoa Công Nghệ Thông Tin' : null),
+        major_id: major_id || (role === 'student' ? 'CNPM' : null),
+        major_name: major_name || (role === 'student' ? 'Kỹ thuật Phần mềm' : null),
+        cohort: cohort || (role === 'student' ? 'K66' : null),
+        class_name: class_name || (role === 'student' ? '66.CNTT-1' : null),
+        birth_date: birth_date || null,
         created_at: new Date()
       };
+      dbUsers.unshift(newUser);
+    }
+
+    // Nếu là sinh viên, cũng thêm vào danh mục studentsStore
+    if (role === 'student') {
+      const existingStdIdx = studentsStore.findIndex(s => s.student_code === newUser.student_code);
+      if (existingStdIdx === -1) {
+        studentsStore.unshift({
+          id: newUser.id,
+          student_code: newUser.student_code,
+          full_name: newUser.full_name,
+          class_name: newUser.class_name || '66.CNTT-1',
+          faculty_id: newUser.faculty_id || 'CNTT',
+          faculty_name: newUser.faculty_name || 'Khoa Công Nghệ Thông Tin',
+          major_id: newUser.major_id || 'CNPM',
+          major: newUser.major_name || 'Kỹ thuật Phần mềm',
+          cohort: newUser.cohort || 'K66',
+          gpa: 3.5,
+          credits_accumulated: 38,
+          lms_progress_pct: 75,
+          status: 'ACTIVE',
+          email: newUser.email,
+          birth_date: newUser.birth_date || '15/08/2004'
+        });
+      }
     }
 
     // Ghi audit log
@@ -200,7 +241,7 @@ exports.createUser = async (req, res) => {
       timestamp: new Date().toISOString(),
       user: (req.user && req.user.username) || 'admin',
       action: 'CREATE_USER',
-      description: `Tạo tài khoản mới: ${username} (${full_name}) - Vai trò: ${role}`,
+      description: `Tạo tài khoản mới: ${username} (${full_name}) - Vai trò: ${role} - Khoa/Lớp: ${newUser.faculty_id || 'N/A'}/${newUser.class_name || 'N/A'}`,
       ip: req.ip || '127.0.0.1',
       status: 'SUCCESS'
     });
@@ -214,13 +255,18 @@ exports.createUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { full_name, role, status } = req.body;
+    const { full_name, role, status, student_code, faculty_id, faculty_name, major_id, major_name, cohort, class_name } = req.body;
     try {
       const user = await User.findByPk(id);
       if (user) {
-        await user.update({ full_name, role });
+        await user.update({ full_name, role, student_code, faculty_id, faculty_name, major_id, major_name, cohort, class_name });
       }
-    } catch (e) {}
+    } catch (e) {
+      const uIdx = dbUsers.findIndex(u => u.id === Number(id));
+      if (uIdx !== -1) {
+        dbUsers[uIdx] = { ...dbUsers[uIdx], full_name, role, status, student_code, faculty_id, faculty_name, major_id, major_name, cohort, class_name };
+      }
+    }
 
     auditLogsStore.unshift({
       id: Date.now(),

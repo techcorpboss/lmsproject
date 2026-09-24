@@ -55,7 +55,22 @@ const INITIAL_TREE_DATA = [
             key: 'major_ktpm',
             title: '[ĐH] Kỹ thuật Phần mềm (Software Eng) (7480103)',
             badge: '2 CTĐT',
-            badgeColor: '#722ed1'
+            badgeColor: '#722ed1',
+            frameworks: [
+              {
+                key: 'ctdt_k66_ktpm',
+                title: 'Khóa: K66 - Khung CTĐT Kỹ sư Kỹ thuật Phần mềm K66 (2022-2026)',
+                badge: '145 TC',
+                badgeColor: '#1677ff',
+                cohort: 'K66',
+                years: '2022-2026',
+                total_credits_label: '145 Tín chỉ',
+                major_name: 'Kỹ thuật Phần mềm',
+                faculty_name: 'Khoa Công nghệ Thông tin',
+                decision_number: 'QĐ-K66/7480103',
+                attached_file: null
+              }
+            ]
           },
           {
             key: 'major_cntt',
@@ -217,7 +232,11 @@ const DEFAULT_COURSES = [
   { id: 35, semester: 8, code: 'GRAD501', name: 'Khóa luận tốt nghiệp Kỹ sư AI', description: 'Nghiên cứu khoa học chuyên sâu hoặc phát triển hệ thống sản phẩm hoàn chỉnh', credits: 16, is_compulsory: true }
 ];
 
-export default function CurriculumManagerView() {
+export default function CurriculumManagerView({ currentUser }) {
+  const isStudent = currentUser?.role === 'student';
+  const studentMajor = (currentUser?.major_name || currentUser?.major || 'Kỹ thuật Phần mềm').toLowerCase();
+  const isKTPM = studentMajor.includes('phần mềm') || studentMajor.includes('software');
+
   const [courses, setCourses] = useState(DEFAULT_COURSES);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -225,9 +244,41 @@ export default function CurriculumManagerView() {
   const [expandedNodes, setExpandedNodes] = useState({
     campus_root: true,
     faculty_cntt: true,
-    major_khmt_ai: true
+    major_khmt_ai: !isStudent || !isKTPM,
+    major_ktpm: isStudent ? isKTPM : true
   });
-  const [selectedFrameworkKey, setSelectedFrameworkKey] = useState('ctdt_k68_khmt_ai');
+  const [selectedFrameworkKey, setSelectedFrameworkKey] = useState(
+    isStudent ? (isKTPM ? 'ctdt_k66_ktpm' : 'ctdt_k68_khmt_ai') : 'ctdt_k68_khmt_ai'
+  );
+
+  // Lọc cây phân cấp nếu người dùng là sinh viên (chỉ hiển thị đúng khoa & ngành sinh viên đang học)
+  const getFilteredTreeData = () => {
+    if (!isStudent) return INITIAL_TREE_DATA;
+
+    const sMajor = (currentUser?.major_name || currentUser?.major || 'Kỹ thuật Phần mềm').toLowerCase();
+    const sFaculty = (currentUser?.faculty_name || 'Công nghệ Thông tin').toLowerCase();
+
+    return INITIAL_TREE_DATA.map(campus => ({
+      ...campus,
+      children: (campus.children || []).filter(fac => {
+        return fac.title.toLowerCase().includes('công nghệ thông tin') ||
+               fac.title.toLowerCase().includes(sFaculty);
+      }).map(fac => ({
+        ...fac,
+        children: (fac.children || []).filter(maj => {
+          if (sMajor.includes('phần mềm') || sMajor.includes('software')) {
+            return maj.key === 'major_ktpm';
+          }
+          if (sMajor.includes('khoa học máy tính') || sMajor.includes('ai')) {
+            return maj.key === 'major_khmt_ai';
+          }
+          return maj.title.toLowerCase().includes(sMajor);
+        })
+      }))
+    })).filter(campus => campus.children.some(c => c.children.length > 0));
+  };
+
+  const activeTreeData = getFilteredTreeData();
 
   // Modals
   const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
@@ -470,6 +521,23 @@ export default function CurriculumManagerView() {
     }
   ];
 
+  const tableColumns = isStudent ? columns.filter(col => col.key !== 'actions') : columns;
+
+  const handleExportExcel = () => {
+    const csvContent = "data:text/csv;charset=utf-8,\uFEFF"
+      + `KHUNG CHUONG TRINH DAO TAO - NGANH: ${currentUser?.major_name || 'Ky thuat Phan mem'} - KHOA: ${currentUser?.cohort || 'K66'}\n`
+      + "Hoc Ky,Ma HP,Ten Hoc Phan,So Tin Chi,Phan Loai,Mo Ta\n"
+      + courses.map(c => `"Ky ${c.semester}","${c.code}","${c.name}","${c.credits}","${c.is_compulsory ? 'Bat buoc' : 'Tu chon'}","${c.description || ''}"`).join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `khung_chuong_trinh_dao_tao_${currentUser?.student_code || 'sv'}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    message.success('Đã xuất Khung chương trình đào tạo ra file Excel/CSV thành công!');
+  };
+
   return (
     <div style={{ background: '#f8fafc', minHeight: '100%', padding: '0 0 20px' }}>
       {/* ========================================================================= */}
@@ -569,11 +637,61 @@ export default function CurriculumManagerView() {
       {/* 2. TIÊU ĐỀ CHÍNH & HÀNG NÚT THAO TÁC                                     */}
       {/* ========================================================================= */}
       <div style={{ marginBottom: 16 }}>
+        {isStudent && (
+          <div style={{
+            background: 'linear-gradient(135deg, #e6f4ff 0%, #f0fdf4 100%)',
+            border: '1px solid #91caff',
+            borderRadius: 10,
+            padding: '14px 18px',
+            marginBottom: 16,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
+          }}>
+            <Row align="middle" justify="space-between" gutter={[16, 12]}>
+              <Col xs={24} md={16}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 24 }}>🎓</span>
+                  <div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: '#002b66' }}>
+                      Chương Trình Đào Tạo Cá Nhân: {currentUser?.full_name} (MSSV: {currentUser?.student_code || '261IT001'})
+                    </div>
+                    <div style={{ fontSize: 13, color: '#334155', marginTop: 2 }}>
+                      🏛️ <b>Khoa:</b> {currentUser?.faculty_name || 'Khoa Công Nghệ Thông Tin'} | 🎓 <b>Ngành:</b> {currentUser?.major_name || 'Kỹ thuật Phần mềm'} | 🏷️ <b>Lớp:</b> {currentUser?.class_name || '66.CNTT-1'} | 📅 <b>Khóa:</b> {currentUser?.cohort || 'K66'}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
+                      ℹ️ Hệ thống đã tự động lọc hiển thị toàn bộ khung học phần theo đúng chuyên ngành bạn đang theo học. Chức năng biên tập bị khóa theo quyền sinh viên.
+                    </div>
+                  </div>
+                </div>
+              </Col>
+              <Col xs={24} md={8} style={{ textAlign: 'right' }}>
+                <Space>
+                  <Button
+                    type="primary"
+                    icon={<PrinterOutlined />}
+                    onClick={() => setIsPrintModalOpen(true)}
+                    style={{ background: '#0958d9', borderColor: '#0958d9', fontWeight: 600 }}
+                  >
+                    In Khung CTĐT
+                  </Button>
+                  <Button
+                    type="primary"
+                    icon={<FileExcelOutlined />}
+                    onClick={handleExportExcel}
+                    style={{ background: '#52c41a', borderColor: '#52c41a', fontWeight: 600 }}
+                  >
+                    Xuất File Excel
+                  </Button>
+                </Space>
+              </Col>
+            </Row>
+          </div>
+        )}
+
         <Row justify="space-between" align="middle" gutter={[12, 12]}>
           <Col xs={24} xl={14}>
             <Title level={4} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, color: '#0958d9', fontWeight: 800 }}>
               <ApartmentOutlined style={{ fontSize: 22 }} />
-              Quản Trị Khung Chương Trình Đào Tạo (Curriculum Architecture)
+              {isStudent ? 'Khung Chương Trình Học Theo Ngành Nghề' : 'Quản Trị Khung Chương Trình Đào Tạo (Curriculum Architecture)'}
             </Title>
             <div style={{ fontSize: 12, color: '#64748b', marginTop: 4, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
               <span>Cây phân cấp chuẩn quốc gia: Trường → Khoa/Viện → Ngành/Nghề → Khóa học → Lớp & Học kỳ → Môn học |</span>
@@ -585,48 +703,50 @@ export default function CurriculumManagerView() {
 
           {/* CÁC NÚT HÀNH ĐỘNG MÀU SẮC CHUẨN */}
           <Col xs={24} xl={10} style={{ textAlign: 'right' }}>
-            <Space size={8} wrap>
-              <Button
-                type="primary"
-                icon={<SyncOutlined />}
-                onClick={handleSyncRoot}
-                style={{ background: '#52c41a', borderColor: '#52c41a', fontWeight: 700 }}
-              >
-                Đồng Bộ Dữ Liệu Gốc 100%
-              </Button>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => setIsAddFacultyModalOpen(true)}
-                style={{ background: '#1677ff', borderColor: '#1677ff', fontWeight: 600 }}
-              >
-                + + Thêm Khoa
-              </Button>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => setIsAddMajorModalOpen(true)}
-                style={{ background: '#13c2c2', borderColor: '#13c2c2', fontWeight: 600 }}
-              >
-                + + Thêm Ngành
-              </Button>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => setIsCreateFrameworkModalOpen(true)}
-                style={{ background: '#722ed1', borderColor: '#722ed1', fontWeight: 600 }}
-              >
-                + + Tạo Khung CTĐT
-              </Button>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => setIsAddClassModalOpen(true)}
-                style={{ background: '#fa8c16', borderColor: '#fa8c16', fontWeight: 600 }}
-              >
-                + + Thêm Lớp
-              </Button>
-            </Space>
+            {!isStudent ? (
+              <Space size={8} wrap>
+                <Button
+                  type="primary"
+                  icon={<SyncOutlined />}
+                  onClick={handleSyncRoot}
+                  style={{ background: '#52c41a', borderColor: '#52c41a', fontWeight: 700 }}
+                >
+                  Đồng Bộ Dữ Liệu Gốc 100%
+                </Button>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => setIsAddFacultyModalOpen(true)}
+                  style={{ background: '#1677ff', borderColor: '#1677ff', fontWeight: 600 }}
+                >
+                  + + Thêm Khoa
+                </Button>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => setIsAddMajorModalOpen(true)}
+                  style={{ background: '#13c2c2', borderColor: '#13c2c2', fontWeight: 600 }}
+                >
+                  + + Thêm Ngành
+                </Button>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => setIsCreateFrameworkModalOpen(true)}
+                  style={{ background: '#722ed1', borderColor: '#722ed1', fontWeight: 600 }}
+                >
+                  + + Tạo Khung CTĐT
+                </Button>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => setIsAddClassModalOpen(true)}
+                  style={{ background: '#fa8c16', borderColor: '#fa8c16', fontWeight: 600 }}
+                >
+                  + + Thêm Lớp
+                </Button>
+              </Space>
+            ) : null}
           </Col>
         </Row>
       </div>
@@ -664,7 +784,7 @@ export default function CurriculumManagerView() {
 
             {/* DANH SÁCH CÂY PHÂN CẤP */}
             <div style={{ maxHeight: 580, overflowY: 'auto', paddingRight: 4 }}>
-              {INITIAL_TREE_DATA.map(campus => (
+              {activeTreeData.map(campus => (
                 <div key={campus.key} style={{ marginBottom: 8 }}>
                   {/* Root Campus */}
                   <div
@@ -809,7 +929,9 @@ export default function CurriculumManagerView() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 18 }}>🎓</span>
                 <Text strong style={{ fontSize: 15, color: '#0f172a' }}>
-                  Khung CTĐT: Khung CTĐT Kỹ sư Khoa học Máy tính & AI K68 (2024-2028)
+                  {isStudent && isKTPM
+                    ? 'Khung CTĐT: Kỹ sư Kỹ thuật Phần mềm K66 (2022-2026)'
+                    : 'Khung CTĐT: Khung CTĐT Kỹ sư Khoa học Máy tính & AI K68 (2024-2028)'}
                 </Text>
               </div>
 
@@ -822,19 +944,23 @@ export default function CurriculumManagerView() {
                 >
                   In Khung CTĐT
                 </Button>
-                <Button
-                  icon={<EditOutlined />}
-                  onClick={() => setIsCreateFrameworkModalOpen(true)}
-                >
-                  Sửa CTĐT
-                </Button>
-                <Button
-                  danger
-                  icon={<DeleteOutlined />}
-                  onClick={() => message.warning('Chức năng bảo vệ an toàn: Khung CTĐT chính khóa không được xóa trực tiếp!')}
-                >
-                  Xóa
-                </Button>
+                {!isStudent && (
+                  <>
+                    <Button
+                      icon={<EditOutlined />}
+                      onClick={() => setIsCreateFrameworkModalOpen(true)}
+                    >
+                      Sửa CTĐT
+                    </Button>
+                    <Button
+                      danger
+                      icon={<DeleteOutlined />}
+                      onClick={() => message.warning('Chức năng bảo vệ an toàn: Khung CTĐT chính khóa không được xóa trực tiếp!')}
+                    >
+                      Xóa
+                    </Button>
+                  </>
+                )}
               </Space>
             </div>
 
@@ -911,38 +1037,59 @@ export default function CurriculumManagerView() {
               gap: 8
             }}>
               {/* Bên trái: Các nút thêm môn, excel, in */}
-              <Space size={8} wrap>
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  onClick={() => setIsAddCourseModalOpen(true)}
-                  style={{ background: '#1677ff', borderColor: '#1677ff', fontWeight: 600 }}
-                >
-                  + + Thêm Môn Học Thủ Công
-                </Button>
-                <Button
-                  type="primary"
-                  icon={<FileExcelOutlined />}
-                  onClick={() => message.info('Mở hộp thoại Import Excel danh mục học phần chuẩn Bộ GD&ĐT')}
-                  style={{ background: '#52c41a', borderColor: '#52c41a', fontWeight: 600 }}
-                >
-                  Import Excel
-                </Button>
-                <Button
-                  icon={<DownloadOutlined />}
-                  onClick={() => message.success('Đang tải file mẫu: Mau_Khung_Chuong_Trinh_Dao_Tao.xlsx')}
-                >
-                  Tải File Mẫu
-                </Button>
-                <Button
-                  type="primary"
-                  icon={<PrinterOutlined />}
-                  onClick={() => setIsPrintModalOpen(true)}
-                  style={{ background: '#003a8c', borderColor: '#003a8c', fontWeight: 600 }}
-                >
-                  In Khung CTĐT Chuẩn
-                </Button>
-              </Space>
+              {isStudent ? (
+                <Space size={8} wrap>
+                  <Button
+                    type="primary"
+                    icon={<PrinterOutlined />}
+                    onClick={() => setIsPrintModalOpen(true)}
+                    style={{ background: '#003a8c', borderColor: '#003a8c', fontWeight: 600 }}
+                  >
+                    In Khung CTĐT Chuẩn
+                  </Button>
+                  <Button
+                    type="primary"
+                    icon={<FileExcelOutlined />}
+                    onClick={handleExportExcel}
+                    style={{ background: '#52c41a', borderColor: '#52c41a', fontWeight: 600 }}
+                  >
+                    Xuất File Excel CTĐT
+                  </Button>
+                </Space>
+              ) : (
+                <Space size={8} wrap>
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => setIsAddCourseModalOpen(true)}
+                    style={{ background: '#1677ff', borderColor: '#1677ff', fontWeight: 600 }}
+                  >
+                    + + Thêm Môn Học Thủ Công
+                  </Button>
+                  <Button
+                    type="primary"
+                    icon={<FileExcelOutlined />}
+                    onClick={() => message.info('Mở hộp thoại Import Excel danh mục học phần chuẩn Bộ GD&ĐT')}
+                    style={{ background: '#52c41a', borderColor: '#52c41a', fontWeight: 600 }}
+                  >
+                    Import Excel
+                  </Button>
+                  <Button
+                    icon={<DownloadOutlined />}
+                    onClick={() => message.success('Đang tải file mẫu: Mau_Khung_Chuong_Trinh_Dao_Tao.xlsx')}
+                  >
+                    Tải File Mẫu
+                  </Button>
+                  <Button
+                    type="primary"
+                    icon={<PrinterOutlined />}
+                    onClick={() => setIsPrintModalOpen(true)}
+                    style={{ background: '#003a8c', borderColor: '#003a8c', fontWeight: 600 }}
+                  >
+                    In Khung CTĐT Chuẩn
+                  </Button>
+                </Space>
+              )}
 
               {/* Bên phải: 3 Tags thống kê */}
               <Space size={6}>
@@ -1000,7 +1147,7 @@ export default function CurriculumManagerView() {
               `}</style>
               <Table
                 dataSource={filteredCourses}
-                columns={columns}
+                columns={tableColumns}
                 rowKey="id"
                 pagination={false}
                 size="middle"

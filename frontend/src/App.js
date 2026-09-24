@@ -92,7 +92,22 @@ function App() {
   const handleChangeRole = (role) => {
     let updated = null;
     if (role === 'student') {
-      updated = { id: 3, username: 'student', full_name: 'Trần Văn Nam (Sinh viên K66)', role: 'student' };
+      updated = {
+        id: 3,
+        username: 'student',
+        student_code: '261IT001',
+        full_name: 'Trần Văn Nam',
+        role: 'student',
+        faculty_id: 'CNTT',
+        faculty_name: 'Khoa Công Nghệ Thông Tin',
+        major_id: 'CNPM',
+        major_code: '7480103',
+        major_name: 'Kỹ thuật Phần mềm',
+        cohort: 'K66',
+        class_name: '66.CNTT-1',
+        birth_date: '15/08/2004',
+        email: 'sinhvien@techcorp.info.vn'
+      };
       setActiveMenuKey('lms_workspace');
     } else if (role === 'teacher') {
       updated = { id: 2, username: 'teacher', full_name: 'TS. Hoàng Đức Em (Giảng viên)', role: 'teacher' };
@@ -227,15 +242,13 @@ function App() {
           {
             key: 'moet_gradebook',
             icon: <FileTextOutlined />,
-            label: 'Sổ Điểm & Bảng Điểm In'
+            label: isTeacherOrAdmin ? 'Sổ Điểm & Bảng Điểm In' : 'Bảng Điểm Cá Nhân'
           },
-          ...(isTeacherOrAdmin ? [
-            {
-              key: 'curriculum_framework',
-              icon: <AuditOutlined />,
-              label: 'Khung Đào Tạo Độc Lập'
-            }
-          ] : [])
+          {
+            key: 'curriculum_framework',
+            icon: <AuditOutlined />,
+            label: isTeacherOrAdmin ? 'Khung Đào Tạo Độc Lập' : 'Chương Trình Đào Tạo Của Tôi'
+          }
         ]
       },
       ...(isTeacherOrAdmin ? [
@@ -547,12 +560,12 @@ function App() {
 
           {/* Màn hình 5: Sổ điểm & Mẫu in chuẩn Bộ GD&ĐT */}
           {activeMenuKey === 'moet_gradebook' && (
-            <MoetGradebookView />
+            <MoetGradebookView currentUser={currentUser} />
           )}
 
           {/* Màn hình 6: Khung đào tạo độc lập */}
           {activeMenuKey === 'curriculum_framework' && (
-            <CurriculumManagerView />
+            <CurriculumManagerView currentUser={currentUser} />
           )}
 
           {/* Màn hình 7: Ngân hàng câu hỏi */}
