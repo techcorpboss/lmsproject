@@ -532,26 +532,50 @@ export default function ElearningCatalog({ currentUser }) {
         </div>
       ) : (
         <Row gutter={[24, 24]}>
-          {courses.map((course) => (
-            <Col xs={24} sm={12} lg={8} key={course.id}>
-              <Card
-                hoverable
-                style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
-                styles={{ body: { flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' } }}
-                title={
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Tag color="geekblue">{course.category || 'Chuyên môn'}</Tag>
-                    {course.is_passed && <Badge count="Đạt chuẩn" style={{ backgroundColor: '#52c41a' }} />}
-                  </div>
-                }
-              >
-                <div>
-                  <Title level={4} style={{ fontSize: 16, minHeight: 48, marginBottom: 8 }}>
-                    {course.course_name}
-                  </Title>
-                  <Paragraph ellipsis={{ rows: 2 }} type="secondary" style={{ fontSize: 13 }}>
-                    {course.description}
-                  </Paragraph>
+          {courses.map((course) => {
+            const courseImages = {
+              1: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=500&auto=format&fit=crop&q=60',
+              2: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=500&auto=format&fit=crop&q=60',
+              3: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=500&auto=format&fit=crop&q=60',
+              4: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&auto=format&fit=crop&q=60',
+              5: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=500&auto=format&fit=crop&q=60'
+            };
+            const imgUrl = courseImages[course.id] || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=500&auto=format&fit=crop&q=60';
+            return (
+              <Col xs={24} sm={12} lg={8} key={course.id}>
+                <Card
+                  hoverable
+                  style={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 12, overflow: 'hidden' }}
+                  styles={{ body: { flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: 20 } }}
+                  cover={
+                    <div style={{ height: 160, overflow: 'hidden', position: 'relative' }}>
+                      <img
+                        alt={course.course_name}
+                        src={imgUrl}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                      <div style={{ position: 'absolute', top: 12, left: 12 }}>
+                        <Tag color="#1677ff" style={{ fontWeight: 'bold', borderRadius: 12, padding: '2px 10px' }}>
+                          {course.category || 'Chuyên môn'}
+                        </Tag>
+                      </div>
+                      {course.is_passed && (
+                        <div style={{ position: 'absolute', top: 12, right: 12 }}>
+                          <Tag color="#52c41a" style={{ fontWeight: 'bold', borderRadius: 12, padding: '2px 10px' }}>
+                            ✓ ĐẠT CHUẨN
+                          </Tag>
+                        </div>
+                      )}
+                    </div>
+                  }
+                >
+                  <div>
+                    <Title level={4} style={{ fontSize: 16, minHeight: 48, marginBottom: 8, lineHeight: 1.4 }}>
+                      {course.course_name}
+                    </Title>
+                    <Paragraph ellipsis={{ rows: 2 }} type="secondary" style={{ fontSize: 13 }}>
+                      {course.description}
+                    </Paragraph>
 
                   <Space direction="vertical" style={{ width: '100%', marginBottom: 16 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
@@ -573,7 +597,8 @@ export default function ElearningCatalog({ currentUser }) {
                 </Button>
               </Card>
             </Col>
-          ))}
+          );
+        })}
         </Row>
       )}
     </div>
