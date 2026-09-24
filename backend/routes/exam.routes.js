@@ -162,11 +162,18 @@ router.post('/submit', async (req, res) => {
         submitted_at: new Date(),
         details
       },
-      message: 'Nộp bài thi thành công!'
-    });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
+// 9. Chuẩn trao đổi đề thi quốc tế IMS QTI v2.1 / v3.0
+const examAdvanced = require('../controllers/examAdvanced.controller');
+router.get('/qti/export/:paperId', examAdvanced.exportPaperToQti);
+router.post('/qti/import', examAdvanced.importQtiPackage);
+
+// 10. Cấu hình & Xác thực Safe Exam Browser (SEB) / Kiosk Mode
+router.get('/seb/config', examAdvanced.generateSebConfigFile);
+router.get('/seb/verify', examAdvanced.verifySebClient);
+
+// 11. Giám thị thời gian thực: Báo cáo vi phạm, AI snapshot & Danh sách vi phạm
+router.post('/proctor/violation-log', examAdvanced.reportProctoringIncident);
+router.get('/proctor/incidents', examAdvanced.getProctoringIncidents);
+router.put('/proctor/incidents/:id/resolve', examAdvanced.resolveIncident);
 
 module.exports = router;

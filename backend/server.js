@@ -98,9 +98,41 @@ io.on('connection', (socket) => {
     });
   });
 
-  // Giám thị gửi tin nhắn cảnh báo hoặc đình chỉ thí sinh
+  // WebRTC Live Video Streaming Signaling (Offer / Answer / ICE Candidates)
+  socket.on('webrtc_signal', ({ targetSocketId, signalData }) => {
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('webrtc_signal', {
+        fromSocketId: socket.id,
+        signalData
+      });
+    } else if (socket.examId) {
+      socket.to(`proctor_${socket.examId}`).emit('webrtc_signal', {
+        fromSocketId: socket.id,
+        signalData
+      });
+    }
+  });
+
+  // Thí sinh truyền luồng Video Snapshot & Chỉ số AI về Hội đồng thi thời gian thực
+  socket.on('candidate_stream_frame', (frameData) => {
+    if (socket.examId) {
+      io.to(`proctor_${socket.examId}`).emit('candidate_frame_update', {
+        ...frameData,
+        socketId: socket.id,
+        studentId: socket.studentId,
+        studentName: socket.studentName,
+        timestamp: new Date()
+      });
+    }
+  });
+
+  // Giám thị gửi tin nhắn cảnh báo, loa nhắc nhở (Intercom) hoặc lệnh đình chỉ thi
   socket.on('send_proctor_command', ({ targetSocketId, command, message }) => {
-    io.to(targetSocketId).emit('proctor_command', { command, message });
+    if (targetSocketId) {
+      io.to(targetSocketId).emit('proctor_command', { command, message });
+    } else if (socket.examId) {
+      io.to(`exam_${socket.examId}`).emit('proctor_command', { command, message });
+    }
   });
 
   socket.on('disconnect', () => {
