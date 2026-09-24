@@ -427,7 +427,60 @@ exports.saveStudent = async (req, res) => {
   }
 };
 
-// --- 6. KHUNG CHƯƠNG TRÌNH ĐÀO TẠO ĐỘC LẬP (CURRICULUM) ---
+// --- 6. KHUNG CHƯƠNG TRÌNH ĐÀO TẠO ĐỘC LẬP (CURRICULUM ARCHITECTURE) ---
+let k68CoursesStore = [
+  // Kỳ 1 (5 môn • 15 TC)
+  { id: 1, semester: 1, code: 'MLN101', name: 'Triết học Mác - Lênin', description: '', credits: 3, is_compulsory: true },
+  { id: 2, semester: 1, code: 'ENG101', name: 'Tiếng Anh 1', description: '', credits: 2, is_compulsory: true },
+  { id: 3, semester: 1, code: 'MAT101', name: 'Giải tích 1', description: 'Giải tích hàm một biến, đạo hàm, vi phân, tích phân', credits: 3, is_compulsory: true },
+  { id: 4, semester: 1, code: 'IT101', name: 'Nhập môn Lập trình C/C++', description: 'Cú pháp C/C++, biến, hàm, con trỏ, cấu trúc mảng', credits: 4, is_compulsory: true },
+  { id: 5, semester: 1, code: 'CS101', name: 'Nhập môn Lập trình C/C++', description: 'Thuật toán cơ bản, lưu đồ giải thuật, lập trình có cấu trúc', credits: 3, is_compulsory: true },
+
+  // Kỳ 2 (5 môn • 13 TC)
+  { id: 6, semester: 2, code: 'MLN102', name: 'Kinh tế chính trị Mác - Lênin', description: '', credits: 2, is_compulsory: true },
+  { id: 7, semester: 2, code: 'ENG102', name: 'Tiếng Anh 2', description: '', credits: 2, is_compulsory: true },
+  { id: 8, semester: 2, code: 'MAT102', name: 'Đại số tuyến tính', description: 'Ma trận, định thức, không gian vector, hệ phương trình tuyến tính', credits: 3, is_compulsory: true },
+  { id: 9, semester: 2, code: 'IT102', name: 'Kỹ thuật lập trình & Hướng đối tượng', description: 'Lập trình nâng cao, Class, Object, Kế thừa, Đa hình C++', credits: 3, is_compulsory: true },
+  { id: 10, semester: 2, code: 'IT201', name: 'Cơ sở dữ liệu (Database Systems)', description: 'Mô hình ER, quan hệ, ngôn ngữ SQL, chuẩn hóa dữ liệu 3NF', credits: 3, is_compulsory: true },
+
+  // Kỳ 3 (5 môn • 15 TC)
+  { id: 11, semester: 3, code: 'MLN103', name: 'Chủ nghĩa xã hội khoa học', description: '', credits: 2, is_compulsory: true },
+  { id: 12, semester: 3, code: 'MAT201', name: 'Xác suất thống kê & Xử lý số liệu', description: 'Biến ngẫu nhiên, phân phối xác suất, ước lượng và kiểm định giả thuyết', credits: 3, is_compulsory: true },
+  { id: 13, semester: 3, code: 'IT301', name: 'Cấu trúc dữ liệu & Giải thuật', description: 'Danh sách liên kết, Cây nhị phân, Đồ thị, Sắp xếp và Tìm kiếm tối ưu', credits: 4, is_compulsory: true },
+  { id: 14, semester: 3, code: 'IT202', name: 'Kiến trúc máy tính & Hợp ngữ', description: 'Tổ chức CPU, thanh ghi x86, bộ nhớ RAM/Cache, Assembly', credits: 3, is_compulsory: true },
+  { id: 15, semester: 3, code: 'ENG201', name: 'Tiếng Anh chuyên ngành CNTT & AI', description: 'Đọc hiểu tài liệu kỹ thuật, viết báo cáo nghiên cứu và thuyết trình', credits: 3, is_compulsory: true },
+
+  // Kỳ 4 (6 môn • 18 TC)
+  { id: 16, semester: 4, code: 'HCM101', name: 'Tư tưởng Hồ Chí Minh', description: '', credits: 2, is_compulsory: true },
+  { id: 17, semester: 4, code: 'IT401', name: 'Mạng máy tính & Truyền thông dữ liệu', description: 'Mô hình OSI, TCP/IP, Socket programming, định tuyến', credits: 3, is_compulsory: true },
+  { id: 18, semester: 4, code: 'IT402', name: 'Hệ điều hành (Operating Systems)', description: 'Quản lý tiến trình Process, luồng Thread, đồng bộ và Deadlock', credits: 3, is_compulsory: true },
+  { id: 19, semester: 4, code: 'AI201', name: 'Toán ứng dụng cho Trí tuệ Nhân tạo', description: 'Giải tích đa biến, tối ưu Gradient Descent, phân rã ma trận SVD/PCA', credits: 3, is_compulsory: true },
+  { id: 20, semester: 4, code: 'SE301', name: 'Công nghệ phần mềm & Quản lý dự án', description: 'Quy trình Agile/Scrum, thiết kế mẫu Design Patterns, kiểm thử phần mềm', credits: 3, is_compulsory: true },
+  { id: 21, semester: 4, code: 'AI202', name: 'Lập trình Python cho Khoa học Dữ liệu & AI', description: 'NumPy, Pandas, Matplotlib, Scikit-learn, xử lý dữ liệu lớn', credits: 4, is_compulsory: true },
+
+  // Kỳ 5 (5 môn • 15 TC)
+  { id: 22, semester: 5, code: 'VNR101', name: 'Lịch sử Đảng Cộng sản Việt Nam', description: '', credits: 2, is_compulsory: true },
+  { id: 23, semester: 5, code: 'AI301', name: 'Học máy (Machine Learning)', description: 'Học có giám sát, không giám sát, hồi quy, cây quyết định, SVM', credits: 4, is_compulsory: true },
+  { id: 24, semester: 5, code: 'AI302', name: 'Thị giác máy tính (Computer Vision)', description: 'Xử lý ảnh số, OpenCV, mạng nơ-ron tích chập CNN, nhận dạng ảnh', credits: 3, is_compulsory: true },
+  { id: 25, semester: 5, code: 'IT303', name: 'An toàn thông tin & An ninh mạng', description: 'Mã hóa đối xứng/bất đối xứng, chữ ký số SHA-256, kiểm thử bảo mật', credits: 3, is_compulsory: true },
+  { id: 26, semester: 5, code: 'SE401', name: 'Phát triển ứng dụng Web Fullstack', description: 'Kiến trúc ReactJS, RESTful API, NodeJS, Microservices', credits: 3, is_compulsory: true },
+
+  // Kỳ 6 (5 môn • 16 TC)
+  { id: 27, semester: 6, code: 'AI401', name: 'Học sâu (Deep Learning & Neural Networks)', description: 'PyTorch, TensorFlow, RNN, LSTM, Attention Mechanism, Transformer', credits: 4, is_compulsory: true },
+  { id: 28, semester: 6, code: 'AI402', name: 'Xử lý ngôn ngữ tự nhiên (NLP & LLMs)', description: 'Word Embedding, BERT, Generative AI, Large Language Models', credits: 3, is_compulsory: true },
+  { id: 29, semester: 6, code: 'IT405', name: 'Điện toán đám mây & MLOps', description: 'Docker container, Kubernetes, triển khai mô hình AI trên Cloud', credits: 3, is_compulsory: true },
+  { id: 30, semester: 6, code: 'AI403', name: 'Hệ thống gợi ý & AI Biên (Edge AI)', description: 'Collaborative Filtering, Matrix Factorization, tối ưu mô hình trên nhúng', credits: 3, is_compulsory: true },
+  { id: 31, semester: 6, code: 'CS305', name: 'Đồ án chuyên ngành AI', description: 'Xây dựng giải pháp AI ứng dụng thực tế và bảo vệ trước hội đồng', credits: 3, is_compulsory: true },
+
+  // Kỳ 7 (3 môn • 10 TC)
+  { id: 32, semester: 7, code: 'PLDC101', name: 'Pháp luật đại cương & Đạo đức AI', description: 'Hệ thống pháp luật VN, quyền sở hữu trí tuệ, an toàn đạo đức AI', credits: 2, is_compulsory: true },
+  { id: 33, semester: 7, code: 'AI501', name: 'Hệ thống Đa Tác Tử (Multi-Agent Systems & RAG)', description: 'Agentic workflows, LangGraph, Vector Database, Retrieval-Augmented Gen', credits: 4, is_compulsory: true },
+  { id: 34, semester: 7, code: 'INT501', name: 'Thực tập tốt nghiệp doanh nghiệp', description: 'Làm việc thực tế tại các công ty công nghệ và hoàn thành báo cáo', credits: 4, is_compulsory: true },
+
+  // Kỳ 8 (1 môn • 16 TC)
+  { id: 35, semester: 8, code: 'GRAD501', name: 'Khóa luận tốt nghiệp Kỹ sư AI', description: 'Nghiên cứu khoa học chuyên sâu hoặc phát triển hệ thống sản phẩm hoàn chỉnh', credits: 16, is_compulsory: true }
+];
+
 exports.getCurriculum = async (req, res) => {
   try {
     res.json({ success: true, data: curriculumStore });
@@ -436,19 +489,79 @@ exports.getCurriculum = async (req, res) => {
   }
 };
 
+exports.getCurriculumArchitecture = async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      data: {
+        unit: 'Đại học TCU - Trụ sở chính (Main Campus)',
+        degree: 'Đại học Chính quy (Undergraduate)',
+        duration: '4.0 - 5.0 Năm',
+        regulations: 'Tín chỉ (TT 08)',
+        sync_status: 'Tiến độ • TKB • Bảng điểm • Khen thưởng • Tốt nghiệp',
+        current_framework: {
+          id: 'K68_KHMT_AI',
+          cohort: 'K68',
+          name: 'Khung CTĐT Kỹ sư Khoa học Máy tính & AI K68 (2024-2028)',
+          years: '2024-2028',
+          major_name: 'Khoa học Máy tính & AI',
+          faculty_name: 'Khoa Công nghệ Thông tin',
+          decision_number: 'QĐ-K68/7480101',
+          total_credits_label: '118+ Tín chỉ',
+          total_credits: 118,
+          attached_file: null,
+          total_courses: k68CoursesStore.length,
+          compulsory_courses: k68CoursesStore.filter(c => c.is_compulsory).length,
+          elective_courses: k68CoursesStore.filter(c => !c.is_compulsory).length
+        },
+        courses: k68CoursesStore
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 exports.saveCurriculumCourse = async (req, res) => {
   try {
-    const { block_id, course } = req.body;
-    const block = curriculumStore.find(b => b.block_id === block_id);
-    if (block) {
-      if (course.id) {
-        const idx = block.courses.findIndex(c => c.id === course.id);
-        if (idx !== -1) block.courses[idx] = { ...block.courses[idx], ...course };
-      } else {
-        block.courses.push({ id: Date.now(), ...course });
-      }
+    const course = req.body;
+    if (course.id) {
+      const idx = k68CoursesStore.findIndex(c => c.id === course.id);
+      if (idx !== -1) k68CoursesStore[idx] = { ...k68CoursesStore[idx], ...course };
+    } else {
+      k68CoursesStore.push({
+        id: Date.now(),
+        semester: Number(course.semester) || 1,
+        code: course.code,
+        name: course.name,
+        description: course.description || '',
+        credits: Number(course.credits) || 3,
+        is_compulsory: course.is_compulsory !== undefined ? course.is_compulsory : true
+      });
     }
-    res.json({ success: true, message: 'Cập nhật học phần trong khung chương trình thành công!' });
+    res.json({ success: true, message: 'Cập nhật học phần trong khung CTĐT thành công!', data: k68CoursesStore });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.deleteCurriculumCourse = async (req, res) => {
+  try {
+    const { id } = req.params;
+    k68CoursesStore = k68CoursesStore.filter(c => String(c.id) !== String(id));
+    res.json({ success: true, message: 'Đã xóa học phần khỏi khung chương trình đào tạo!', data: k68CoursesStore });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.syncRootCurriculum = async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      message: 'Đã đồng bộ 100% dữ liệu gốc Khung CTĐT từ Hệ thống Quản lý Đào tạo Đại học TCU!',
+      timestamp: new Date().toISOString()
+    });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }

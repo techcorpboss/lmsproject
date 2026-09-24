@@ -27,7 +27,10 @@ router.post('/students', controller.saveStudent);
 
 // 6. Khung chương trình đào tạo độc lập
 router.get('/curriculum', controller.getCurriculum);
+router.get('/curriculum/architecture', controller.getCurriculumArchitecture);
 router.post('/curriculum/course', controller.saveCurriculumCourse);
+router.delete('/curriculum/course/:id', controller.deleteCurriculumCourse);
+router.post('/curriculum/sync-root', controller.syncRootCurriculum);
 
 // 7. Cổng liên thông ERP TCU COMPASS (qldt.techcorp.info.vn)
 router.get('/erp/config', controller.getErpConfig);
