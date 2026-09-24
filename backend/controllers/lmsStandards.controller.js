@@ -473,6 +473,47 @@ exports.uploadScormPackage = (req, res) => {
   }
 };
 
+exports.updateScormPackage = (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, subtitle, standard, mastery_score, scos, estimated_time } = req.body;
+    const pkgIndex = scormPackagesStore.findIndex(p => p.id === id);
+    if (pkgIndex === -1) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy gói bài giảng' });
+    }
+
+    scormPackagesStore[pkgIndex] = {
+      ...scormPackagesStore[pkgIndex],
+      title: title || scormPackagesStore[pkgIndex].title,
+      subtitle: subtitle || scormPackagesStore[pkgIndex].subtitle,
+      standard: standard || scormPackagesStore[pkgIndex].standard,
+      mastery_score: Number(mastery_score) || scormPackagesStore[pkgIndex].mastery_score,
+      estimated_time: estimated_time || scormPackagesStore[pkgIndex].estimated_time,
+      scos: scos || scormPackagesStore[pkgIndex].scos,
+      sco_count: (scos || scormPackagesStore[pkgIndex].scos).length,
+      updated_at: new Date().toISOString()
+    };
+
+    res.json({
+      success: true,
+      message: 'Đã cập nhật cấu trúc bài giảng SCORM thành công!',
+      data: scormPackagesStore[pkgIndex]
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.deleteScormPackage = (req, res) => {
+  try {
+    const { id } = req.params;
+    scormPackagesStore = scormPackagesStore.filter(p => p.id !== id);
+    res.json({ success: true, message: 'Đã xóa bài giảng khỏi thư viện số' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 exports.trackScormCmi = (req, res) => {
   try {
     const { student_id, package_id, cmi_element, cmi_value } = req.body;

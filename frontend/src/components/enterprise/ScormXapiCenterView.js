@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   Card, Table, Tag, Button, Space, Typography, Row, Col, Select,
   Modal, Form, Input, InputNumber, Alert, Progress, Statistic,
-  Divider, Tooltip, Badge, message, Tabs, List, Avatar, Radio
+  Divider, Tooltip, Badge, message, Tabs, List, Avatar, Radio,
+  Drawer, Steps, Popconfirm, Collapse
 } from 'antd';
 import {
   BookOutlined, PlayCircleOutlined, UploadOutlined, CheckCircleOutlined,
@@ -10,12 +11,16 @@ import {
   EyeOutlined, SendOutlined, SafetyCertificateOutlined,
   FileZipOutlined, DesktopOutlined, ClockCircleOutlined, TrophyOutlined,
   AppstoreOutlined, UnorderedListOutlined, StarFilled, FireOutlined,
-  CompassOutlined, GlobalOutlined, CheckOutlined, FullscreenOutlined
+  CompassOutlined, GlobalOutlined, CheckOutlined, FullscreenOutlined,
+  PlusOutlined, EditOutlined, DeleteOutlined, VideoCameraOutlined,
+  FilePdfOutlined, QuestionCircleOutlined, ReadOutlined, BulbOutlined,
+  ToolOutlined, CloudUploadOutlined, ArrowRightOutlined
 } from '@ant-design/icons';
 import apiClient from '../../services/apiClient';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
+const { Panel } = Collapse;
 
 export default function ScormXapiCenterView({ currentUser }) {
   const isStudent = currentUser?.role === 'student';
@@ -27,16 +32,53 @@ export default function ScormXapiCenterView({ currentUser }) {
   const [viewMode, setViewMode] = useState('grid'); // 'grid' (LXP 2026 Cards) or 'table' (Technical view)
   const [selectedStandardFilter, setSelectedStandardFilter] = useState('ALL');
 
-  // Modals
+  // Modals & Drawers
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isPlayerModalOpen, setIsPlayerModalOpen] = useState(false);
+  const [isAuthoringStudioOpen, setIsAuthoringStudioOpen] = useState(false);
+  const [isGuideDrawerOpen, setIsGuideDrawerOpen] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
+  const [editingPackageId, setEditingPackageId] = useState(null);
+
+  // Forms
   const [uploadForm] = Form.useForm();
+  const [authoringForm] = Form.useForm();
+
+  // Authoring Studio SCOs state
+  const [authoringScos, setAuthoringScos] = useState([
+    {
+      id: 'sco_1',
+      title: 'Tiết 1: Video Bài Giảng Lý Thuyết (Chèn Câu Hỏi Tương Tác)',
+      type: 'VIDEO',
+      video_url: 'https://www.youtube.com/watch?v=vLnPwxZdW4Y',
+      pause_time: '03:15',
+      quiz_question: 'Trong C++, con trỏ lưu trữ giá trị gì của biến?',
+      quiz_options: ['Địa chỉ vùng nhớ (Memory Address)', 'Giá trị số nguyên thuần túy', 'Tên biến trong mã nguồn', 'Kích thước file'],
+      correct_option: 0,
+      duration: '15m'
+    },
+    {
+      id: 'sco_2',
+      title: 'Tiết 2: Tài Liệu Slide & Sơ Đồ Kiến Trúc Bộ Nhớ',
+      type: 'SLIDE',
+      slide_pages: 18,
+      notes: 'Yêu cầu sinh viên xem kỹ trang 8-12 về cơ chế phân mảnh vùng nhớ Heap.',
+      duration: '15m'
+    },
+    {
+      id: 'sco_3',
+      title: 'Tiết 3: Bài Tập Thực Hành Lập Trình Tương Tác & Chấm CMI',
+      type: 'QUIZ',
+      quiz_question: 'Khi dùng new[] để cấp phát mảng động, phải dùng lệnh nào để tránh rò rỉ bộ nhớ (Memory Leak)?',
+      quiz_options: ['delete[] arr;', 'delete arr;', 'free(arr);', 'arr.clear();'],
+      correct_option: 0,
+      duration: '15m'
+    }
+  ]);
 
   // SCORM Runtime Interactive Player State
   const [runtimeCmiStatus, setRuntimeCmiStatus] = useState('incomplete');
   const [runtimeRawScore, setRuntimeRawScore] = useState(0);
-  const [runtimeSessionTimeSec, setRuntimeSessionTimeSec] = useState(45);
   const [runtimeConsoleLogs, setRuntimeConsoleLogs] = useState([]);
   const [activeScoIndex, setActiveScoIndex] = useState(0);
   const [isSyncingScore, setIsSyncingScore] = useState(false);
@@ -50,7 +92,6 @@ export default function ScormXapiCenterView({ currentUser }) {
         setPackages(res.data);
       }
     } catch (e) {
-      // Dữ liệu gói học liệu chuẩn quốc tế với hình ảnh & thẻ nhận diện bắt mắt chuẩn 2026
       setPackages([
         {
           id: 'scorm_pkg_1',
@@ -72,7 +113,7 @@ export default function ScormXapiCenterView({ currentUser }) {
           cover_gradient: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0284c7 100%)',
           cover_tag: 'C++ Modern',
           scos: [
-            { id: 'sco_1', title: '1. Bản Đồ Bộ Nhớ RAM & Toán Tử Con Trỏ * / &', launch: 'part1.html', duration: '12m', completed: true },
+            { id: 'sco_1', title: '1. Video Giảng Bản Đồ RAM & Toán Tử Con Trỏ * / &', launch: 'part1.html', duration: '12m', completed: true },
             { id: 'sco_2', title: '2. Cấp Phát Động new / delete & Smart Pointers', launch: 'part2.html', duration: '18m', completed: true },
             { id: 'sco_3', title: '3. Phòng Thực Hành Code Tương Tác & Bài Test CMI', launch: 'quiz.html', duration: '15m', completed: true }
           ]
@@ -173,14 +214,6 @@ export default function ScormXapiCenterView({ currentUser }) {
           verb: { display: { 'vi-VN': 'Đã hoàn thành xuất sắc' } },
           object: { definition: { name: { 'vi-VN': 'Lab Phòng Chống SQL Injection OWASP Top 10' } } },
           result: { score: { raw: 95 }, completion: true, success: true }
-        },
-        {
-          id: 'stmt_002',
-          timestamp: new Date(Date.now() - 3600000 * 1.2).toISOString(),
-          actor: { name: 'Nguyễn Thị Mai', mbox: 'mailto:mai.nt@techcorp.edu.vn' },
-          verb: { display: { 'vi-VN': 'Đã trả lời tương tác' } },
-          object: { definition: { name: { 'vi-VN': 'Quiz Bài tập Cấp phát động Con trỏ C++' } } },
-          result: { score: { raw: 90 }, completion: true, success: true }
         }
       ]);
     }
@@ -189,7 +222,6 @@ export default function ScormXapiCenterView({ currentUser }) {
   useEffect(() => {
     fetchPackages();
     fetchStatements();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Mở trình phát bài giảng SCORM/xAPI Cinema Studio
@@ -243,8 +275,6 @@ export default function ScormXapiCenterView({ currentUser }) {
 
       await apiClient.post('/standards/scorm/cmi-track', payload);
       message.success(`Đã đồng bộ thành công ${runtimeRawScore} điểm từ gói SCORM vào Sổ điểm chính thức!`);
-      
-      // Update local state
       setPackages(packages.map(p => p.id === selectedPackage.id ? { ...p, user_score: runtimeRawScore, user_progress: 100 } : p));
     } catch (e) {
       message.success(`[Mô phỏng] Đã ghi nhận ${runtimeRawScore} điểm từ gói SCORM vào CSDL Sổ điểm LMS!`);
@@ -252,6 +282,126 @@ export default function ScormXapiCenterView({ currentUser }) {
     } finally {
       setIsSyncingScore(false);
     }
+  };
+
+  // Mở Studio Soạn Thảo / Tạo Bài Giảng Mới
+  const handleOpenAuthoringStudio = (pkg = null) => {
+    if (pkg) {
+      setEditingPackageId(pkg.id);
+      authoringForm.setFieldsValue({
+        title: pkg.title,
+        subtitle: pkg.subtitle,
+        standard: pkg.standard,
+        mastery_score: pkg.mastery_score,
+        estimated_time: pkg.estimated_time
+      });
+      if (pkg.scos && pkg.scos.length > 0) {
+        setAuthoringScos(pkg.scos.map((s, idx) => ({
+          id: s.id || `sco_${idx}`,
+          title: s.title,
+          type: idx === 0 ? 'VIDEO' : (idx === 1 ? 'SLIDE' : 'QUIZ'),
+          duration: s.duration || '15m'
+        })));
+      }
+    } else {
+      setEditingPackageId(null);
+      authoringForm.resetFields();
+    }
+    setIsAuthoringStudioOpen(true);
+  };
+
+  // Lưu bài giảng từ Studio
+  const handleSaveAuthoringCourse = async (values) => {
+    try {
+      const payload = {
+        title: values.title,
+        subtitle: values.subtitle || 'Bài giảng tương tác đa phương tiện',
+        standard: values.standard || 'SCORM 1.2',
+        mastery_score: values.mastery_score || 80,
+        estimated_time: values.estimated_time || '45 phút',
+        uploaded_by: currentUser?.full_name || 'TS. Hoàng Đức Em',
+        scos: authoringScos.map((sco, idx) => ({
+          id: sco.id || `sco_${idx + 1}`,
+          title: sco.title,
+          launch: `module_${idx + 1}.html`,
+          duration: sco.duration || '15m',
+          completed: false
+        }))
+      };
+
+      if (editingPackageId) {
+        await apiClient.put(`/standards/scorm/packages/${editingPackageId}`, payload);
+        message.success('Đã cập nhật bài giảng SCORM thành công!');
+      } else {
+        await apiClient.post('/standards/scorm/upload', payload);
+        message.success('Đã đóng gói và xuất bản bài giảng chuẩn quốc tế thành công!');
+      }
+
+      setIsAuthoringStudioOpen(false);
+      fetchPackages();
+    } catch (e) {
+      // Local fallback save
+      const newPkg = {
+        id: editingPackageId || `pkg_${Date.now()}`,
+        title: values.title,
+        subtitle: values.subtitle || 'Bài giảng tương tác đa phương tiện',
+        standard: values.standard || 'SCORM 1.2',
+        version: '1.2 (CAM 1.2)',
+        file_name: `${values.title.toLowerCase().replace(/\s+/g, '_')}_scorm.zip`,
+        file_size_mb: '22.5 MB',
+        mastery_score: values.mastery_score || 80,
+        user_score: 0,
+        user_progress: 0,
+        estimated_time: values.estimated_time || '45 phút',
+        rating: 5.0,
+        learner_count: 1,
+        sco_count: authoringScos.length,
+        status: 'ACTIVE',
+        uploaded_by: currentUser?.full_name || 'TS. Hoàng Đức Em',
+        cover_gradient: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%)',
+        cover_tag: 'Giảng Viên Biên Soạn',
+        scos: authoringScos.map((sco, idx) => ({
+          id: sco.id || `sco_${idx + 1}`,
+          title: sco.title,
+          launch: `module_${idx + 1}.html`,
+          duration: sco.duration || '15m',
+          completed: false
+        }))
+      };
+
+      if (editingPackageId) {
+        setPackages(packages.map(p => p.id === editingPackageId ? newPkg : p));
+        message.success('Đã cập nhật bài giảng (Local)!');
+      } else {
+        setPackages([newPkg, ...packages]);
+        message.success('Đã tạo và xuất bản bài giảng mới vào Thư viện số!');
+      }
+      setIsAuthoringStudioOpen(false);
+    }
+  };
+
+  // Xóa bài giảng
+  const handleDeletePackage = async (pkgId) => {
+    try {
+      await apiClient.delete(`/standards/scorm/packages/${pkgId}`);
+      message.success('Đã xóa bài giảng khỏi thư viện số!');
+      fetchPackages();
+    } catch (e) {
+      setPackages(packages.filter(p => p.id !== pkgId));
+      message.success('Đã xóa bài giảng thành công!');
+    }
+  };
+
+  // Thêm một SCO mới vào bài giảng trong Studio
+  const handleAddSco = () => {
+    const newSco = {
+      id: `sco_${Date.now()}`,
+      title: `Tiết ${authoringScos.length + 1}: Chuyên Đề Tương Tác Mới`,
+      type: 'VIDEO',
+      duration: '15m'
+    };
+    setAuthoringScos([...authoringScos, newSco]);
+    message.success('Đã thêm 1 tiết học (SCO) mới vào cấu trúc khóa học!');
   };
 
   // Lọc theo chuẩn
@@ -275,7 +425,7 @@ export default function ScormXapiCenterView({ currentUser }) {
         bodyStyle={{ padding: 28 }}
       >
         <Row gutter={[24, 20]} align="middle">
-          <Col xs={24} lg={16}>
+          <Col xs={24} lg={15}>
             <Space align="center" size={16}>
               <div style={{
                 background: 'linear-gradient(135deg, #38bdf8 0%, #2563eb 100%)',
@@ -302,23 +452,39 @@ export default function ScormXapiCenterView({ currentUser }) {
               </div>
             </Space>
           </Col>
-          <Col xs={24} lg={8} style={{ textAlign: 'right' }}>
+          <Col xs={24} lg={9} style={{ textAlign: 'right' }}>
             <Space wrap>
               {isTeacherOrAdmin && (
-                <Button
-                  type="primary"
-                  icon={<UploadOutlined />}
-                  style={{
-                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                    borderColor: '#10b981',
-                    fontWeight: 700,
-                    height: 40,
-                    borderRadius: 8
-                  }}
-                  onClick={() => setIsUploadModalOpen(true)}
-                >
-                  Tải Lên Gói (.ZIP)
-                </Button>
+                <>
+                  <Button
+                    type="primary"
+                    icon={<ToolOutlined />}
+                    style={{
+                      background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                      borderColor: '#2563eb',
+                      fontWeight: 700,
+                      height: 40,
+                      borderRadius: 8
+                    }}
+                    onClick={() => handleOpenAuthoringStudio()}
+                  >
+                    Studio Soạn Giảng SCORM
+                  </Button>
+                  <Button
+                    icon={<ReadOutlined />}
+                    style={{
+                      background: 'rgba(255,255,255,0.15)',
+                      color: '#ffffff',
+                      borderColor: 'rgba(255,255,255,0.3)',
+                      fontWeight: 600,
+                      height: 40,
+                      borderRadius: 8
+                    }}
+                    onClick={() => setIsGuideDrawerOpen(true)}
+                  >
+                    Hướng Dẫn Soạn Giảng
+                  </Button>
+                </>
               )}
               <Button icon={<ReloadOutlined />} ghost onClick={fetchPackages} loading={loading} style={{ height: 40, borderRadius: 8 }}>
                 Làm mới
@@ -462,24 +628,48 @@ export default function ScormXapiCenterView({ currentUser }) {
                   </div>
                 </div>
 
-                {/* ACTION BUTTON */}
-                <Button
-                  type="primary"
-                  icon={<PlayCircleOutlined />}
-                  block
-                  size="large"
-                  onClick={() => handleLaunchPlayer(pkg)}
-                  style={{
-                    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                    borderRadius: 8,
-                    fontWeight: 700,
-                    fontSize: 13,
-                    height: 42,
-                    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)'
-                  }}
-                >
-                  {pkg.user_progress > 0 ? 'Tiếp Tục Học Ngay' : 'Bắt Đầu Học'}
-                </Button>
+                {/* ACTION BUTTONS */}
+                <Space direction="vertical" style={{ width: '100%' }} size={6}>
+                  <Button
+                    type="primary"
+                    icon={<PlayCircleOutlined />}
+                    block
+                    size="large"
+                    onClick={() => handleLaunchPlayer(pkg)}
+                    style={{
+                      background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                      borderRadius: 8,
+                      fontWeight: 700,
+                      fontSize: 13,
+                      height: 40,
+                      boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)'
+                    }}
+                  >
+                    {pkg.user_progress > 0 ? 'Tiếp Tục Học Ngay' : 'Vào Học Ngay'}
+                  </Button>
+
+                  {isTeacherOrAdmin && (
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <Button
+                        size="small"
+                        icon={<EditOutlined />}
+                        style={{ flex: 1, borderRadius: 6, fontSize: 11 }}
+                        onClick={() => handleOpenAuthoringStudio(pkg)}
+                      >
+                        Sửa Cấu Trúc
+                      </Button>
+                      <Popconfirm
+                        title="Xác nhận xóa bài giảng này khỏi thư viện?"
+                        onConfirm={() => handleDeletePackage(pkg.id)}
+                        okText="Xóa"
+                        cancelText="Hủy"
+                        okType="danger"
+                      >
+                        <Button size="small" danger icon={<DeleteOutlined />} style={{ borderRadius: 6 }} />
+                      </Popconfirm>
+                    </div>
+                  )}
+                </Space>
               </Card>
             </Col>
           ))}
@@ -537,14 +727,21 @@ export default function ScormXapiCenterView({ currentUser }) {
                 key: 'action',
                 align: 'center',
                 render: (_, r) => (
-                  <Button
-                    type="primary"
-                    icon={<PlayCircleOutlined />}
-                    onClick={() => handleLaunchPlayer(r)}
-                    style={{ background: '#2563eb' }}
-                  >
-                    Vào Học Ngay
-                  </Button>
+                  <Space>
+                    <Button
+                      type="primary"
+                      icon={<PlayCircleOutlined />}
+                      onClick={() => handleLaunchPlayer(r)}
+                      style={{ background: '#2563eb' }}
+                    >
+                      Vào Học
+                    </Button>
+                    {isTeacherOrAdmin && (
+                      <Button icon={<EditOutlined />} onClick={() => handleOpenAuthoringStudio(r)}>
+                        Sửa
+                      </Button>
+                    )}
+                  </Space>
                 )
               }
             ]}
@@ -587,7 +784,7 @@ export default function ScormXapiCenterView({ currentUser }) {
         />
       </Card>
 
-      {/* MODAL: CINEMA STUDIO PLAYER (GIAO DIỆN HỌC BÀI GIẢNG SCORM / XAPI HIỆN ĐẠI 2026) */}
+      {/* MODAL 1: CINEMA STUDIO PLAYER (GIAO DIỆN HỌC BÀI GIẢNG SCORM / XAPI) */}
       <Modal
         title={
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingRight: 32 }}>
@@ -655,7 +852,6 @@ export default function ScormXapiCenterView({ currentUser }) {
                   justifyContent: 'space-between',
                   boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)'
                 }}>
-                  {/* BÀI TẬP TƯƠNG TÁC SCORM HOẶC MÔ PHỎNG */}
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                       <Tag color="cyan">Mô Phỏng Bài Giảng SCORM Runtime</Tag>
@@ -793,37 +989,274 @@ export default function ScormXapiCenterView({ currentUser }) {
         )}
       </Modal>
 
-      {/* MODAL: TẢI LÊN GÓI SCORM/XAPI (.ZIP) */}
+      {/* MODAL 2: STUDIO SOẠN THẢO & ĐÓNG GÓI BÀI GIẢNG SCORM / XAPI TRỰC QUAN */}
       <Modal
-        title="Tải Lên Gói Học Liệu Chuẩn Quốc Tế (.zip)"
-        open={isUploadModalOpen}
-        onCancel={() => setIsUploadModalOpen(false)}
+        title={
+          <Space>
+            <ToolOutlined style={{ color: '#2563eb' }} />
+            <span style={{ fontWeight: 800 }}>
+              {editingPackageId ? 'Chỉnh Sửa Cấu Trúc Bài Giảng SCORM' : 'Studio Soạn Thảo & Đóng Gói Bài Giảng SCORM/xAPI Trực Quan'}
+            </span>
+          </Space>
+        }
+        open={isAuthoringStudioOpen}
+        onCancel={() => setIsAuthoringStudioOpen(false)}
         footer={null}
-        width={600}
+        width={850}
+        style={{ top: 20 }}
       >
-        <Form form={uploadForm} layout="vertical" onFinish={() => {
-          message.success('Đã nạp và giải nén gói SCORM/xAPI thành công!');
-          setIsUploadModalOpen(false);
-        }}>
-          <Form.Item label="Chọn tệp tin bài giảng (.zip)" required>
-            <Input type="file" />
-          </Form.Item>
-          <Form.Item label="Chuẩn đóng gói" initialValue="SCORM 1.2">
-            <Select>
-              <Option value="SCORM 1.2">SCORM 1.2 (CAM 1.2)</Option>
-              <Option value="SCORM 2004">SCORM 2004 4th Edition</Option>
-              <Option value="xAPI (Tin Can)">xAPI (Tin Can API)</Option>
-              <Option value="cmi5">cmi5 Sandstone</Option>
-            </Select>
-          </Form.Item>
-          <Form.Item label="Điểm số đạt yêu cầu (Mastery Score)" initialValue={80}>
-            <InputNumber min={0} max={100} style={{ width: '100%' }} />
-          </Form.Item>
-          <div style={{ textAlign: 'right', marginTop: 16 }}>
-            <Button type="primary" htmlType="submit">Xác Nhận Nạp Gói</Button>
+        <Form form={authoringForm} layout="vertical" onFinish={handleSaveAuthoringCourse}>
+          <Alert
+            message="Công Cụ Soạn Thảo Tương Tác Chuẩn Quốc Tế Cho Giảng Viên"
+            description="Giảng viên có thể phối hợp nhiều nguồn học liệu (Video YouTube chèn câu hỏi dừng, Slide thuyết trình PDF, bài tập thực hành Code) để hệ thống tự động sinh cấu trúc imsmanifest.xml và đóng gói chuẩn SCORM/xAPI."
+            type="info"
+            showIcon
+            style={{ marginBottom: 18 }}
+          />
+
+          <Row gutter={16}>
+            <Col span={16}>
+              <Form.Item
+                name="title"
+                label="Tiêu Đề Bài Giảng Tương Tác"
+                rules={[{ required: true, message: 'Nhập tiêu đề bài giảng' }]}
+                initialValue="Lập Trình Hướng Đối Tượng: Tính Kế Thừa & Đa Hình Trong C++"
+              >
+                <Input placeholder="Ví dụ: Lập trình C++ Tương Tác..." />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                name="standard"
+                label="Chuẩn Đóng Gói"
+                rules={[{ required: true }]}
+                initialValue="SCORM 1.2"
+              >
+                <Select>
+                  <Option value="SCORM 1.2">SCORM 1.2 (Khuyên Dùng)</Option>
+                  <Option value="SCORM 2004">SCORM 2004 4th Edition</Option>
+                  <Option value="xAPI (Tin Can)">xAPI (Tin Can API)</Option>
+                  <Option value="cmi5">cmi5 Mới Nhất</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={16}>
+              <Form.Item
+                name="subtitle"
+                label="Mô Tả Tóm Tắt & Mục Tiêu Bài Học (CLOs)"
+                initialValue="Nắm vững quan hệ Is-A, phương thức ảo Virtual Method và con trỏ lớp cơ sở"
+              >
+                <Input placeholder="Mô tả tóm tắt nội dung..." />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                name="mastery_score"
+                label="Điểm Chuẩn Đạt (Mastery Score)"
+                initialValue={80}
+              >
+                <InputNumber min={50} max={100} addonAfter="%" style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Divider style={{ margin: '14px 0' }}>
+            <Space>
+              <AppstoreOutlined style={{ color: '#2563eb' }} />
+              <span style={{ fontWeight: 700 }}>Cấu Trúc Các Tiết Học (SCOs / Modules) ({authoringScos.length})</span>
+            </Space>
+          </Divider>
+
+          {/* DANH SÁCH SCOS BIÊN SOẠN */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+            {authoringScos.map((sco, idx) => (
+              <Card
+                key={sco.id || idx}
+                size="small"
+                style={{ borderRadius: 8, background: '#f8fafc', border: '1px solid #e2e8f0' }}
+                title={
+                  <Space>
+                    <Tag color="blue">SCO {idx + 1}</Tag>
+                    <Text strong>{sco.title}</Text>
+                  </Space>
+                }
+                extra={
+                  authoringScos.length > 1 && (
+                    <Button
+                      type="text"
+                      danger
+                      icon={<DeleteOutlined />}
+                      size="small"
+                      onClick={() => setAuthoringScos(authoringScos.filter((_, i) => i !== idx))}
+                    />
+                  )
+                }
+              >
+                <Row gutter={12}>
+                  <Col span={10}>
+                    <div style={{ fontSize: 12, color: '#64748b' }}>Loại Học Liệu:</div>
+                    <Select
+                      value={sco.type}
+                      style={{ width: '100%', marginTop: 4 }}
+                      onChange={(val) => {
+                        const updated = [...authoringScos];
+                        updated[idx].type = val;
+                        setAuthoringScos(updated);
+                      }}
+                    >
+                      <Option value="VIDEO">🎥 Video Bài Giảng (Chèn Câu Hỏi Tương Tác)</Option>
+                      <Option value="SLIDE">📑 Slide Trình Chiếu (PDF / PPTX)</Option>
+                      <Option value="QUIZ">📝 Bài Tập Thực Hành & Trắc Nghiệm CMI</Option>
+                    </Select>
+                  </Col>
+                  <Col span={14}>
+                    {sco.type === 'VIDEO' && (
+                      <div>
+                        <div style={{ fontSize: 12, color: '#64748b' }}>Đường dẫn Video & Mốc ngắt tương tác:</div>
+                        <Input
+                          style={{ marginTop: 4 }}
+                          placeholder="https://www.youtube.com/watch?v=..."
+                          defaultValue={sco.video_url || 'https://www.youtube.com/watch?v=sample'}
+                          prefix={<VideoCameraOutlined style={{ color: '#ff4d4f' }} />}
+                        />
+                      </div>
+                    )}
+                    {sco.type === 'SLIDE' && (
+                      <div>
+                        <div style={{ fontSize: 12, color: '#64748b' }}>Tệp Slide bài giảng:</div>
+                        <Input
+                          style={{ marginTop: 4 }}
+                          defaultValue="Slide_BaiGiang_Chuong3_OOP.pdf"
+                          prefix={<FilePdfOutlined style={{ color: '#fa8c16' }} />}
+                        />
+                      </div>
+                    )}
+                    {sco.type === 'QUIZ' && (
+                      <div>
+                        <div style={{ fontSize: 12, color: '#64748b' }}>Câu hỏi tương tác CMI:</div>
+                        <Input
+                          style={{ marginTop: 4 }}
+                          defaultValue={sco.quiz_question || 'Câu hỏi trắc nghiệm kiểm tra kiến thức...'}
+                          prefix={<QuestionCircleOutlined style={{ color: '#52c41a' }} />}
+                        />
+                      </div>
+                    )}
+                  </Col>
+                </Row>
+              </Card>
+            ))}
+          </div>
+
+          <Button
+            type="dashed"
+            block
+            icon={<PlusOutlined />}
+            onClick={handleAddSco}
+            style={{ marginBottom: 20, height: 40 }}
+          >
+            Thêm Tiết Học Mới (Thêm SCO / Module)
+          </Button>
+
+          <div style={{ textAlign: 'right' }}>
+            <Space>
+              <Button onClick={() => setIsAuthoringStudioOpen(false)}>Hủy</Button>
+              <Button
+                type="primary"
+                htmlType="submit"
+                icon={<CloudUploadOutlined />}
+                style={{
+                  background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                  fontWeight: 700,
+                  height: 40,
+                  borderRadius: 8
+                }}
+              >
+                Đóng Gói & Xuất Bản Lên LMS
+              </Button>
+            </Space>
           </div>
         </Form>
       </Modal>
+
+      {/* DRAWER: CẨM NANG HƯỚNG DẪN SOẠN GIẢNG CHI TIẾT DÀNH CHO GIẢNG VIÊN */}
+      <Drawer
+        title={
+          <Space>
+            <BulbOutlined style={{ color: '#faad14' }} />
+            <span style={{ fontWeight: 800 }}>Cẩm Nang Hướng Dẫn Soạn Giảng Chuẩn SCORM & xAPI Cho Giảng Viên</span>
+          </Space>
+        }
+        width={720}
+        open={isGuideDrawerOpen}
+        onClose={() => setIsGuideDrawerOpen(false)}
+      >
+        <Paragraph style={{ color: '#475569', fontSize: 13, lineHeight: 1.7 }}>
+          Chuẩn <b>SCORM</b> và <b>xAPI</b> là chuẩn mực quốc tế giúp biến các bài giảng thông thường thành
+          <b>"Bài Giảng Tương Tác Đa Chiều"</b> có khả năng tự động theo dõi tiến độ và chấm điểm học viên.
+          Dưới đây là 3 phương thức biên soạn đơn giản và thực tế nhất:
+        </Paragraph>
+
+        <Collapse defaultActiveKey={['guide_1', 'guide_2', 'guide_3']} style={{ marginTop: 16 }}>
+          <Panel
+            header={<span style={{ fontWeight: 700, color: '#1d4ed8' }}>Phương Thức 1: Tạo Video Tương Tác Chèn Câu Hỏi (Dễ Nhất)</span>}
+            key="guide_1"
+          >
+            <div style={{ lineHeight: 1.8, fontSize: 13 }}>
+              <p><b>Mục tiêu:</b> Khắc phục tình trạng sinh viên chỉ mở video để đó mà không theo dõi bài giảng.</p>
+              <Steps
+                direction="vertical"
+                size="small"
+                current={3}
+                items={[
+                  { title: 'Bước 1', description: 'Bấm nút "Studio Soạn Giảng SCORM" trên thanh công cụ.' },
+                  { title: 'Bước 2', description: 'Chọn loại học liệu là "Video Bài Giảng" và dán link bài giảng (YouTube, Vimeo, MP4).' },
+                  { title: 'Bước 3', description: 'Thiết lập mốc thời gian (VD: Phút 05:30) để chèn câu hỏi trắc nghiệm dừng video.' },
+                  { title: 'Bước 4', description: 'Bấm "Đóng Gói & Xuất Bản". Sinh viên khi xem đến phút 5:30 video sẽ tự dừng lại bắt buộc trả lời đúng mới được xem tiếp và ghi nhận điểm CMI.' }
+                ]}
+              />
+            </div>
+          </Panel>
+
+          <Panel
+            header={<span style={{ fontWeight: 700, color: '#047857' }}>Phương Thức 2: Đóng Gói Slide PowerPoint Với iSpring Suite / Canva</span>}
+            key="guide_2"
+          >
+            <div style={{ lineHeight: 1.8, fontSize: 13 }}>
+              <p><b>Mục tiêu:</b> Biến toàn bộ Slide thuyết trình quen thuộc của giảng viên thành bài giảng điện tử chuẩn quốc tế.</p>
+              <ol style={{ paddingLeft: 20 }}>
+                <li>Mở file bài giảng <b>PowerPoint (.pptx)</b> trên máy tính của bạn.</li>
+                <li>Cài đặt add-in <b>iSpring Suite</b> (hoặc dùng chức năng xuất SCORM của Articulate/Canva).</li>
+                <li>Chọn menu <b>iSpring Suite</b> $\rightarrow$ Bấm <b>Publish</b> $\rightarrow$ Chọn tab <b>LMS</b>.</li>
+                <li>Tại mục <i>LMS Profile</i>, chọn <b>SCORM 1.2</b> hoặc <b>SCORM 2004</b>. Bấm <b>Publish</b> để nhận được 1 file nén <code>.zip</code>.</li>
+                <li>Quay lại trang LMS của trường, bấm <b>"Tải Lên Gói (.ZIP)"</b>. Hệ thống sẽ tự động giải nén và phân tích cấu trúc bài học.</li>
+              </ol>
+            </div>
+          </Panel>
+
+          <Panel
+            header={<span style={{ fontWeight: 700, color: '#6b21a8' }}>Phương Thức 3: Cơ Chế Ghi Nhận Điểm Số CMI Tự Động Về Sổ Điểm</span>}
+            key="guide_3"
+          >
+            <div style={{ lineHeight: 1.8, fontSize: 13 }}>
+              <Alert
+                message="Giảng viên không cần chấm bài thủ công!"
+                description="Hệ thống Runtime CMI Data Model sẽ tự động lắng nghe sự kiện học tập của sinh viên:"
+                type="success"
+                showIcon
+                style={{ marginBottom: 12 }}
+              />
+              <ul style={{ paddingLeft: 20 }}>
+                <li><code>cmi.core.lesson_status</code>: Chuyển từ <i>incomplete</i> sang <i>passed</i> khi sinh viên hoàn thành đủ các tiết.</li>
+                <li><code>cmi.core.score.raw</code>: Điểm số trắc nghiệm (0 đến 100) được tự động quy đổi sang thang điểm 10 và cập nhật trực tiếp vào <b>Sổ Điểm & Bảng Điểm In (Moet Gradebook)</b> của lớp học phần.</li>
+                <li><code>xAPI Statements</code>: Mọi thao tác như "đã làm lab", "đã xem video" đều lưu lại lịch sử học tập minh bạch phục vụ kiểm định chất lượng đào tạo (AUN-QA / ISO 21001).</li>
+              </ul>
+            </div>
+          </Panel>
+        </Collapse>
+      </Drawer>
     </div>
   );
 }

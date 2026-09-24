@@ -7,6 +7,8 @@ const controller = require('../controllers/lmsStandards.controller');
 // 1. Chuẩn đóng gói bài giảng điện tử SCORM 1.2 / 2004 & xAPI (Tin Can / cmi5)
 router.get('/scorm/packages', controller.getScormPackages);
 router.post('/scorm/upload', controller.uploadScormPackage);
+router.put('/scorm/packages/:id', controller.updateScormPackage);
+router.delete('/scorm/packages/:id', controller.deleteScormPackage);
 router.post('/scorm/cmi-track', controller.trackScormCmi);
 router.get('/xapi/statements', controller.getXApiStatements);
 router.post('/xapi/statements', controller.postXApiStatement);
