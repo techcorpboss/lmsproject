@@ -13,6 +13,12 @@ router.delete('/modules/:id', controller.deleteModule);
 router.post('/materials', controller.saveMaterial);
 router.delete('/materials/:id', controller.deleteMaterial);
 
+// Tải lên tệp tin học liệu (Video, Slide, PDF, Docs, Code) từ thiết bị
+router.post('/upload', controller.uploadFileMiddleware, controller.uploadFile);
+
+// Trợ lý AI tự động sinh câu hỏi trắc nghiệm
+router.post('/ai-generate-quiz', controller.aiGenerateQuiz);
+
 // Quản lý bài kiểm tra Quiz
 router.post('/quizzes', controller.saveQuiz);
 router.delete('/quizzes/:id', controller.deleteQuiz);

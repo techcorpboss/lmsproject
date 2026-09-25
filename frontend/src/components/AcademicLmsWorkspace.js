@@ -52,7 +52,10 @@ function AcademicLmsWorkspace({
   const [analytics, setAnalytics] = useState(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
-  // Modals for Lecturer
+  const isStaff = (role === 'LECTURER' || role === 'ADMIN' || role === 'admin' || role === 'teacher');
+  const isStudent = (role === 'STUDENT' || role === 'student');
+
+  // Modals for Lecturer & Admin
   const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
   const [moduleForm] = Form.useForm();
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
@@ -61,7 +64,13 @@ function AcademicLmsWorkspace({
   const [videoUploadPreviewUrl, setVideoUploadPreviewUrl] = useState('');
   const [materialTypeSelected, setMaterialTypeSelected] = useState('DOCUMENT');
   const [strictProgression, setStrictProgression] = useState(true);
-  const [isSimulatingUpload, setIsSimulatingUpload] = useState(false);
+  
+  // Real File Upload States (Tải tệp tin Video, Slide, PDF, Docs, Code từ thiết bị)
+  const [materialSourceMode, setMaterialSourceMode] = useState('UPLOAD'); // 'UPLOAD' or 'LINK'
+  const [uploadingProgress, setUploadingProgress] = useState(0);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [uploadedFileInfo, setUploadedFileInfo] = useState(null);
+  const fileInputRef = useRef(null);
 
   // Modals & State for Lecturer Quiz Editing (Soạn bài Quiz)
   const [isQuizEditorOpen, setIsQuizEditorOpen] = useState(false);
@@ -70,6 +79,13 @@ function AcademicLmsWorkspace({
   const [editingQuizId, setEditingQuizId] = useState(null);
   const [quizQuestionsList, setQuizQuestionsList] = useState([]);
   const [savingQuiz, setSavingQuiz] = useState(false);
+
+  // AI Quiz Generator States (Trợ lý AI sinh đề thi trắc nghiệm chuẩn)
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
+  const [aiTopicInput, setAiTopicInput] = useState('');
+  const [aiSummaryInput, setAiSummaryInput] = useState('');
+  const [aiQuestionCount, setAiQuestionCount] = useState(5);
+  const [aiBloomLevel, setAiBloomLevel] = useState('BLOOM_STANDARD');
 
   // Modals & State for Student Quiz Taking
   const [activeQuiz, setActiveQuiz] = useState(null);
@@ -410,7 +426,7 @@ function AcademicLmsWorkspace({
     }
   };
 
-  // Thêm Tài liệu (Giảng viên)
+  // Thêm Tài liệu (Giảng viên & Admin)
   const handleSaveMaterial = async (values) => {
     try {
       const payload = {
@@ -418,15 +434,66 @@ function AcademicLmsWorkspace({
         module_id: selectedModuleIdForMaterial
       };
       const res = await academicTrainingApi.saveLmsMaterial(payload);
-      if (res.success) {
-        message.success('Đã tải lên tài liệu học phần thành công!');
+      if (res && res.success) {
+        message.success('Đã lưu học liệu vào đề cương tuần thành công!');
         setIsMaterialModalOpen(false);
         materialForm.resetFields();
+        setUploadedFileInfo(null);
+        setVideoUploadPreviewUrl('');
         loadLmsData();
         notifyLmsUpdated();
+      } else {
+        message.error(res?.message || 'Không thể lưu học liệu');
       }
     } catch (err) {
       message.error('Lỗi: ' + err.message);
+    }
+  };
+
+  // Xử lý chọn tệp từ thiết bị và tải lên máy chủ thật
+  const handleFileSelected = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    setIsUploadingFile(true);
+    setUploadingProgress(20);
+
+    try {
+      const res = await academicTrainingApi.uploadLmsFile(formData, (pct) => {
+        setUploadingProgress(Math.max(25, pct));
+      });
+
+      if (res && res.success && res.data) {
+        const { url, filename, original_name, size_mb, material_type } = res.data;
+        setUploadedFileInfo(res.data);
+        setUploadingProgress(100);
+
+        const currentTitle = materialForm.getFieldValue('title');
+        const cleanTitle = currentTitle || original_name.replace(/\.[^/.]+$/, '').replace(/[_\\-]/g, ' ');
+
+        materialForm.setFieldsValue({
+          title: cleanTitle,
+          file_url: url,
+          file_size_mb: size_mb,
+          material_type: material_type || materialTypeSelected,
+          external_source: 'Tệp nội bộ máy chủ (Local Storage)'
+        });
+
+        if (material_type) setMaterialTypeSelected(material_type);
+        setVideoUploadPreviewUrl(url);
+
+        message.success(`Đã tải lên tệp "${original_name}" (${size_mb} MB) thành công!`);
+      } else {
+        message.error(res?.message || 'Không thể tải tệp lên');
+      }
+    } catch (err) {
+      console.error('[Upload error]', err);
+      message.error('Lỗi khi tải tệp: ' + (err.message || 'Vui lòng kiểm tra lại'));
+    } finally {
+      setIsUploadingFile(false);
     }
   };
 
@@ -453,40 +520,97 @@ function AcademicLmsWorkspace({
     } catch (err) { message.error('Lỗi: ' + err.message); }
   };
 
-  // ═══ QUẢN TRỊ BÀI KIỂM TRA QUIZ DÀNH CHO GIẢNG VIÊN ═══
+  // ═══ QUẢN TRỊ BÀI KIỂM TRA QUIZ DÀNH CHO GIẢNG VIÊN & ADMIN ═══
   const totalQuizQuestionsScore = useMemo(() => {
     return quizQuestionsList.reduce((sum, q) => sum + (Number(q.score) || 0), 0);
   }, [quizQuestionsList]);
+
+  // AI Quiz Generator: Gọi AI sinh bộ câu hỏi trắc nghiệm tự động
+  const handleAiGenerateQuestions = async () => {
+    if (!aiTopicInput.trim()) {
+      message.warning('Vui lòng nhập chủ đề hoặc tiêu đề bài học để AI sinh câu hỏi!');
+      return;
+    }
+
+    setIsAiGenerating(true);
+    try {
+      const curMod = lmsData.modules?.find(m => m.id === selectedModuleIdForQuiz);
+      const res = await academicTrainingApi.aiGenerateQuizQuestions({
+        title: aiTopicInput.trim(),
+        chapter_or_week: curMod?.title || 'Tuần học hiện tại',
+        summary_content: aiSummaryInput.trim(),
+        question_count: aiQuestionCount,
+        difficulty_mix: aiBloomLevel
+      });
+
+      if (res && res.success && res.data && res.data.questions) {
+        const generated = res.data.questions;
+        setQuizQuestionsList(generated);
+        message.success(`🎉 AI đã sinh thành công bộ ${generated.length} câu hỏi trắc nghiệm chuẩn sư phạm!`);
+      } else {
+        message.error(res?.message || 'Không thể sinh câu hỏi bằng AI');
+      }
+    } catch (err) {
+      console.error('[AI Quiz Gen error]', err);
+      message.error('Lỗi khi gọi AI: ' + (err.message || 'Vui lòng thử lại'));
+    } finally {
+      setIsAiGenerating(false);
+    }
+  };
 
   // Mở modal tạo mới Quiz cho tuần học
   const handleOpenCreateQuiz = (moduleId) => {
     setSelectedModuleIdForQuiz(moduleId);
     setEditingQuizId(null);
+    const curMod = lmsData.modules?.find(m => m.id === moduleId);
+    const weekNum = curMod?.week_number || 1;
+    
     quizEditorForm.resetFields();
     quizEditorForm.setFieldsValue({
-      title: `Bài Kiểm Tra Đánh Giá Quá Trình (Tuần ${lmsData.modules?.find(m => m.id === moduleId)?.week_number || 1})`,
+      title: `Quiz Đánh Giá Quá Trình (Tuần ${weekNum}): ${curMod?.title ? curMod.title.replace(/^Tuần \d+:\s*/, '') : 'Kiến thức cốt lõi'}`,
       time_limit_minutes: 15,
       passing_score: 5.0,
       grade_weight: 10,
-      max_attempts: 2,
+      max_attempts: 3,
       scoring_policy: 'HIGHEST',
       max_tab_switches: 3,
       shuffle_questions: true,
       shuffle_options: true
     });
-    // Khởi tạo 2 câu hỏi mẫu mặc định
+
+    // Điền sẵn thông tin chủ đề cho AI
+    setAiTopicInput(curMod?.title ? curMod.title.replace(/^Tuần \d+:\s*/, '') : 'Kiến thức trọng tâm bài học');
+    setAiSummaryInput(curMod?.description || 'Khái niệm lý thuyết, cú pháp ngôn ngữ, bài tập thực hành và xử lý tình huống.');
+    setAiQuestionCount(5);
+    setAiBloomLevel('BLOOM_STANDARD');
+
+    // Khởi tạo 2 câu hỏi mặc định
     setQuizQuestionsList([
       {
-        question_text: '',
+        question_text: `Mục tiêu chuẩn đầu ra trọng tâm của nội dung Tuần ${weekNum} là gì?`,
         score: 5.0,
-        options: ['', '', '', ''],
-        correct_answer: 'A'
+        options: [
+          'Nắm vững kiến thức nền tảng và vận dụng giải bài tập thực tế',
+          'Chỉ học thuộc lý thuyết mà không cần thực hành',
+          'Bỏ qua các bước kiểm thử ca biên',
+          'Không cần biên dịch thử mã nguồn'
+        ],
+        correct_answer: 'A',
+        explanation: 'Chuẩn đầu ra yêu cầu kết hợp giữa lý thuyết nền tảng và kỹ năng giải quyết bài toán thực tế.',
+        bloom_level: 'Thông hiểu'
       },
       {
-        question_text: '',
+        question_text: 'Theo Thông tư 08/2021/TT-BGDĐT, sinh viên cần hoàn thành tối thiểu bao nhiêu % để đủ điều kiện thi?',
         score: 5.0,
-        options: ['', '', '', ''],
-        correct_answer: 'B'
+        options: [
+          'Tối thiểu 80% tiến độ bài giảng và bài tập LMS',
+          'Tối thiểu 50%',
+          'Không quy định tiến độ',
+          'Tối thiểu 30%'
+        ],
+        correct_answer: 'A',
+        explanation: 'Quy chế đào tạo tín chỉ đại học quy định sinh viên phải hoàn thành tối thiểu 80% thời lượng.',
+        bloom_level: 'Nhận biết'
       }
     ]);
     setIsQuizEditorOpen(true);
@@ -496,35 +620,50 @@ function AcademicLmsWorkspace({
   const handleOpenEditQuiz = async (quiz) => {
     setSelectedModuleIdForQuiz(quiz.module_id);
     setEditingQuizId(quiz.id);
+    const curMod = lmsData.modules?.find(m => m.id === quiz.module_id);
+
     quizEditorForm.resetFields();
     quizEditorForm.setFieldsValue({
       title: quiz.title,
       description: quiz.description,
       time_limit_minutes: quiz.time_limit_minutes || 15,
       passing_score: quiz.passing_score || 5.0,
-      grade_weight: quiz.grade_weight || 10,
-      max_attempts: quiz.max_attempts || 2,
+      grade_weight: quiz.weight || quiz.grade_weight || 10,
+      max_attempts: quiz.max_attempts || 3,
       scoring_policy: quiz.scoring_policy || 'HIGHEST',
       max_tab_switches: quiz.max_tab_switches || 3,
       shuffle_questions: quiz.shuffle_questions !== false,
       shuffle_options: quiz.shuffle_options !== false
     });
 
+    setAiTopicInput(quiz.title ? quiz.title.replace(/^(Quiz Đánh Giá Quá Trình|Bài Kiểm Tra)[^:]*:\s*/i, '') : (curMod?.title || 'Kiến thức cốt lõi'));
+    setAiSummaryInput(curMod?.description || '');
+    setAiQuestionCount(quiz.questions?.length || 5);
+
     try {
       const res = await academicTrainingApi.getLmsQuizDetail(quiz.id);
-      if (res.success && res.data.questions && res.data.questions.length > 0) {
-        const qs = res.data.questions.map(q => {
+      const rawQuestions = (res.success && res.data?.questions?.length > 0) ? res.data.questions : (quiz.questions || []);
+      if (rawQuestions && rawQuestions.length > 0) {
+        const qs = rawQuestions.map(q => {
           let opts = [];
-          try {
-            opts = typeof q.options_json === 'string' ? JSON.parse(q.options_json) : (q.options_json || []);
-          } catch (e) { opts = []; }
+          if (Array.isArray(q.options) && q.options.length > 0) {
+            opts = q.options.map(o => typeof o === 'string' ? o : (o.content || o.text || ''));
+          } else if (Array.isArray(q.answers) && q.answers.length > 0) {
+            opts = q.answers.map(a => typeof a === 'string' ? a : (a.content || a.text || ''));
+          } else {
+            try {
+              opts = typeof q.options_json === 'string' ? JSON.parse(q.options_json) : (q.options_json || []);
+            } catch (e) { opts = []; }
+          }
           while (opts.length < 4) opts.push('');
           return {
             id: q.id,
-            question_text: q.question_text || '',
+            question_text: q.question_text || q.content || '',
             score: Number(q.score) || 2.5,
             options: opts,
-            correct_answer: q.correct_answer || 'A'
+            correct_answer: (q.correct_answer || 'A').toUpperCase(),
+            explanation: q.explanation || '',
+            bloom_level: q.bloom_level || 'Thông hiểu'
           };
         });
         setQuizQuestionsList(qs);
@@ -678,10 +817,14 @@ function AcademicLmsWorkspace({
         module_id: selectedModuleIdForQuiz,
         section_id: sectionId,
         questions: quizQuestionsList.map(q => ({
+          id: q.id,
           question_text: q.question_text,
           score: Number(q.score) || 2.5,
           options_json: q.options,
-          correct_answer: q.correct_answer || 'A'
+          options: q.options,
+          correct_answer: (q.correct_answer || 'A').toUpperCase(),
+          explanation: q.explanation || '',
+          bloom_level: q.bloom_level || 'Thông hiểu'
         }))
       };
 
@@ -1930,7 +2073,7 @@ int main() {
           </Col>
           <Col xs={24} sm={10} style={{ textAlign: 'right' }}>
             <Space wrap>
-              {role === 'LECTURER' && (
+              {isStaff && (
                 <Tooltip title="Khi bật, sinh viên bắt buộc phải hoàn thành và đạt bài Quiz của tuần trước thì tuần tiếp theo mới được mở khóa (Quy chế đào tạo TT 08/2021)">
                   <Space>
                     <span style={{ fontSize: 12, color: '#475569' }}>Học tuần tự:</span>
@@ -2022,7 +2165,7 @@ int main() {
                                   )}
                                   <Badge count={`${(m.materials || []).length} Tài liệu`} style={{ backgroundColor: '#e2e8f0', color: '#334155' }} />
                                   <Badge count={`${(m.quizzes || []).length} Bài kiểm tra`} style={{ backgroundColor: '#fef3c7', color: '#b45309' }} />
-                                  {role === 'LECTURER' && (
+                                  {isStaff && (
                                     <Space onClick={e => e.stopPropagation()}>
                                       <Button
                                         size="small"
@@ -2037,6 +2180,8 @@ int main() {
                                             duration_mins: 45
                                           });
                                           setMaterialTypeSelected('VIDEO');
+                                          setMaterialSourceMode('UPLOAD');
+                                          setUploadedFileInfo(null);
                                           setVideoUploadPreviewUrl('');
                                           setIsMaterialModalOpen(true);
                                         }}
@@ -2056,6 +2201,8 @@ int main() {
                                             duration_mins: 45
                                           });
                                           setMaterialTypeSelected('DOCUMENT');
+                                          setMaterialSourceMode('UPLOAD');
+                                          setUploadedFileInfo(null);
                                           setVideoUploadPreviewUrl('');
                                           setIsMaterialModalOpen(true);
                                         }}
@@ -2830,20 +2977,173 @@ int main() {
         </Form>
       </Modal>
 
-      {/* 5. MODAL: THÊM TÀI LIỆU ĐA PHƯƠNG TIỆN (GIẢNG VIÊN) */}
+      {/* 5. MODAL: THÊM & QUẢN LÝ TÀI LIỆU ĐA PHƯƠNG TIỆN (GIẢNG VIÊN & ADMIN) */}
       <Modal
-        title="Đăng Tải Tài Liệu / Bài Giảng / Liên Kết Học Liệu"
+        title={
+          <Space>
+            <UploadOutlined style={{ color: '#2563eb', fontSize: 18 }} />
+            <span style={{ fontWeight: 700, fontSize: 16 }}>
+              Đăng Tải Học Liệu Đa Phương Tiện (Video, Slide, PDF, Docs, Code)
+            </span>
+          </Space>
+        }
         open={isMaterialModalOpen}
-        onCancel={() => setIsMaterialModalOpen(false)}
+        onCancel={() => {
+          setIsMaterialModalOpen(false);
+          setUploadedFileInfo(null);
+          setVideoUploadPreviewUrl('');
+        }}
         onOk={() => materialForm.submit()}
-        width={650}
+        width={720}
+        okText="Lưu Vào Đề Cương Tuần"
+        cancelText="Hủy Bỏ"
+        style={{ top: 25 }}
       >
+        {/* LỰA CHỌN PHƯƠNG THỨC: TẢI TỆP THỰC TẾ HOẶC DÁN LINK URL */}
+        <div style={{ marginBottom: 16, textAlign: 'center' }}>
+          <Radio.Group
+            value={materialSourceMode}
+            onChange={e => setMaterialSourceMode(e.target.value)}
+            buttonStyle="solid"
+            size="middle"
+          >
+            <Radio.Button value="UPLOAD">
+              <Space><DesktopOutlined /> <strong>Tải Tệp Lên Từ Máy Tính (Thiết Bị)</strong></Space>
+            </Radio.Button>
+            <Radio.Button value="LINK">
+              <Space><LinkOutlined /> <strong>Chèn Link URL / Video Stream</strong></Space>
+            </Radio.Button>
+          </Radio.Group>
+        </div>
+
+        {/* CHẾ ĐỘ 1: TẢI TỆP TIN THẬT TỪ THIẾT BỊ */}
+        {materialSourceMode === 'UPLOAD' && (
+          <Card
+            size="small"
+            style={{
+              marginBottom: 16,
+              background: '#f8fafc',
+              borderRadius: 8,
+              border: '2px dashed #93c5fd',
+              textAlign: 'center',
+              padding: '16px 12px'
+            }}
+          >
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              onChange={handleFileSelected}
+              accept=".mp4,.webm,.mov,.mkv,.avi,.pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.zip,.rar,.cpp,.c,.java,.py,.sql,.txt"
+            />
+            <div style={{ marginBottom: 8 }}>
+              <Avatar size={48} icon={<UploadOutlined />} style={{ backgroundColor: '#e0f2fe', color: '#0284c7' }} />
+            </div>
+            <Title level={5} style={{ margin: '0 0 6px 0', color: '#1e293b' }}>
+              Bấm nút để chọn tệp từ máy tính cá nhân
+            </Title>
+            <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 12 }}>
+              Hỗ trợ Video bài giảng (MP4, WebM), Slide trình chiếu (PPTX, PDF), Giáo trình Word, Code thực hành, ZIP (Lên đến 300MB)
+            </Text>
+            <Button
+              type="primary"
+              icon={<DesktopOutlined />}
+              loading={isUploadingFile}
+              onClick={() => fileInputRef.current?.click()}
+              style={{ background: '#2563eb', borderColor: '#2563eb', borderRadius: 6, fontWeight: 600 }}
+            >
+              {isUploadingFile ? 'Đang Tải Tệp Lên Máy Chủ...' : '📁 Chọn Tệp Tin Từ Máy Tính Của Bạn'}
+            </Button>
+
+            {isUploadingFile && (
+              <div style={{ marginTop: 12, maxWidth: 360, margin: '12px auto 0 auto' }}>
+                <Progress percent={uploadingProgress} status="active" strokeColor="#2563eb" />
+                <Text type="secondary" style={{ fontSize: 11 }}>Đang tải lên hệ thống lưu trữ...</Text>
+              </div>
+            )}
+
+            {uploadedFileInfo && (
+              <Alert
+                type="success"
+                showIcon
+                style={{ marginTop: 14, textAlign: 'left', borderRadius: 6 }}
+                message={
+                  <Space wrap>
+                    <strong>✓ Đã tải lên máy chủ: {uploadedFileInfo.original_name}</strong>
+                    <Tag color="blue">{uploadedFileInfo.size_mb} MB</Tag>
+                    <Tag color="purple">{uploadedFileInfo.material_type}</Tag>
+                  </Space>
+                }
+                description={
+                  <span style={{ fontSize: 12, color: '#166534' }}>
+                    Đường dẫn tệp nội bộ: <code>{uploadedFileInfo.url}</code> (Đã tự động điền vào thông tin học liệu)
+                  </span>
+                }
+              />
+            )}
+          </Card>
+        )}
+
+        {/* CHẾ ĐỘ 2: CHÈN ĐƯỜNG DẪN LINK / STREAM TRỰC TUYẾN */}
+        {materialSourceMode === 'LINK' && (
+          <Card size="small" style={{ marginBottom: 16, background: '#eff6ff', borderRadius: 8, border: '1px solid #bfdbfe' }}>
+            <Row justify="space-between" align="middle">
+              <Col>
+                <Space>
+                  <LinkOutlined style={{ color: '#2563eb' }} />
+                  <Text strong style={{ color: '#1e40af' }}>Mẫu liên kết học liệu nhanh:</Text>
+                </Space>
+              </Col>
+              <Col>
+                <Space wrap>
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      const sampleYt = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+                      materialForm.setFieldsValue({
+                        title: materialForm.getFieldValue('title') || 'Video Bài Giảng: Kỹ Thuật Tối Ưu Hóa & Lập Trình Nâng Cao',
+                        file_url: sampleYt,
+                        duration_mins: 45,
+                        material_type: 'VIDEO',
+                        external_source: 'YouTube TCU E-Learning'
+                      });
+                      setMaterialTypeSelected('VIDEO');
+                      setVideoUploadPreviewUrl(sampleYt);
+                      message.success('Đã nạp liên kết YouTube mẫu!');
+                    }}
+                  >
+                    🎬 YouTube Mẫu
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      const sampleSlide = 'https://slides.techcorp.edu.vn/it101-week1.pdf';
+                      materialForm.setFieldsValue({
+                        title: materialForm.getFieldValue('title') || 'Slide Bài Giảng Số Hóa: Kiến Trúc Hệ Thống & CSDL',
+                        file_url: sampleSlide,
+                        duration_mins: 30,
+                        material_type: 'SLIDE',
+                        external_source: 'TCU Digital Slide Cloud'
+                      });
+                      setMaterialTypeSelected('SLIDE');
+                      setVideoUploadPreviewUrl(sampleSlide);
+                      message.success('Đã nạp link Slide PDF mẫu!');
+                    }}
+                  >
+                    📊 Slide PDF Mẫu
+                  </Button>
+                </Space>
+              </Col>
+            </Row>
+          </Card>
+        )}
+
         <Form
           form={materialForm}
           layout="vertical"
           onFinish={handleSaveMaterial}
           initialValues={{ material_type: 'VIDEO', category: 'MAIN_TEXTBOOK', duration_mins: 45 }}
-          onValuesChange={(changed, all) => {
+          onValuesChange={(changed) => {
             if (changed.material_type) setMaterialTypeSelected(changed.material_type);
             if (changed.file_url !== undefined) setVideoUploadPreviewUrl(changed.file_url);
           }}
@@ -2879,87 +3179,15 @@ int main() {
             </Col>
           </Row>
 
-          {/* CÔNG CỤ CHÈN VIDEO & TẢI TỆP VIDEO (KHI CHỌN LOẠI VIDEO) */}
-          {materialTypeSelected === 'VIDEO' && (
-            <Card
-              size="small"
-              style={{
-                marginBottom: 16,
-                background: '#fef2f2',
-                borderRadius: 8,
-                border: '1px solid #fecaca'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                <Space>
-                  <VideoCameraOutlined style={{ color: '#ef4444', fontSize: 16 }} />
-                  <Text strong style={{ color: '#991b1b' }}>Công Cụ Chèn & Tải Video Bài Giảng:</Text>
-                </Space>
-                <Space>
-                  <Button
-                    size="small"
-                    type="primary"
-                    style={{ background: '#ef4444', borderColor: '#ef4444' }}
-                    onClick={() => {
-                      const sampleYt = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
-                      materialForm.setFieldsValue({
-                        title: materialForm.getFieldValue('title') || 'Bài Giảng Thực Hành & Hướng Dẫn Tối Ưu Hóa (FHD)',
-                        file_url: sampleYt,
-                        duration_mins: 35,
-                        external_source: 'YouTube E-Learning TCU'
-                      });
-                      setVideoUploadPreviewUrl(sampleYt);
-                      message.success('Đã chèn liên kết bài giảng video mẫu thành công!');
-                    }}
-                  >
-                    🎬 Chèn Video YouTube Mẫu
-                  </Button>
-                  <Button
-                    size="small"
-                    icon={<UploadOutlined />}
-                    loading={isSimulatingUpload}
-                    onClick={() => {
-                      setIsSimulatingUpload(true);
-                      setTimeout(() => {
-                        setIsSimulatingUpload(false);
-                        const sampleStorageUrl = 'https://storage.tcu.edu.vn/lectures/video_bai_giang_chuan_1080p.mp4';
-                        materialForm.setFieldsValue({
-                          title: materialForm.getFieldValue('title') || 'Video Bài Giảng Số Hóa TCU Cloud (1080p)',
-                          file_url: sampleStorageUrl,
-                          file_size_mb: 185.5,
-                          duration_mins: 45,
-                          external_source: 'TCU Media Cloud'
-                        });
-                        setVideoUploadPreviewUrl(sampleStorageUrl);
-                        message.success('Đã tải và đính kèm video bài giảng lên TCU Cloud thành công!');
-                      }, 1200);
-                    }}
-                  >
-                    📁 Tải Tệp Video Lên (MP4)
-                  </Button>
-                </Space>
-              </div>
-
-              {/* VÙNG HIỂN THỊ XEM TRƯỚC VIDEO (VIDEO PREVIEW BOX) */}
-              <div style={{ marginTop: 8 }}>
-                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 6 }}>
-                  👁️ <strong>Vùng Hiển Thị Xem Trước Video Bài Giảng (Video Preview Box):</strong>
-                </Text>
-
-                {renderVideoUploadPreview()}
-              </div>
-            </Card>
-          )}
-
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="external_source" label="Nguồn Học Liệu (Nếu có)">
-                <Input placeholder="Ví dụ: TCU Media, YouTube, IEEE Xplore, GitHub" />
+                <Input placeholder="Ví dụ: TCU Media, YouTube, IEEE Xplore, Local Device" />
               </Form.Item>
             </Col>
             <Col span={6}>
               <Form.Item name="file_size_mb" label="Dung Lượng (MB)">
-                <InputNumber min={0.1} max={1000} step={0.5} style={{ width: '100%' }} />
+                <InputNumber min={0.01} max={2000} step={0.5} style={{ width: '100%' }} />
               </Form.Item>
             </Col>
             <Col span={6}>
@@ -2971,17 +3199,53 @@ int main() {
 
           <Form.Item
             name="file_url"
-            label="Đường Dẫn URL File / Liên Kết Video Bài Giảng"
-            rules={[{ required: true, message: 'Vui lòng nhập đường dẫn URL hoặc tải file!' }]}
+            label="Đường Dẫn URL File / Tệp Học Liệu Đã Tải Lên"
+            rules={[{ required: true, message: 'Vui lòng tải tệp lên hoặc nhập đường dẫn URL!' }]}
           >
             <Input
-              placeholder="https://www.youtube.com/watch?v=... hoặc https://storage.tcu.edu.vn/..."
+              placeholder="https://... hoặc /uploads/..."
               onChange={e => setVideoUploadPreviewUrl(e.target.value)}
             />
           </Form.Item>
 
+          {/* VÙNG XEM TRƯỚC HỌC LIỆU TRỰC TIẾP */}
+          {videoUploadPreviewUrl && (
+            <div style={{ marginBottom: 16 }}>
+              <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 6, color: '#334155' }}>
+                👁️ Xem Trước Học Liệu (Preview):
+              </Text>
+              {materialTypeSelected === 'VIDEO' ? (
+                videoUploadPreviewUrl.includes('youtube.com') || videoUploadPreviewUrl.includes('youtu.be') ? (
+                  <iframe
+                    width="100%"
+                    height="220"
+                    src={`https://www.youtube.com/embed/${videoUploadPreviewUrl.split('v=')[1]?.split('&')[0] || videoUploadPreviewUrl.split('/').pop()}?rel=0`}
+                    title="Preview"
+                    frameBorder="0"
+                    allowFullScreen
+                    style={{ borderRadius: 8, display: 'block' }}
+                  />
+                ) : (
+                  <video
+                    controls
+                    src={videoUploadPreviewUrl}
+                    style={{ width: '100%', maxHeight: 220, borderRadius: 8, background: '#0f172a' }}
+                  />
+                )
+              ) : (
+                <div style={{ padding: '12px 16px', background: '#f1f5f9', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <FilePdfOutlined style={{ fontSize: 28, color: '#ef4444' }} />
+                  <div>
+                    <strong>Tệp học liệu số:</strong> {materialForm.getFieldValue('title') || 'Tài liệu bài giảng'}
+                    <div style={{ fontSize: 12, color: '#64748b' }}>Đường dẫn: <code>{videoUploadPreviewUrl}</code></div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <Form.Item name="content_text" label="Ghi Chú Hướng Dẫn & Trọng Tâm Bài Học">
-            <TextArea rows={2} placeholder="Yêu cầu sinh viên theo dõi kỹ video bài giảng và hoàn thành bài Quiz để mở khóa bài học tuần sau..." />
+            <TextArea rows={2} placeholder="Yêu cầu sinh viên theo dõi kỹ tài liệu/video bài giảng và hoàn thành bài Quiz để mở khóa bài học tuần sau..." />
           </Form.Item>
         </Form>
       </Modal>
@@ -3109,7 +3373,7 @@ int main() {
                   {activeViewerMaterial?.title || (activeVideoUrl ? 'Video Bài Giảng Trực Tuyến' : 'Xem Học Liệu')}
                 </span>
                 {activeViewerMaterial && renderCategoryTag(activeViewerMaterial.category)}
-                {role === 'LECTURER' && <Tag color="purple">👁️ Giảng Viên Xem Trước</Tag>}
+                {isStaff && <Tag color="purple">👁️ Giảng Viên / Admin Xem Trước</Tag>}
                 {role === 'STUDENT' && activeViewerMaterial?.is_completed && <Tag color="success">✓ Đã Hoàn Thành</Tag>}
               </Space>
             </Col>
@@ -3291,6 +3555,113 @@ int main() {
             </Row>
           </Card>
 
+          {/* BỘ CÔNG CỤ AI SINH BỘ CÂU HỎI TRẮC NGHIỆM TỰ ĐỘNG CHUẨN SƯ PHẠM */}
+          <Card
+            size="small"
+            style={{
+              marginBottom: 16,
+              background: 'linear-gradient(135deg, #f5f3ff 0%, #faf5ff 50%, #eff6ff 100%)',
+              borderRadius: 8,
+              border: '1px solid #c4b5fd',
+              boxShadow: '0 2px 6px rgba(124, 58, 237, 0.08)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
+              <Space>
+                <ThunderboltOutlined style={{ color: '#7e22ce', fontSize: 18 }} />
+                <span style={{ fontWeight: 700, color: '#581c87', fontSize: 14 }}>
+                  ⚡ TRỢ LÝ AI SOẠN CÂU HỎI TRẮC NGHIỆM TỰ ĐỘNG CHUẨN BỘ GD&ĐT
+                </span>
+                <Tag color="purple">Claude Sonnet & Sư Phạm Số</Tag>
+              </Space>
+              <Button
+                size="small"
+                icon={<ReloadOutlined />}
+                onClick={() => {
+                  const curMod = lmsData.modules?.find(m => m.id === selectedModuleIdForQuiz);
+                  setAiTopicInput(curMod?.title ? curMod.title.replace(/^Tuần \d+:\s*/, '') : 'Chủ đề bài học');
+                  setAiSummaryInput(curMod?.description || '');
+                  message.info('Đã nạp lại tiêu đề và tóm tắt của tuần học hiện tại!');
+                }}
+              >
+                Lấy Đề Cương Tuần Này
+              </Button>
+            </div>
+
+            <Row gutter={[12, 10]}>
+              <Col xs={24} md={12}>
+                <div>
+                  <Text strong style={{ fontSize: 12, color: '#4c1d95' }}>Tiêu đề / Chủ đề bài học cần kiểm tra:</Text>
+                  <Input
+                    size="small"
+                    value={aiTopicInput}
+                    onChange={e => setAiTopicInput(e.target.value)}
+                    placeholder="Ví dụ: Cấu trúc rẽ nhánh if-else, switch-case và kiểm thử ca biên"
+                    style={{ marginTop: 4, borderRadius: 6 }}
+                  />
+                </div>
+              </Col>
+              <Col xs={24} md={12}>
+                <div>
+                  <Text strong style={{ fontSize: 12, color: '#4c1d95' }}>Nội dung tóm tắt / Mục tiêu chuẩn đầu ra (CLO):</Text>
+                  <Input
+                    size="small"
+                    value={aiSummaryInput}
+                    onChange={e => setAiSummaryInput(e.target.value)}
+                    placeholder="Tóm tắt lý thuyết trọng tâm hoặc dán đề cương vào đây..."
+                    style={{ marginTop: 4, borderRadius: 6 }}
+                  />
+                </div>
+              </Col>
+              <Col xs={12} sm={6}>
+                <Text strong style={{ fontSize: 12, color: '#4c1d95' }}>Số lượng câu hỏi sinh:</Text>
+                <Select
+                  size="small"
+                  value={aiQuestionCount}
+                  onChange={setAiQuestionCount}
+                  style={{ width: '100%', marginTop: 4 }}
+                >
+                  <Option value={3}>3 câu trắc nghiệm</Option>
+                  <Option value={5}>5 câu trắc nghiệm (Chuẩn)</Option>
+                  <Option value={8}>8 câu trắc nghiệm</Option>
+                  <Option value={10}>10 câu trắc nghiệm</Option>
+                  <Option value={15}>15 câu trắc nghiệm</Option>
+                </Select>
+              </Col>
+              <Col xs={12} sm={8}>
+                <Text strong style={{ fontSize: 12, color: '#4c1d95' }}>Định hướng nhận thức (Bloom):</Text>
+                <Select
+                  size="small"
+                  value={aiBloomLevel}
+                  onChange={setAiBloomLevel}
+                  style={{ width: '100%', marginTop: 4 }}
+                >
+                  <Option value="BLOOM_STANDARD">Hỗn hợp chuẩn (Nhận biết ➔ Vận dụng cao)</Option>
+                  <Option value="BLOOM_REMEMBER">Tập trung Nhận biết & Khái niệm</Option>
+                  <Option value="BLOOM_UNDERSTAND">Tập trung Thông hiểu & Giải thích</Option>
+                  <Option value="BLOOM_APPLY">Tập trung Vận dụng & Tình huống</Option>
+                </Select>
+              </Col>
+              <Col xs={24} sm={10} style={{ display: 'flex', alignItems: 'flex-end' }}>
+                <Button
+                  type="primary"
+                  icon={<ThunderboltOutlined />}
+                  loading={isAiGenerating}
+                  onClick={handleAiGenerateQuestions}
+                  style={{
+                    width: '100%',
+                    background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
+                    borderColor: '#6d28d9',
+                    borderRadius: 6,
+                    fontWeight: 600
+                  }}
+                >
+                  {isAiGenerating ? 'AI Đang Phân Tích & Sinh Câu Hỏi...' : `⚡ AI Tự Động Sinh Bộ ${aiQuestionCount} Câu Hỏi Ngay`}
+                </Button>
+              </Col>
+            </Row>
+          </Card>
+
           {/* PHẦN 2: SOẠN DANH SÁCH CÂU HỎI & ĐÁP ÁN */}
           <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
             <div>
@@ -3348,8 +3719,9 @@ int main() {
                 {/* Tiêu đề câu & điểm số */}
                 <Row justify="space-between" align="middle" style={{ marginBottom: 8, borderBottom: '1px solid #f1f5f9', paddingBottom: 6 }}>
                   <Col>
-                    <Space>
+                    <Space wrap>
                       <Tag color="purple" style={{ fontWeight: 'bold' }}>CÂU {qIdx + 1}</Tag>
+                      {q.bloom_level && <Tag color="blue">{q.bloom_level}</Tag>}
                       <Text type="secondary" style={{ fontSize: 12 }}>Chọn nút tròn để chỉ định đáp án đúng</Text>
                     </Space>
                   </Col>
@@ -3419,6 +3791,29 @@ int main() {
                     ))}
                   </Row>
                 </Radio.Group>
+
+                {/* Lời giải thích và mức độ Bloom */}
+                <div style={{ marginTop: 10, display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <Input
+                    size="small"
+                    prefix={<span style={{ fontSize: 11, color: '#64748b' }}>💡 Lời giải:</span>}
+                    placeholder="Giải thích chi tiết tại sao đáp án này đúng..."
+                    value={q.explanation || ''}
+                    onChange={e => handleQuestionChange(qIdx, 'explanation', e.target.value)}
+                    style={{ flex: 1, borderRadius: 4 }}
+                  />
+                  <Select
+                    size="small"
+                    value={q.bloom_level || 'Thông hiểu'}
+                    onChange={val => handleQuestionChange(qIdx, 'bloom_level', val)}
+                    style={{ width: 135 }}
+                  >
+                    <Option value="Nhận biết">🌱 Nhận biết</Option>
+                    <Option value="Thông hiểu">📘 Thông hiểu</Option>
+                    <Option value="Vận dụng">⚡ Vận dụng</Option>
+                    <Option value="Vận dụng cao">🚀 Vận dụng cao</Option>
+                  </Select>
+                </div>
               </Card>
             ))}
           </div>

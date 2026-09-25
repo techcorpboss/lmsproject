@@ -184,7 +184,36 @@ const academicTrainingApi = {
     return { success: true, message: 'Đã xóa tuần học!' };
   },
 
-  // 5. Lưu / Xóa Tài liệu
+  // 5. Tải lên tệp tin học liệu (Video, Slide, Docs, Code) từ thiết bị
+  uploadLmsFile: async (formData, onProgress) => {
+    try {
+      const res = await apiClient.post('/academic/lms/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (progressEvent) => {
+          if (onProgress && progressEvent.total) {
+            const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            onProgress(percent);
+          }
+        }
+      });
+      return res;
+    } catch (e) {
+      console.error('[Upload API] error:', e);
+      throw e;
+    }
+  },
+
+  // 6. Trợ lý AI tự động sinh câu hỏi Quiz
+  aiGenerateQuizQuestions: async (payload) => {
+    try {
+      return await apiClient.post('/academic/lms/ai-generate-quiz', payload);
+    } catch (e) {
+      console.error('[AI Quiz API] error:', e);
+      throw e;
+    }
+  },
+
+  // 7. Lưu / Xóa Tài liệu
   saveLmsMaterial: async (payload) => {
     try {
       return await apiClient.post('/academic/lms/materials', payload);
