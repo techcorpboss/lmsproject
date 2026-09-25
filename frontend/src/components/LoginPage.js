@@ -4,15 +4,143 @@ import {
 } from 'antd';
 import {
   UserOutlined, LockOutlined, GlobalOutlined, SafetyCertificateOutlined,
-  BookOutlined, ThunderboltOutlined, TeamOutlined, LoginOutlined, CheckCircleOutlined
+  BookOutlined, ThunderboltOutlined, TeamOutlined, LoginOutlined, CheckCircleOutlined,
+  BankOutlined
 } from '@ant-design/icons';
 import apiClient from '../services/apiClient';
 
 const { Title, Text, Paragraph } = Typography;
 
+const SAMPLE_FACULTIES = [
+  {
+    id: 'CNTT',
+    name: 'Khoa Công Nghệ Thông Tin',
+    color: '#1677ff',
+    icon: '💻',
+    teacher: {
+      username: 'gv_cntt',
+      name: 'TS. Hoàng Đức Em',
+      desc: 'Giảng viên Kỹ thuật Phần mềm'
+    },
+    student: {
+      username: 'sv_cntt',
+      name: 'Trần Văn Nam',
+      code: '261IT001',
+      className: '66.CNTT-1'
+    }
+  },
+  {
+    id: 'KT',
+    name: 'Khoa Kinh Tế & QTKD',
+    color: '#d48806',
+    icon: '📊',
+    teacher: {
+      username: 'gv_kinhte',
+      name: 'TS. Nguyễn Thị Hồng',
+      desc: 'Trưởng Khoa Kinh Tế'
+    },
+    student: {
+      username: 'sv_kinhte',
+      name: 'Lê Thị Mỹ Duyên',
+      code: '261BA001',
+      className: '66.QTKD-1'
+    }
+  },
+  {
+    id: 'NN',
+    name: 'Khoa Ngoại Ngữ',
+    color: '#389e0d',
+    icon: '🌐',
+    teacher: {
+      username: 'gv_ngoaingu',
+      name: 'TS. Phạm Thu Hương',
+      desc: 'Trưởng Khoa Ngoại Ngữ'
+    },
+    student: {
+      username: 'sv_ngoaingu',
+      name: 'Hoàng Thùy Linh',
+      code: '261NN001',
+      className: '66.NNA-1'
+    }
+  },
+  {
+    id: 'DDT',
+    name: 'Khoa Điện - Điện Tử & Tự Động Hóa',
+    color: '#722ed1',
+    icon: '⚡',
+    teacher: {
+      username: 'gv_dientu',
+      name: 'TS. Bùi Quốc Thái',
+      desc: 'Trưởng Khoa Điện - ĐT & IoT'
+    },
+    student: {
+      username: 'sv_dientu',
+      name: 'Nguyễn Văn Cường',
+      code: '261DT001',
+      className: '66.DDT-1'
+    }
+  },
+  {
+    id: 'DL',
+    name: 'Khoa Du Lịch & Khách Sạn',
+    color: '#c41d7f',
+    icon: '✈️',
+    teacher: {
+      username: 'gv_dulich',
+      name: 'ThS. Đỗ Quang Vinh',
+      desc: 'Trưởng Khoa Du Lịch & KS'
+    },
+    student: {
+      username: 'sv_dulich',
+      name: 'Phan Quỳnh Trang',
+      code: '261DL001',
+      className: '66.DL-1'
+    }
+  }
+];
+
 export default function LoginPage({ onLoginSuccess }) {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
+
+  const handleSampleLogin = async (username) => {
+    setLoading(true);
+    try {
+      const res = await apiClient.post('/auth/login', { username, password: 'root123@' });
+      if (res && res.success && res.user) {
+        localStorage.setItem('lms_token', res.token);
+        message.success(`Đăng nhập thành công! Chào mừng ${res.user.full_name} (${res.user.faculty_name || 'Hệ thống'})`);
+        onLoginSuccess(res.user);
+        return;
+      }
+    } catch (err) {
+      // Fallback nếu kết nối mạng tạm gián đoạn
+      const fac = SAMPLE_FACULTIES.find(f => f.teacher.username === username || f.student.username === username);
+      const isTeacher = fac?.teacher.username === username;
+      const user = isTeacher ? {
+        id: username === 'gv_cntt' ? 2 : username === 'gv_kinhte' ? 6 : username === 'gv_ngoaingu' ? 8 : username === 'gv_dientu' ? 10 : 12,
+        username,
+        full_name: fac?.teacher.name,
+        role: 'teacher',
+        faculty_id: fac?.id,
+        faculty_name: fac?.name
+      } : {
+        id: username === 'sv_cntt' ? 3 : username === 'sv_kinhte' ? 7 : username === 'sv_ngoaingu' ? 9 : username === 'sv_dientu' ? 11 : 13,
+        username,
+        full_name: fac?.student.name,
+        role: 'student',
+        student_code: fac?.student.code,
+        class_name: fac?.student.className,
+        faculty_id: fac?.id,
+        faculty_name: fac?.name
+      };
+      localStorage.setItem('lms_token', 'mock-valid-token-2026');
+      message.success(`Đăng nhập tài khoản mẫu: ${user.full_name}`);
+      onLoginSuccess(user);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLocalLogin = async (values) => {
     setLoading(true);
@@ -274,6 +402,100 @@ export default function LoginPage({ onLoginSuccess }) {
                           </Text>
                         </div>
                       </Form>
+                    )
+                  },
+                  {
+                    key: 'sample_faculties',
+                    label: <span><BankOutlined /> Tài Khoản Mẫu (5 Khoa)</span>,
+                    children: (
+                      <div style={{ paddingTop: 8, maxHeight: 420, overflowY: 'auto', paddingRight: 4 }}>
+                        <Alert
+                          message="Tài khoản thực nghiệm theo từng Đơn vị Khoa Đào tạo"
+                          description="Nhấp 1-chạm để đăng nhập đúng vai trò và thẩm quyền của từng Khoa. Hệ thống sẽ tự động lọc bài giảng, sổ điểm và lớp học phần tương ứng."
+                          type="success"
+                          showIcon
+                          style={{ marginBottom: 14 }}
+                        />
+
+                        <Space direction="vertical" style={{ width: '100%' }} size={10}>
+                          {SAMPLE_FACULTIES.map(fac => (
+                            <Card
+                              key={fac.id}
+                              size="small"
+                              style={{
+                                borderRadius: 8,
+                                border: `1px solid ${fac.color}40`,
+                                background: '#f8fafc'
+                              }}
+                              styles={{ body: { padding: '10px 14px' } }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                <Space>
+                                  <span style={{ fontSize: 16 }}>{fac.icon}</span>
+                                  <Text strong style={{ color: fac.color, fontSize: 13 }}>{fac.name}</Text>
+                                </Space>
+                                <Tag color={fac.color}>{fac.id}</Tag>
+                              </div>
+
+                              <Row gutter={8}>
+                                <Col span={12}>
+                                  <Button
+                                    size="small"
+                                    block
+                                    loading={loading}
+                                    onClick={() => handleSampleLogin(fac.teacher.username)}
+                                    style={{
+                                      textAlign: 'left',
+                                      height: 'auto',
+                                      padding: '5px 8px',
+                                      borderRadius: 6,
+                                      borderColor: '#91caff'
+                                    }}
+                                  >
+                                    <div style={{ fontSize: 11, color: '#1677ff', fontWeight: 600 }}>👨‍🏫 Giảng Viên:</div>
+                                    <div style={{ fontSize: 12, fontWeight: 700, color: '#1f2937' }}>{fac.teacher.name}</div>
+                                    <div style={{ fontSize: 10, color: '#64748b' }}>Acc: <code>{fac.teacher.username}</code></div>
+                                  </Button>
+                                </Col>
+                                <Col span={12}>
+                                  <Button
+                                    size="small"
+                                    block
+                                    loading={loading}
+                                    onClick={() => handleSampleLogin(fac.student.username)}
+                                    style={{
+                                      textAlign: 'left',
+                                      height: 'auto',
+                                      padding: '5px 8px',
+                                      borderRadius: 6,
+                                      borderColor: '#b7eb8f'
+                                    }}
+                                  >
+                                    <div style={{ fontSize: 11, color: '#52c41a', fontWeight: 600 }}>🎓 Sinh Viên ({fac.student.className}):</div>
+                                    <div style={{ fontSize: 12, fontWeight: 700, color: '#1f2937' }}>{fac.student.name}</div>
+                                    <div style={{ fontSize: 10, color: '#64748b' }}>MSSV: <code>{fac.student.code}</code></div>
+                                  </Button>
+                                </Col>
+                              </Row>
+                            </Card>
+                          ))}
+
+                          <Button
+                            type="dashed"
+                            block
+                            loading={loading}
+                            onClick={() => handleSampleLogin('admin')}
+                            style={{
+                              borderRadius: 8,
+                              borderColor: '#d9d9d9',
+                              background: '#ffffff',
+                              marginTop: 4
+                            }}
+                          >
+                            ⚡ Đăng nhập Quản Trị Viên Toàn Trường: <b>admin</b> (Full Quyền 5 Khoa)
+                          </Button>
+                        </Space>
+                      </div>
                     )
                   }
                 ]}

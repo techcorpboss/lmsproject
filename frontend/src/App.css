@@ -36,3 +36,95 @@
     transform: rotate(360deg);
   }
 }
+
+/* ==================== QUY CHUẨN IN ẤN BỘ GD&ĐT (NGHỊ ĐỊNH 30/2020/NĐ-CP & TT 08/2021) ==================== */
+@media print {
+  /* 1. Ẩn toàn bộ thanh điều hướng, sidebar, header, footer và các nút bấm giao diện */
+  .ant-layout-sider,
+  .ant-layout-header,
+  .ant-layout-footer,
+  .no-print,
+  .ant-btn,
+  .ant-radio-group,
+  .ant-select,
+  .ant-slider,
+  .ant-switch,
+  .ant-tabs-nav,
+  .ant-dropdown,
+  .ant-message,
+  .ant-notification {
+    display: none !important;
+  }
+
+  /* 2. Thiết lập nền trắng tinh, lề chuẩn giấy A4 */
+  @page {
+    size: A4 portrait;
+    margin: 15mm 15mm 20mm 15mm;
+  }
+
+  html, body, #root, .ant-layout, .ant-layout-content {
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: auto !important;
+    width: 100% !important;
+  }
+
+  /* 3. Tối ưu khung bảng điểm chuẩn mẫu văn bản hành chính nhà nước */
+  .moet-printable-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    font-family: 'Times New Roman', Times, serif !important;
+  }
+
+  .moet-printable-sheet .ant-card-body {
+    padding: 0 !important;
+  }
+
+  /* 4. Viền bảng điểm đen sắc nét 1px chuẩn lưu trữ văn thư quốc gia */
+  .moet-printable-sheet table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    border: 1px solid #000000 !important;
+  }
+
+  .moet-printable-sheet th,
+  .moet-printable-sheet td {
+    border: 1px solid #000000 !important;
+    color: #000000 !important;
+    padding: 6px 8px !important;
+    font-size: 11pt !important;
+    font-family: 'Times New Roman', Times, serif !important;
+  }
+
+  .moet-printable-sheet th {
+    background-color: #f2f2f2 !important;
+    font-weight: bold !important;
+    text-align: center !important;
+  }
+
+  /* Tag trạng thái khi in chuyển về văn bản đen trắng trang trọng */
+  .moet-printable-sheet .ant-tag {
+    border: none !important;
+    background: transparent !important;
+    color: #000000 !important;
+    font-weight: 600 !important;
+    padding: 0 !important;
+  }
+
+  /* 5. Khối chữ ký số 3 bên tuyệt đối không bị đứt trang (page-break-inside) */
+  .moet-signatures-block {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin-top: 35px !important;
+    width: 100% !important;
+  }
+
+  .moet-signatures-block .ant-col {
+    text-align: center !important;
+  }
+}

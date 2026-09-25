@@ -5,6 +5,7 @@ const path = require('path');
 const multer = require('multer');
 const aiService = require('../services/aiService');
 const { Course, CourseSection, CourseLesson, QuizAssessment, QuizQuestion, QuizSubmission, User } = require('../models');
+const { SECTION_METADATA, generateStandard15Weeks } = require('./sectionData');
 
 // Thư mục dữ liệu bền vững
 const dataDir = path.join(__dirname, '..', 'data');
@@ -75,128 +76,40 @@ let discussionsStore = [
 // Tiến độ học tập của sinh viên
 let studentProgressStore = {}; // key: `${studentId}_${materialId}` -> { isCompleted, timeSpent, updatedAt }
 
-// 15 Tuần học chuẩn Đề cương đào tạo đại học (Dùng để khởi tạo lần đầu nếu chưa có file store)
-const generateStandard15Weeks = (courseId = 1) => {
-  const weekTitles = [
-    { title: 'Giới thiệu Tổng quan về Ngôn ngữ C/C++ & Môi trường Lập trình', desc: 'Cài đặt IDE (VSCode, GCC), cấu trúc chương trình C++, biên dịch và chạy file mã nguồn.' },
-    { title: 'Kiểu dữ liệu, Biến, Hằng số & Các Toán tử Cơ bản', desc: 'Toán tử số học, logic, quan hệ, thứ tự ưu tiên và ép kiểu dữ liệu an toàn.' },
-    { title: 'Cấu trúc Điều khiển Rẽ nhánh (if-else, switch-case)', desc: 'Xây dựng thuật toán phân nhánh điều kiện và kiểm thử ca kiểm thử biên.' },
-    { title: 'Cấu trúc Lặp & Vòng lặp nâng cao (for, while, do-while)', desc: 'Vòng lặp xác định và không xác định, lệnh break, continue và phòng ngừa lặp vô hạn.' },
-    { title: 'Hàm và Kỹ thuật Truyền tham số (Value, Reference, Pointer)', desc: 'Tổ chức module hóa chương trình, phạm vi biến (scope), tái sử dụng mã nguồn.' },
-    { title: 'Mảng Một Chiều & Thuật toán Cơ bản (Tìm kiếm, Sắp xếp)', desc: 'Khai báo, duyệt mảng, tìm max/min, Linear Search, Binary Search, Bubble Sort.' },
-    { title: 'Mảng Hai Chiều & Xử lý Ma trận Số học', desc: 'Cấu trúc ma trận, cộng/nhân ma trận, ma trận tam giác và ứng dụng đồ họa game.' },
-    { title: 'Kiểm tra Đánh giá Quá trình Giữa Kỳ & Ôn tập Thuật toán', desc: 'Thi trực tuyến trắc nghiệm & thực hành giải thuật tính điểm thành phần 1.' },
-    { title: 'Chuỗi Ký tự (C-Strings & std::string)', desc: 'Thư viện cstring, xử lý chuỗi động std::string, chuẩn hóa họ tên và tách từ.' },
-    { title: 'Con trỏ (Pointers) & Quản lý Bộ nhớ Động (new / delete)', desc: 'Địa chỉ ô nhớ, toán tử & và *, cấp phát động mảng 1D/2D, chống thất thoát RAM.' },
-    { title: 'Kiểu Dữ Liệu Có Cấu Trúc (struct, union, enum)', desc: 'Định nghĩa kiểu dữ liệu mới, quản lý danh sách sinh viên bằng mảng cấu trúc.' },
-    { title: 'Thao tác Tệp tin & Dòng dữ liệu (File I/O Streams)', desc: 'Thao tác ifstream, ofstream, đọc/ghi tệp nhị phân (.dat) và tệp văn bản (.txt).' },
-    { title: 'Nhập môn Lập trình Hướng đối tượng OOP (Class & Object)', desc: 'Khái niệm đóng gói (Encapsulation), thuộc tính (Attributes), phương thức (Methods), constructor/destructor.' },
-    { title: 'Thư viện Chuẩn STL (vector, map, set, algorithms)', desc: 'Sử dụng các container chuẩn của C++, tối ưu hóa hiệu năng và giải thuật thực tế.' },
-    { title: 'Tổng kết Học phần, Báo cáo Đồ án & Hướng dẫn Ôn thi Cuối kỳ', desc: 'Đánh giá tiến độ hoàn thành LMS, giải đáp thắc mắc và công bố danh sách đủ điều kiện dự thi.' }
-  ];
+// Quản lý bộ nhớ đề cương kết nối file bền vững (Đa lớp học phần & đa khoa)
+let curriculumStore = {};
 
-  return weekTitles.map((w, idx) => {
-    const weekNum = idx + 1;
-    const fullTitle = `Tuần ${weekNum}: ${w.title}`;
-    return {
-      id: 100 + weekNum,
-      week_number: weekNum,
-      title: fullTitle,
-      name: fullTitle,
-      description: w.desc,
-      order_index: weekNum,
-      materials: [
-        {
-          id: 1000 + weekNum * 2 - 1,
-          module_id: 100 + weekNum,
-          title: `Slide Bài Giảng Số Hóa: ${fullTitle}`,
-          material_type: 'SLIDE',
-          file_url: `https://slides.techcorp.edu.vn/it101-week${weekNum}.pdf`,
-          category: 'LECTURE_SLIDE',
-          file_size_mb: 4.8,
-          suggested_time_minutes: 30,
-          duration_mins: 30,
-          is_completed: false
-        },
-        {
-          id: 1000 + weekNum * 2,
-          module_id: 100 + weekNum,
-          title: `Video Bài Giảng Tương Tác: ${fullTitle}`,
-          material_type: 'VIDEO',
-          file_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-          category: 'MAIN_TEXTBOOK',
-          file_size_mb: 185.0,
-          suggested_time_minutes: 45,
-          duration_mins: 45,
-          is_completed: false
-        }
-      ],
-      quizzes: [
-        {
-          id: 500 + weekNum,
-          module_id: 100 + weekNum,
-          title: `Quiz Đánh Giá Quá Trình (Tuần ${weekNum}): ${w.title}`,
-          time_limit_minutes: 15,
-          max_attempts: 3,
-          weight: 10,
-          passing_score: 5.0,
-          passing_score_pct: 70,
-          scoring_policy: 'HIGHEST',
-          max_tab_switches: 3,
-          shuffle_questions: true,
-          shuffle_options: true,
-          questions: [
-            {
-              id: weekNum * 10 + 1,
-              content: `Mục tiêu cốt lõi của nội dung bài học Tuần ${weekNum} (${w.title}) là gì?`,
-              question_text: `Mục tiêu cốt lõi của nội dung bài học Tuần ${weekNum} (${w.title}) là gì?`,
-              score: 5.0,
-              correct_answer: 'A',
-              explanation: 'Nắm vững kiến thức nền tảng và vận dụng giải bài tập thực tế theo chuẩn đầu ra (CLO).',
-              bloom_level: 'Thông hiểu',
-              answers: [
-                { id: 1, letter: 'A', content: 'Nắm vững kiến thức nền tảng và vận dụng giải bài tập thực tế', is_correct: true },
-                { id: 2, letter: 'B', content: 'Chỉ ghi nhớ khái niệm lý thuyết', is_correct: false },
-                { id: 3, letter: 'C', content: 'Bỏ qua phần bài tập thực hành', is_correct: false },
-                { id: 4, letter: 'D', content: 'Không cần biên dịch thử mã nguồn', is_correct: false }
-              ],
-              options: [
-                'Nắm vững kiến thức nền tảng và vận dụng giải bài tập thực tế',
-                'Chỉ ghi nhớ khái niệm lý thuyết',
-                'Bỏ qua phần bài tập thực hành',
-                'Không cần biên dịch thử mã nguồn'
-              ]
-            },
-            {
-              id: weekNum * 10 + 2,
-              content: 'Chuẩn đánh giá theo Thông tư 08/2021/TT-BGDĐT yêu cầu tỷ lệ hoàn thành tối thiểu bao nhiêu để đủ điều kiện thi?',
-              question_text: 'Chuẩn đánh giá theo Thông tư 08/2021/TT-BGDĐT yêu cầu tỷ lệ hoàn thành tối thiểu bao nhiêu để đủ điều kiện thi?',
-              score: 5.0,
-              correct_answer: 'A',
-              explanation: 'Theo Điều 12 TT 08/2021/TT-BGDĐT, sinh viên cần hoàn thành tối thiểu 80% thời lượng và bài tập LMS.',
-              bloom_level: 'Nhận biết',
-              answers: [
-                { id: 5, letter: 'A', content: 'Tối thiểu 80% thời lượng và bài tập LMS', is_correct: true },
-                { id: 6, letter: 'B', content: 'Tối thiểu 50%', is_correct: false },
-                { id: 7, letter: 'C', content: 'Không quy định', is_correct: false },
-                { id: 8, letter: 'D', content: 'Tối thiểu 30%', is_correct: false }
-              ],
-              options: [
-                'Tối thiểu 80% thời lượng và bài tập LMS',
-                'Tối thiểu 50%',
-                'Không quy định',
-                'Tối thiểu 30%'
-              ]
-            }
-          ]
-        }
-      ]
-    };
-  });
-};
+function getSectionCurriculum(sectionId) {
+  const sId = String(sectionId || 1);
+  if (!curriculumStore[sId] || !Array.isArray(curriculumStore[sId]) || curriculumStore[sId].length === 0) {
+    const meta = SECTION_METADATA[sId] || { course_code: 'IT101' };
+    curriculumStore[sId] = generateStandard15Weeks(meta.course_code || 'IT101', Number(sId));
+    saveCurriculumToDisk();
+  }
+  return curriculumStore[sId];
+}
 
-// Quản lý bộ nhớ đề cương kết nối file bền vững
-let curriculumModules = [];
+function findModuleAcrossSections(moduleId) {
+  for (const [secId, modules] of Object.entries(curriculumStore)) {
+    if (Array.isArray(modules)) {
+      const mod = modules.find(m => String(m.id) === String(moduleId));
+      if (mod) return { sectionId: secId, module: mod };
+    }
+  }
+  return null;
+}
+
+function findQuizAcrossSections(quizId) {
+  for (const [secId, modules] of Object.entries(curriculumStore)) {
+    if (Array.isArray(modules)) {
+      for (const mod of modules) {
+        const q = (mod.quizzes || []).find(x => String(x.id) === String(quizId));
+        if (q) return { sectionId: secId, module: mod, quiz: q };
+      }
+    }
+  }
+  return null;
+}
 
 function loadCurriculumFromDisk() {
   try {
@@ -204,7 +117,11 @@ function loadCurriculumFromDisk() {
       const raw = fs.readFileSync(curriculumStoreFile, 'utf8');
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        curriculumModules = parsed;
+        curriculumStore = { "1": parsed };
+        saveCurriculumToDisk();
+        return;
+      } else if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+        curriculumStore = parsed;
         return;
       }
     }
@@ -212,14 +129,21 @@ function loadCurriculumFromDisk() {
     console.error('[AcademicLMS] Lỗi đọc lms_curriculum_store.json:', err.message);
   }
 
-  // Khởi tạo nếu chưa có hoặc file rỗng
-  curriculumModules = generateStandard15Weeks(1);
+  // Khởi tạo các phân hệ chuẩn nếu chưa có
+  curriculumStore = {
+    "1": generateStandard15Weeks('IT101', 1),
+    "2": generateStandard15Weeks('IT201', 2),
+    "4": generateStandard15Weeks('BA101', 4),
+    "6": generateStandard15Weeks('ENG101', 6),
+    "7": generateStandard15Weeks('EE101', 7),
+    "8": generateStandard15Weeks('TOU101', 8)
+  };
   saveCurriculumToDisk();
 }
 
 function saveCurriculumToDisk() {
   try {
-    fs.writeFileSync(curriculumStoreFile, JSON.stringify(curriculumModules, null, 2), 'utf8');
+    fs.writeFileSync(curriculumStoreFile, JSON.stringify(curriculumStore, null, 2), 'utf8');
   } catch (err) {
     console.error('[AcademicLMS] Lỗi ghi lms_curriculum_store.json:', err.message);
   }
@@ -310,35 +234,43 @@ function generatePedagogicalQuestions(topicTitle, weekLabel, count) {
 // 1. GET /api/academic/lms/sections/:sectionId/modules
 exports.getModulesBySection = async (req, res) => {
   try {
-    const { sectionId } = req.params;
+    const sectionId = Number(req.params.sectionId) || 1;
     const studentId = req.query.studentId || (req.user ? req.user.id : 1);
 
     // Nạp dữ liệu mới nhất từ đĩa
     loadCurriculumFromDisk();
 
+    const secMeta = SECTION_METADATA[sectionId] || {
+      id: sectionId,
+      code: `SEC_${sectionId}`,
+      course_code: 'IT101',
+      course_name: `Lớp Học Phần ${sectionId}`,
+      name: `Lớp Học Phần ${sectionId}`,
+      current_enrolled: 40,
+      room_name: 'Phòng học trực tuyến',
+      lecturer_name: 'Giảng viên phụ trách',
+      credits: 3,
+      degree_level: 'ĐẠI HỌC CHÍNH QUY'
+    };
+
+    const modulesList = getSectionCurriculum(sectionId);
+
     const sectionInfo = {
-      id: Number(sectionId) || 1,
-      code: 'IT101_66.CNTT-1_HK1',
-      name: 'Nhập môn Lập trình C/C++ (IT101)',
-      current_enrolled: 14,
-      room_name: 'P.401 (Nhà A3)',
-      lecturer_name: 'TS. Hoàng Đức Em',
-      credits: 4,
-      degree_level: 'ĐẠI HỌC / THẠC SĨ / TIẾN SĨ',
-      syllabus_weeks: curriculumModules.length
+      ...secMeta,
+      syllabus_weeks: modulesList.length
     };
 
     const courseInfo = {
-      id: 1,
-      code: 'IT101',
-      name: 'Nhập môn Lập trình C/C++',
-      credits: 4,
+      id: sectionId,
+      code: secMeta.course_code,
+      name: secMeta.course_name,
+      credits: secMeta.credits,
       theory_hours: 30,
       practice_hours: 30
     };
 
     // Deep copy và bổ sung tiến độ học của sinh viên
-    const modules = JSON.parse(JSON.stringify(curriculumModules));
+    const modules = JSON.parse(JSON.stringify(modulesList));
     modules.forEach(mod => {
       mod.title = mod.title || mod.name;
       mod.name = mod.name || mod.title;
@@ -543,9 +475,16 @@ exports.saveModule = async (req, res) => {
     const data = req.body;
     loadCurriculumFromDisk();
 
+    const secId = String(data.section_id || 1);
+    let secModules = getSectionCurriculum(secId);
+
     let target = null;
     if (data.id) {
-      target = curriculumModules.find(m => String(m.id) === String(data.id));
+      target = secModules.find(m => String(m.id) === String(data.id));
+      if (!target) {
+        const cross = findModuleAcrossSections(data.id);
+        if (cross) target = cross.module;
+      }
     }
 
     if (target) {
@@ -554,9 +493,10 @@ exports.saveModule = async (req, res) => {
       target.name = data.title || target.name;
       target.description = data.description || target.description;
     } else {
-      const newWeekNum = Number(data.week_number) || (curriculumModules.length + 1);
+      const newWeekNum = Number(data.week_number) || (secModules.length + 1);
       target = {
         id: Date.now(),
+        section_id: Number(secId),
         week_number: newWeekNum,
         title: data.title || `Tuần ${newWeekNum}: Chủ đề mới`,
         name: data.title || `Tuần ${newWeekNum}: Chủ đề mới`,
@@ -565,8 +505,8 @@ exports.saveModule = async (req, res) => {
         materials: [],
         quizzes: []
       };
-      curriculumModules.push(target);
-      curriculumModules.sort((a, b) => (a.week_number || 0) - (b.week_number || 0));
+      secModules.push(target);
+      secModules.sort((a, b) => (a.week_number || 0) - (b.week_number || 0));
     }
 
     saveCurriculumToDisk();
@@ -586,8 +526,17 @@ exports.deleteModule = async (req, res) => {
   try {
     const { id } = req.params;
     loadCurriculumFromDisk();
-    curriculumModules = curriculumModules.filter(m => String(m.id) !== String(id));
-    saveCurriculumToDisk();
+    
+    let deleted = false;
+    for (const secId of Object.keys(curriculumStore)) {
+      if (Array.isArray(curriculumStore[secId])) {
+        const initialLen = curriculumStore[secId].length;
+        curriculumStore[secId] = curriculumStore[secId].filter(m => String(m.id) !== String(id));
+        if (curriculumStore[secId].length < initialLen) deleted = true;
+      }
+    }
+    
+    if (deleted) saveCurriculumToDisk();
     res.json({ success: true, message: 'Đã xóa tuần học khỏi hệ thống thành công!' });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
@@ -601,7 +550,10 @@ exports.saveMaterial = async (req, res) => {
     loadCurriculumFromDisk();
 
     const moduleId = data.module_id;
-    const targetModule = curriculumModules.find(m => String(m.id) === String(moduleId));
+    let targetModule = null;
+    const cross = findModuleAcrossSections(moduleId);
+    if (cross) targetModule = cross.module;
+
     if (!targetModule) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy tuần học tương ứng!' });
     }
@@ -660,13 +612,17 @@ exports.deleteMaterial = async (req, res) => {
     loadCurriculumFromDisk();
 
     let removed = false;
-    curriculumModules.forEach(mod => {
-      if (mod.materials) {
-        const initialLen = mod.materials.length;
-        mod.materials = mod.materials.filter(m => String(m.id) !== String(id));
-        if (mod.materials.length < initialLen) removed = true;
+    for (const secId of Object.keys(curriculumStore)) {
+      if (Array.isArray(curriculumStore[secId])) {
+        curriculumStore[secId].forEach(mod => {
+          if (mod.materials) {
+            const initialLen = mod.materials.length;
+            mod.materials = mod.materials.filter(m => String(m.id) !== String(id));
+            if (mod.materials.length < initialLen) removed = true;
+          }
+        });
       }
-    });
+    }
 
     if (removed) {
       saveCurriculumToDisk();
@@ -685,24 +641,12 @@ exports.getQuizDetail = async (req, res) => {
     const { quizId } = req.params;
     loadCurriculumFromDisk();
 
-    let foundQuiz = null;
-    for (const m of curriculumModules) {
-      const q = (m.quizzes || []).find(x => String(x.id) === String(quizId));
-      if (q) {
-        foundQuiz = q;
-        break;
-      }
+    const cross = findQuizAcrossSections(quizId);
+    if (cross) {
+      return res.json({ success: true, data: cross.quiz });
     }
 
-    if (!foundQuiz && curriculumModules.length > 0 && curriculumModules[0].quizzes?.length > 0) {
-      foundQuiz = curriculumModules[0].quizzes[0];
-    }
-
-    if (!foundQuiz) {
-      return res.status(404).json({ success: false, message: 'Không tìm thấy bài Quiz!' });
-    }
-
-    res.json({ success: true, data: foundQuiz });
+    res.status(404).json({ success: false, message: 'Không tìm thấy bài Quiz!' });
   } catch (err) {
     res.status(404).json({ success: false, message: err.message });
   }
@@ -715,7 +659,10 @@ exports.saveQuiz = async (req, res) => {
     loadCurriculumFromDisk();
 
     const moduleId = data.module_id;
-    const targetModule = curriculumModules.find(m => String(m.id) === String(moduleId));
+    let targetModule = null;
+    const cross = findModuleAcrossSections(moduleId);
+    if (cross) targetModule = cross.module;
+
     if (!targetModule) {
       return res.status(404).json({ success: false, message: 'Không tìm thấy tuần học của Quiz!' });
     }
@@ -801,13 +748,17 @@ exports.deleteQuiz = async (req, res) => {
     loadCurriculumFromDisk();
 
     let removed = false;
-    curriculumModules.forEach(mod => {
-      if (mod.quizzes) {
-        const initialLen = mod.quizzes.length;
-        mod.quizzes = mod.quizzes.filter(q => String(q.id) !== String(id));
-        if (mod.quizzes.length < initialLen) removed = true;
+    for (const secId of Object.keys(curriculumStore)) {
+      if (Array.isArray(curriculumStore[secId])) {
+        curriculumStore[secId].forEach(mod => {
+          if (mod.quizzes) {
+            const initialLen = mod.quizzes.length;
+            mod.quizzes = mod.quizzes.filter(q => String(q.id) !== String(id));
+            if (mod.quizzes.length < initialLen) removed = true;
+          }
+        });
       }
-    });
+    }
 
     if (removed) {
       saveCurriculumToDisk();
@@ -828,16 +779,13 @@ exports.submitQuiz = async (req, res) => {
     loadCurriculumFromDisk();
 
     let foundQuiz = null;
-    for (const m of curriculumModules) {
-      const q = (m.quizzes || []).find(x => String(x.id) === String(quizId));
-      if (q) {
-        foundQuiz = q;
-        break;
-      }
+    const cross = findQuizAcrossSections(quizId);
+    if (cross) {
+      foundQuiz = cross.quiz;
     }
 
-    if (!foundQuiz && curriculumModules.length > 0) {
-      foundQuiz = curriculumModules[0].quizzes?.[0];
+    if (!foundQuiz && curriculumStore["1"] && curriculumStore["1"].length > 0) {
+      foundQuiz = curriculumStore["1"][0].quizzes?.[0];
     }
 
     const questions = foundQuiz ? (foundQuiz.questions || []) : [];

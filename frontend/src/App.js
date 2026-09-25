@@ -93,36 +93,110 @@ function App() {
     message.info('Đã đăng xuất khỏi hệ thống.');
   };
 
-  const handleChangeRole = (role) => {
+  const handleChangeRole = (role, facultyId = 'CNTT') => {
     let updated = null;
     if (role === 'student') {
-      updated = {
-        id: 3,
-        username: 'student',
-        student_code: '261IT001',
-        full_name: 'Trần Văn Nam',
-        role: 'student',
-        faculty_id: 'CNTT',
-        faculty_name: 'Khoa Công Nghệ Thông Tin',
-        major_id: 'CNPM',
-        major_code: '7480103',
-        major_name: 'Kỹ thuật Phần mềm',
-        cohort: 'K66',
-        class_name: '66.CNTT-1',
-        birth_date: '15/08/2004',
-        email: 'sinhvien@techcorp.info.vn'
-      };
-      setActiveMenuKey('lms_workspace');
+      if (facultyId === 'KT') {
+        updated = {
+          id: 7,
+          username: 'sv_kinhte',
+          student_code: '261BA001',
+          full_name: 'Lê Thị Mỹ Duyên',
+          role: 'student',
+          faculty_id: 'KT',
+          faculty_name: 'Khoa Kinh Tế & QTKD',
+          major_id: 'QTKD',
+          major_name: 'Quản trị Kinh doanh',
+          cohort: 'K66',
+          class_name: '66.QTKD-1',
+          birth_date: '10/05/2004',
+          email: 'duyen.ltm@techcorp.edu.vn'
+        };
+      } else if (facultyId === 'NN') {
+        updated = {
+          id: 9,
+          username: 'sv_ngoaingu',
+          student_code: '261NN001',
+          full_name: 'Hoàng Thùy Linh',
+          role: 'student',
+          faculty_id: 'NN',
+          faculty_name: 'Khoa Ngoại Ngữ',
+          major_id: 'NNA',
+          major_name: 'Ngôn ngữ Anh',
+          cohort: 'K66',
+          class_name: '66.NNA-1',
+          birth_date: '28/02/2004',
+          email: 'linh.ht@techcorp.edu.vn'
+        };
+      } else if (facultyId === 'DDT') {
+        updated = {
+          id: 11,
+          username: 'sv_dientu',
+          student_code: '261DT001',
+          full_name: 'Nguyễn Văn Cường',
+          role: 'student',
+          faculty_id: 'DDT',
+          faculty_name: 'Khoa Điện - Điện Tử & Tự Động Hóa',
+          major_id: 'DDT',
+          major_name: 'Kỹ thuật Điện - Điện tử & IoT',
+          cohort: 'K66',
+          class_name: '66.DDT-1',
+          birth_date: '19/09/2004',
+          email: 'cuong.nv@techcorp.edu.vn'
+        };
+      } else if (facultyId === 'DL') {
+        updated = {
+          id: 13,
+          username: 'sv_dulich',
+          student_code: '261DL001',
+          full_name: 'Phan Quỳnh Trang',
+          role: 'student',
+          faculty_id: 'DL',
+          faculty_name: 'Khoa Du Lịch & Khách Sạn',
+          major_id: 'DL',
+          major_name: 'Quản trị Dịch vụ Du lịch & Lữ hành',
+          cohort: 'K66',
+          class_name: '66.DL-1',
+          birth_date: '05/04/2004',
+          email: 'trang.pq@techcorp.edu.vn'
+        };
+      } else {
+        updated = {
+          id: 3,
+          username: 'sv_cntt',
+          student_code: '261IT001',
+          full_name: 'Trần Văn Nam',
+          role: 'student',
+          faculty_id: 'CNTT',
+          faculty_name: 'Khoa Công Nghệ Thông Tin',
+          major_id: 'CNPM',
+          major_code: '7480103',
+          major_name: 'Kỹ thuật Phần mềm',
+          cohort: 'K66',
+          class_name: '66.CNTT-1',
+          birth_date: '15/08/2004',
+          email: 'nam.tv@techcorp.edu.vn'
+        };
+      }
     } else if (role === 'teacher') {
-      updated = { id: 2, username: 'teacher', full_name: 'TS. Hoàng Đức Em (Giảng viên)', role: 'teacher' };
-      setActiveMenuKey('lms_workspace');
+      if (facultyId === 'KT') {
+        updated = { id: 6, username: 'gv_kinhte', full_name: 'TS. Nguyễn Thị Hồng', role: 'teacher', faculty_id: 'KT', faculty_name: 'Khoa Kinh Tế & QTKD', title: 'Tiến sĩ' };
+      } else if (facultyId === 'NN') {
+        updated = { id: 8, username: 'gv_ngoaingu', full_name: 'TS. Phạm Thu Hương', role: 'teacher', faculty_id: 'NN', faculty_name: 'Khoa Ngoại Ngữ', title: 'Tiến sĩ' };
+      } else if (facultyId === 'DDT') {
+        updated = { id: 10, username: 'gv_dientu', full_name: 'TS. Bùi Quốc Thái', role: 'teacher', faculty_id: 'DDT', faculty_name: 'Khoa Điện - Điện Tử & Tự Động Hóa', title: 'Tiến sĩ' };
+      } else if (facultyId === 'DL') {
+        updated = { id: 12, username: 'gv_dulich', full_name: 'ThS. Đỗ Quang Vinh', role: 'teacher', faculty_id: 'DL', faculty_name: 'Khoa Du Lịch & Khách Sạn', title: 'Thạc sĩ' };
+      } else {
+        updated = { id: 2, username: 'gv_cntt', full_name: 'TS. Hoàng Đức Em', role: 'teacher', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', title: 'Tiến sĩ' };
+      }
     } else {
-      updated = { id: 1, username: 'admin', full_name: 'Quản trị viên Hệ thống (Admin)', role: 'admin' };
-      setActiveMenuKey('lms_workspace');
+      updated = { id: 1, username: 'admin', full_name: 'Quản trị viên Hệ thống (Admin)', role: 'admin', faculty_id: 'ALL', faculty_name: 'Toàn trường' };
     }
+    setActiveMenuKey('lms_workspace');
     setCurrentUser(updated);
     localStorage.setItem('lms_user', JSON.stringify(updated));
-    message.success(`Đã chuyển sang không gian làm việc: ${updated.full_name}`);
+    message.success(`Đã chuyển sang: ${updated.full_name} (${updated.faculty_name || ''})`);
   };
 
   // NẾU CHƯA ĐĂNG NHẬP -> HIỂN THỊ CỔNG ĐĂNG NHẬP CHUẨN QUỐC TẾ
@@ -179,29 +253,54 @@ function App() {
         key: 'header_role',
         label: (
           <div style={{ padding: '4px 0' }}>
-            <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>VAI TRÒ HIỆN TẠI</Text>
-            <b>{currentUser.role === 'student' ? 'Học viên / Sinh viên' : currentUser.role === 'teacher' ? 'Cán bộ Giảng viên' : 'Quản trị viên (Super Admin)'}</b>
+            <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>VAI TRÒ & ĐƠN VỊ</Text>
+            <b>{currentUser.role === 'student' ? '🎓 Sinh Viên' : currentUser.role === 'teacher' ? '👨‍🏫 Giảng Viên' : '⚡ Quản trị viên (Admin)'}</b>
+            <div style={{ fontSize: 12, color: '#0958d9' }}>{currentUser.faculty_name}</div>
           </div>
         ),
         disabled: true
       },
       { type: 'divider' },
       {
-        key: 'switch_student',
+        key: 'switch_sv_cntt',
         icon: <SwapOutlined />,
-        label: 'Chuyển sang: Sinh viên (Student)',
-        onClick: () => handleChangeRole('student')
+        label: 'SV: Trần Văn Nam (Khoa CNTT - 66.CNTT-1)',
+        onClick: () => handleChangeRole('student', 'CNTT')
       },
       {
-        key: 'switch_teacher',
+        key: 'switch_sv_kt',
         icon: <SwapOutlined />,
-        label: 'Chuyển sang: Giảng viên (Teacher)',
-        onClick: () => handleChangeRole('teacher')
+        label: 'SV: Lê Thị Mỹ Duyên (Khoa Kinh Tế - 66.QTKD-1)',
+        onClick: () => handleChangeRole('student', 'KT')
+      },
+      {
+        key: 'switch_sv_nn',
+        icon: <SwapOutlined />,
+        label: 'SV: Hoàng Thùy Linh (Khoa Ngoại Ngữ - 66.NNA-1)',
+        onClick: () => handleChangeRole('student', 'NN')
+      },
+      {
+        key: 'switch_gv_cntt',
+        icon: <SwapOutlined />,
+        label: 'GV: TS. Hoàng Đức Em (Khoa CNTT)',
+        onClick: () => handleChangeRole('teacher', 'CNTT')
+      },
+      {
+        key: 'switch_gv_kt',
+        icon: <SwapOutlined />,
+        label: 'GV: TS. Nguyễn Thị Hồng (Khoa Kinh Tế)',
+        onClick: () => handleChangeRole('teacher', 'KT')
+      },
+      {
+        key: 'switch_gv_nn',
+        icon: <SwapOutlined />,
+        label: 'GV: TS. Phạm Thu Hương (Khoa Ngoại Ngữ)',
+        onClick: () => handleChangeRole('teacher', 'NN')
       },
       {
         key: 'switch_admin',
         icon: <SwapOutlined />,
-        label: 'Chuyển sang: Quản trị viên (Admin)',
+        label: 'Quản trị viên Toàn Trường (Admin)',
         onClick: () => handleChangeRole('admin')
       },
       { type: 'divider' },
@@ -484,7 +583,7 @@ function App() {
                 Học kỳ 1 • 2026-2027
               </Tag>
               <Tag color="cyan" style={{ borderRadius: 6, padding: '3px 8px' }}>
-                Khoa CNTT — Lớp 66.CNTT-1 (IT101)
+                {currentUser?.faculty_name || 'Toàn trường'} {currentUser?.class_name ? `• ${currentUser.class_name}` : ''}
               </Tag>
             </Space>
           </Space>
@@ -541,7 +640,7 @@ function App() {
               <CourseHierarchySelector
                 selectedSectionId={selectedSectionId}
                 onSelectSection={(id) => setSelectedSectionId(id)}
-                role={currentUser.role === 'student' ? 'STUDENT' : 'LECTURER'}
+                currentUser={currentUser}
               />
               <AcademicLmsWorkspace
                 sectionId={selectedSectionId}
@@ -594,7 +693,7 @@ function App() {
 
           {/* Màn hình 5: Sổ điểm & Mẫu in chuẩn Bộ GD&ĐT */}
           {activeMenuKey === 'moet_gradebook' && (
-            <MoetGradebookView currentUser={currentUser} />
+            <MoetGradebookView currentUser={currentUser} selectedSectionId={selectedSectionId} />
           )}
 
           {/* Màn hình 6: Khung đào tạo độc lập */}

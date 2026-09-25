@@ -14,13 +14,14 @@ import apiClient from '../../services/apiClient';
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
 
-export default function MoetGradebookView({ currentUser }) {
+export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }) {
   const isStudent = currentUser?.role === 'student';
 
   // Chế độ xem: Nếu là sinh viên, chỉ cho phép INDIVIDUAL_STUDENT hoặc ACCUMULATED_ALL (KHÔNG có CLASS_SECTION)
   const [reportType, setReportType] = useState(isStudent ? 'INDIVIDUAL_STUDENT' : 'CLASS_SECTION');
   const [selectedSemester, setSelectedSemester] = useState('ALL');
   const [selectedStudentId, setSelectedStudentId] = useState(currentUser?.id || 1);
+  const [currentSectionId, setCurrentSectionId] = useState(selectedSectionId || 1);
   
   // Dữ liệu lớp học phần (dành cho Admin / Giảng viên)
   const [classData, setClassData] = useState(null);
@@ -32,22 +33,30 @@ export default function MoetGradebookView({ currentUser }) {
   const [fontSizePt, setFontSizePt] = useState(13);
   const [showSignatures, setShowSignatures] = useState(true);
 
+  // Đồng bộ khi prop selectedSectionId thay đổi
+  useEffect(() => {
+    if (selectedSectionId) {
+      setCurrentSectionId(selectedSectionId);
+    }
+  }, [selectedSectionId]);
+
   // Tải dữ liệu lớp học phần (dành cho Admin/Giảng viên)
   const fetchClassGrades = async () => {
     setLoading(true);
     try {
-      const res = await apiClient.get('/academic/enterprise/transcripts/class/1');
+      const res = await apiClient.get(`/academic/enterprise/transcripts/class/${currentSectionId}`);
       if (res && res.success) {
         setClassData(res.data);
       }
     } catch (e) {
       setClassData({
-        section_id: 1,
+        section_id: currentSectionId,
         course_name: 'Nhập môn Lập trình C/C++ (IT101)',
         class_name: '66.CNTT-1',
-        semester: 'Học kỳ 1 - Năm học 2024-2025',
+        semester: 'Học kỳ 1 - Năm học 2026-2027',
         faculty: 'Khoa Công Nghệ Thông Tin',
         lecturer: 'TS. Hoàng Đức Em',
+        dean: 'PGS. TS. Trần Mạnh Tuấn',
         students: [
           { student_id: 1, student_code: '261IT001', full_name: 'Trần Văn Nam', attendance_score: 9.5, assignment_score: 9.0, midterm_score: 9.0, final_exam_score: 9.5, course_score_10: 9.35, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', gpa_semester_4: 3.91, gpa_accumulated_4: 3.87, academic_rank: 'XUẤT SẮC' },
           { student_id: 2, student_code: '261IT002', full_name: 'Nguyễn Thị Mai', attendance_score: 10.0, assignment_score: 9.5, midterm_score: 9.5, final_exam_score: 9.0, course_score_10: 9.30, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', gpa_semester_4: 3.90, gpa_accumulated_4: 3.82, academic_rank: 'XUẤT SẮC' },
@@ -63,7 +72,7 @@ export default function MoetGradebookView({ currentUser }) {
   // Tải dữ liệu bảng điểm cá nhân chi tiết theo từng học kỳ
   const fetchStudentTranscript = async () => {
     setLoading(true);
-    const targetStudentId = isStudent ? (currentUser?.id || 1) : selectedStudentId;
+    const targetStudentId = isStudent ? (currentUser?.username || currentUser?.student_code || currentUser?.id || 1) : selectedStudentId;
     try {
       const res = await apiClient.get(`/academic/enterprise/transcripts/student/${targetStudentId}?semester=${selectedSemester}`);
       if (res && res.success && res.data) {
@@ -139,7 +148,7 @@ export default function MoetGradebookView({ currentUser }) {
     } else {
       fetchClassGrades();
     }
-  }, [reportType, selectedSemester, selectedStudentId, currentUser]);
+  }, [reportType, selectedSemester, selectedStudentId, currentUser, currentSectionId]);
 
   const handlePrint = () => {
     window.print();
@@ -328,7 +337,7 @@ export default function MoetGradebookView({ currentUser }) {
   return (
     <div>
       {/* THANH ĐIỀU HƯỚNG & HÀNH ĐỘNG */}
-      <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+      <Row justify="space-between" align="middle" style={{ marginBottom: 16 }} className="no-print">
         <Col>
           <Title level={4} style={{ margin: 0 }}>
             <FileTextOutlined style={{ color: '#10b981', marginRight: 8 }} />
@@ -378,9 +387,41 @@ export default function MoetGradebookView({ currentUser }) {
         </Col>
       </Row>
 
+      {/* BỘ LỌC LỚP HỌC PHẦN DÀNH CHO ADMIN / GIẢNG VIÊN */}
+      {!isStudent && reportType === 'CLASS_SECTION' && (
+        <Card size="small" className="no-print" style={{ borderRadius: 10, marginBottom: 16, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+          <Row gutter={[16, 12]} align="middle" justify="space-between">
+            <Col xs={24} md={16}>
+              <Space wrap align="center">
+                <BookOutlined style={{ color: '#0958d9', fontSize: 16 }} />
+                <Text strong>Chọn Lớp Học Phần Xem Sổ Điểm:</Text>
+                <Select
+                  value={currentSectionId}
+                  onChange={setCurrentSectionId}
+                  style={{ width: 380 }}
+                >
+                  <Option value={1}>[IT101] Nhập môn Lập trình C/C++ (66.CNTT-1 - Khoa CNTT)</Option>
+                  <Option value={2}>[IT201] Cơ sở Dữ liệu (66.CNTT-2 - Khoa CNTT)</Option>
+                  <Option value={3}>[IT301] Cấu trúc Dữ liệu & Giải thuật (65.CNTT-1 - Khoa CNTT)</Option>
+                  <Option value={4}>[BA101] Kinh Tế Vi Mô (66.QTKD-1 - Khoa Kinh Tế)</Option>
+                  <Option value={5}>[BA102] Quản Trị Học Đại Cương (66.QTKD-1 - Khoa Kinh Tế)</Option>
+                  <Option value={6}>[ENG101] Tiếng Anh Học Thuật 1 (66.NNA-1 - Khoa Ngoại Ngữ)</Option>
+                  <Option value={7}>[EE101] Kỹ Thuật Mạch Điện Tử & IoT (66.DDT-1 - Khoa Điện - ĐT)</Option>
+                  <Option value={8}>[TOU101] Tổng Quan Du Lịch & Lữ Hành (66.DL-1 - Khoa Du Lịch)</Option>
+                </Select>
+              </Space>
+            </Col>
+            <Col xs={24} md={8} style={{ textAlign: 'right' }}>
+              <Tag color="cyan">Sĩ số: {classData?.students?.length || 0} học viên</Tag>
+              <Tag color="blue">{classData?.faculty}</Tag>
+            </Col>
+          </Row>
+        </Card>
+      )}
+
       {/* BỘ LỌC HỌC KỲ DÀNH CHO BẢNG ĐIỂM CÁ NHÂN */}
       {(isStudent || reportType !== 'CLASS_SECTION') && (
-        <Card size="small" style={{ borderRadius: 10, marginBottom: 16, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+        <Card size="small" className="no-print" style={{ borderRadius: 10, marginBottom: 16, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
           <Row gutter={[16, 12]} align="middle" justify="space-between">
             <Col xs={24} md={14}>
               <Space wrap align="center">
@@ -409,12 +450,13 @@ export default function MoetGradebookView({ currentUser }) {
                   <Select
                     value={selectedStudentId}
                     onChange={setSelectedStudentId}
-                    style={{ width: 230 }}
+                    style={{ width: 320 }}
                   >
-                    <Option value={1}>261IT001 - Trần Văn Nam</Option>
-                    <Option value={2}>261IT002 - Nguyễn Thị Mai</Option>
-                    <Option value={3}>261IT003 - Lê Hoàng Long</Option>
-                    <Option value={5}>261IT005 - Vũ Hải Đăng</Option>
+                    <Option value={3}>261IT001 - Trần Văn Nam (Khoa CNTT)</Option>
+                    <Option value={7}>261BA001 - Lê Thị Mỹ Duyên (Khoa Kinh Tế)</Option>
+                    <Option value={9}>261NN001 - Hoàng Thùy Linh (Khoa Ngoại Ngữ)</Option>
+                    <Option value={11}>261DT001 - Nguyễn Văn Cường (Khoa Điện Tử)</Option>
+                    <Option value={13}>261DL001 - Phan Quỳnh Trang (Khoa Du Lịch)</Option>
                   </Select>
                 </Space>
               </Col>
@@ -425,7 +467,7 @@ export default function MoetGradebookView({ currentUser }) {
 
       {/* THÔNG TIN HỒ SƠ SINH VIÊN VÀ BẢNG THỐNG KÊ KPI HỌC TẬP */}
       {(isStudent || reportType !== 'CLASS_SECTION') && currentStudent && (
-        <Card style={{ borderRadius: 12, marginBottom: 16, background: '#ffffff', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+        <Card className="no-print" style={{ borderRadius: 12, marginBottom: 16, background: '#ffffff', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
           <Row gutter={[24, 16]} align="middle">
             <Col xs={24} md={8}>
               <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
@@ -493,7 +535,7 @@ export default function MoetGradebookView({ currentUser }) {
       )}
 
       {/* CÔNG CỤ TÙY BIẾN TRANG IN (PRINT CUSTOMIZER) */}
-      <Card size="small" style={{ borderRadius: 8, background: '#f8fafc', marginBottom: 16 }}>
+      <Card size="small" className="no-print" style={{ borderRadius: 8, background: '#f8fafc', marginBottom: 16 }}>
         <Row gutter={[16, 8]} align="middle">
           <Col xs={24} md={6}>
             <Space>
@@ -522,7 +564,7 @@ export default function MoetGradebookView({ currentUser }) {
       </Card>
 
       {/* CONTAINER BẢNG ĐIỂM CHUẨN IN ẤN QUỐC GIA (PRINTABLE CONTAINER) */}
-      <Card style={{ borderRadius: 12, fontSize: `${fontSizePt}px` }}>
+      <Card className="moet-printable-sheet" style={{ borderRadius: 12, fontSize: `${fontSizePt}px`, background: '#ffffff' }}>
         {/* TIÊU ĐỀ CHUẨN BỘ GIÁO DỤC VÀ ĐÀO TẠO */}
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <Row justify="space-between">
@@ -530,7 +572,7 @@ export default function MoetGradebookView({ currentUser }) {
               <div style={{ fontWeight: 700, fontSize: `${fontSizePt}px` }}>BỘ GIÁO DỤC VÀ ĐÀO TẠO</div>
               <div style={{ fontWeight: 800, fontSize: `${fontSizePt + 1}px` }}>TRƯỜNG ĐẠI HỌC CÔNG NGHỆ TECHCORP</div>
               <div style={{ fontSize: `${fontSizePt - 2}px`, color: '#64748b' }}>
-                {isStudent || reportType !== 'CLASS_SECTION' ? currentStudent?.faculty_name : classData?.faculty}
+                {isStudent || reportType !== 'CLASS_SECTION' ? (currentStudent?.faculty_name || 'Khoa Đào tạo') : (classData?.faculty || 'Khoa Đào tạo')}
               </div>
             </Col>
             <Col span={14} style={{ textAlign: 'center' }}>
@@ -607,7 +649,7 @@ export default function MoetGradebookView({ currentUser }) {
 
         {/* CHỮ KÝ PHÊ DUYỆT 3 BÊN */}
         {showSignatures && (
-          <div style={{ marginTop: 36, pageBreakInside: 'avoid' }}>
+          <div className="moet-signatures-block" style={{ marginTop: 36, pageBreakInside: 'avoid' }}>
             <Row gutter={16} style={{ textAlign: 'center' }}>
               <Col span={8}>
                 <div style={{ fontWeight: 700, fontSize: `${fontSizePt}px` }}>
@@ -617,7 +659,7 @@ export default function MoetGradebookView({ currentUser }) {
                   (Ký và ghi rõ họ tên)
                 </div>
                 <div style={{ fontWeight: 700 }}>
-                  {isStudent || reportType !== 'CLASS_SECTION' ? currentStudent?.advisor : classData?.lecturer}
+                  {isStudent || reportType !== 'CLASS_SECTION' ? (currentStudent?.advisor || 'TS. Hoàng Đức Em') : (classData?.lecturer || 'TS. Hoàng Đức Em')}
                 </div>
               </Col>
               <Col span={8}>
@@ -627,7 +669,9 @@ export default function MoetGradebookView({ currentUser }) {
                 <div style={{ fontSize: `${fontSizePt - 2}px`, fontStyle: 'italic', marginBottom: 55 }}>
                   (Ký và xác nhận)
                 </div>
-                <div style={{ fontWeight: 700 }}>PGS. TS. Trần Mạnh Tuấn</div>
+                <div style={{ fontWeight: 700 }}>
+                  {isStudent || reportType !== 'CLASS_SECTION' ? (currentStudent?.dean_name || 'PGS. TS. Trần Mạnh Tuấn') : (classData?.dean || classData?.head_of_department || 'PGS. TS. Trần Mạnh Tuấn')}
+                </div>
               </Col>
               <Col span={8}>
                 <div style={{ fontWeight: 700, fontSize: `${fontSizePt}px` }}>TRƯỞNG PHÒNG ĐÀO TẠO</div>

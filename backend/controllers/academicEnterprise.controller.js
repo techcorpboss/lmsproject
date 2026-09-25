@@ -2,6 +2,7 @@
 // Enterprise Academic Modules: Catalogs, Teaching Assignments, AI Studio, 3 Exam Papers, Moderation & MOET Gradebooks
 const { User, Course, CourseSection } = require('../models');
 const aiService = require('../services/aiService');
+const { studentDetailedTranscripts, sectionClassTranscripts } = require('./transcriptData');
 
 // ==================== 1. CÁC DANH MỤC CƠ SỞ CHUẨN ĐẠI HỌC ====================
 
@@ -195,7 +196,10 @@ let classesCatalog = [
   { id: 3, class_code: '66.HTTT-1', class_name: 'Lớp 66.HTTT-1', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', major_id: 'HTTT', major_name: 'Hệ thống Thông tin', cohort: 'K66', academic_year: '2026-2027', total_students: 45, advisor: 'TS. Hoàng Đức Em', room: 'P.501-A3' },
   { id: 4, class_code: '66.KHMT-1', class_name: 'Lớp 66.KHMT-1', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', major_id: 'KHMT', major_name: 'Khoa học Máy tính', cohort: 'K66', academic_year: '2026-2027', total_students: 38, advisor: 'TS. Lê Hải Đăng', room: 'P.502-A3' },
   { id: 5, class_code: '68.KHMT-1', class_name: 'Lớp 68.KHMT-1', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', major_id: 'KHMT_AI', major_name: 'Khoa học Máy tính & AI', cohort: 'K68', academic_year: '2024-2028', total_students: 44, advisor: 'PGS. TS. Trần Mạnh Tuấn', room: 'P.301-A2' },
-  { id: 6, class_code: '66.QTKD-1', class_name: 'Lớp 66.QTKD-1', faculty_id: 'KT', faculty_name: 'Khoa Kinh Tế & QTKD', major_id: 'QTKD', major_name: 'Quản trị Kinh doanh', cohort: 'K66', academic_year: '2026-2027', total_students: 50, advisor: 'ThS. Vũ Nam', room: 'P.201-B1' }
+  { id: 6, class_code: '66.QTKD-1', class_name: 'Lớp 66.QTKD-1', faculty_id: 'KT', faculty_name: 'Khoa Kinh Tế & QTKD', major_id: 'QTKD', major_name: 'Quản trị Kinh doanh', cohort: 'K66', academic_year: '2026-2027', total_students: 50, advisor: 'ThS. Vũ Nam', room: 'P.201-B1' },
+  { id: 7, class_code: '66.NNA-1', class_name: 'Lớp 66.NNA-1', faculty_id: 'NN', faculty_name: 'Khoa Ngoại Ngữ', major_id: 'NNA', major_name: 'Ngôn ngữ Anh', cohort: 'K66', academic_year: '2026-2027', total_students: 35, advisor: 'TS. Phạm Thu Hương', room: 'P.301-C' },
+  { id: 8, class_code: '66.DDT-1', class_name: 'Lớp 66.DDT-1', faculty_id: 'DDT', faculty_name: 'Khoa Điện - Điện Tử & Tự Động Hóa', major_id: 'DDT', major_name: 'Kỹ thuật Điện - Điện tử & IoT', cohort: 'K66', academic_year: '2026-2027', total_students: 36, advisor: 'TS. Bùi Quốc Thái', room: 'Lab Vi Mạch' },
+  { id: 9, class_code: '66.DL-1', class_name: 'Lớp 66.DL-1', faculty_id: 'DL', faculty_name: 'Khoa Du Lịch & Khách Sạn', major_id: 'DL', major_name: 'Quản trị Dịch vụ Du lịch & Lữ hành', cohort: 'K66', academic_year: '2026-2027', total_students: 38, advisor: 'ThS. Đỗ Quang Vinh', room: 'P.202-D' }
 ];
 
 // 1.3. Danh mục Môn học theo Khoa, Ngành và Học kỳ
@@ -218,7 +222,16 @@ let coursesCatalog = [
   { id: 13, faculty_id: 'KT', major_id: 'QTKD', semester: 1, code: 'BA101', name: 'Kinh Tế Vi Mô (Microeconomics)', credits: 3, theory_hours: 45, practice_hours: 0, prerequisites: 'Không', knowledge_block: 'Cơ sở khối ngành', is_compulsory: true },
   { id: 14, faculty_id: 'KT', major_id: 'QTKD', semester: 1, code: 'BA102', name: 'Quản Trị Học Đại Cương (Principles of Management)', credits: 3, theory_hours: 45, practice_hours: 0, prerequisites: 'Không', knowledge_block: 'Cơ sở ngành', is_compulsory: true },
   { id: 15, faculty_id: 'KT', major_id: 'QTKD', semester: 2, code: 'BA201', name: 'Kinh Tế Vĩ Mô (Macroeconomics)', credits: 3, theory_hours: 45, practice_hours: 0, prerequisites: 'BA101', knowledge_block: 'Cơ sở khối ngành', is_compulsory: true },
-  { id: 16, faculty_id: 'KT', major_id: 'QTKD', semester: 2, code: 'BA202', name: 'Nguyên Lý Kế Toán Doanh Nghiệp', credits: 3, theory_hours: 30, practice_hours: 30, prerequisites: 'Không', knowledge_block: 'Cơ sở ngành', is_compulsory: true }
+  { id: 16, faculty_id: 'KT', major_id: 'QTKD', semester: 2, code: 'BA202', name: 'Nguyên Lý Kế Toán Doanh Nghiệp', credits: 3, theory_hours: 30, practice_hours: 30, prerequisites: 'Không', knowledge_block: 'Cơ sở ngành', is_compulsory: true },
+
+  // Khoa Ngoại Ngữ
+  { id: 17, faculty_id: 'NN', major_id: 'NNA', semester: 1, code: 'ENG101', name: 'Tiếng Anh Học Thuật 1 (General English B1)', credits: 4, theory_hours: 40, practice_hours: 40, prerequisites: 'Không', knowledge_block: 'Đại cương', is_compulsory: true },
+
+  // Khoa Điện - Điện Tử & Tự Động Hóa
+  { id: 18, faculty_id: 'DDT', major_id: 'DDT', semester: 1, code: 'EE101', name: 'Kỹ Thuật Mạch Điện Tử & IoT', credits: 3, theory_hours: 30, practice_hours: 30, prerequisites: 'Không', knowledge_block: 'Cơ sở ngành', is_compulsory: true },
+
+  // Khoa Du Lịch & Khách Sạn
+  { id: 19, faculty_id: 'DL', major_id: 'DL', semester: 1, code: 'TOU101', name: 'Tổng Quan Du Lịch & Dịch Vụ Lữ Hành', credits: 3, theory_hours: 45, practice_hours: 0, prerequisites: 'Không', knowledge_block: 'Cơ sở ngành', is_compulsory: true }
 ];
 
 // 1.4. Danh sách Phân công giảng dạy hiện hành
@@ -281,6 +294,90 @@ let assignmentsStore = [
     cohort: 'K65',
     semester: 'Học kỳ 1 (2026-2027)',
     assigned_by: 'Hội đồng Khoa CNTT',
+    can_author_lms: true,
+    can_grade: true,
+    can_appraise_exams: true,
+    created_at: new Date()
+  },
+  {
+    id: 4,
+    lecturer_id: 6,
+    lecturer_username: 'hong.nt',
+    lecturer_name: 'TS. Nguyễn Thị Hồng',
+    faculty_id: 'KT',
+    major_id: 'QTKD',
+    major_name: 'Quản trị Kinh doanh',
+    course_id: 13,
+    course_code: 'BA101',
+    course_name: 'Kinh Tế Vi Mô (Microeconomics)',
+    class_id: 6,
+    class_name: '66.QTKD-1',
+    cohort: 'K66',
+    semester: 'Học kỳ 1 (2026-2027)',
+    assigned_by: 'Hội đồng Khoa Kinh Tế & QTKD',
+    can_author_lms: true,
+    can_grade: true,
+    can_appraise_exams: true,
+    created_at: new Date()
+  },
+  {
+    id: 5,
+    lecturer_id: 8,
+    lecturer_username: 'huong.pt',
+    lecturer_name: 'TS. Phạm Thu Hương',
+    faculty_id: 'NN',
+    major_id: 'NNA',
+    major_name: 'Ngôn ngữ Anh',
+    course_id: 17,
+    course_code: 'ENG101',
+    course_name: 'Tiếng Anh Học Thuật 1 (General English B1)',
+    class_id: 7,
+    class_name: '66.NNA-1',
+    cohort: 'K66',
+    semester: 'Học kỳ 1 (2026-2027)',
+    assigned_by: 'Hội đồng Khoa Ngoại Ngữ',
+    can_author_lms: true,
+    can_grade: true,
+    can_appraise_exams: true,
+    created_at: new Date()
+  },
+  {
+    id: 6,
+    lecturer_id: 10,
+    lecturer_username: 'thai.bq',
+    lecturer_name: 'TS. Bùi Quốc Thái',
+    faculty_id: 'DDT',
+    major_id: 'DDT',
+    major_name: 'Kỹ thuật Điện - Điện tử & IoT',
+    course_id: 18,
+    course_code: 'EE101',
+    course_name: 'Kỹ Thuật Mạch Điện Tử & IoT',
+    class_id: 8,
+    class_name: '66.DDT-1',
+    cohort: 'K66',
+    semester: 'Học kỳ 1 (2026-2027)',
+    assigned_by: 'Hội đồng Khoa Điện - Điện Tử',
+    can_author_lms: true,
+    can_grade: true,
+    can_appraise_exams: true,
+    created_at: new Date()
+  },
+  {
+    id: 7,
+    lecturer_id: 12,
+    lecturer_username: 'vinh.dq',
+    lecturer_name: 'ThS. Đỗ Quang Vinh',
+    faculty_id: 'DL',
+    major_id: 'DL',
+    major_name: 'Quản trị Dịch vụ Du lịch & Lữ hành',
+    course_id: 19,
+    course_code: 'TOU101',
+    course_name: 'Tổng Quan Du Lịch & Dịch Vụ Lữ Hành',
+    class_id: 9,
+    class_name: '66.DL-1',
+    cohort: 'K66',
+    semester: 'Học kỳ 1 (2026-2027)',
+    assigned_by: 'Hội đồng Khoa Du Lịch & KS',
     can_author_lms: true,
     can_grade: true,
     can_appraise_exams: true,
@@ -575,12 +672,28 @@ exports.getHierarchyAndAssignments = async (req, res) => {
   try {
     const userRole = (req.user && req.user.role) || 'admin';
     const username = (req.user && req.user.username) || '';
+    const facultyId = (req.user && req.user.faculty_id) || '';
+    const className = (req.user && req.user.class_name) || '';
 
     let userAssignments = assignmentsStore;
     if (userRole === 'teacher') {
-      userAssignments = assignmentsStore.filter(
-        a => a.lecturer_username === username || a.lecturer_username === 'teacher'
-      );
+      userAssignments = assignmentsStore.filter(a => {
+        if (username === 'admin') return true;
+        if (a.lecturer_username === username) return true;
+        if ((username === 'teacher' || username === 'gv_cntt') && (a.lecturer_username === 'teacher' || a.lecturer_username === 'em.hd')) return true;
+        if (username === 'gv_kinhte' && (a.lecturer_username === 'hong.nt' || a.faculty_id === 'KT')) return true;
+        if (username === 'gv_ngoaingu' && (a.lecturer_username === 'huong.pt' || a.faculty_id === 'NN')) return true;
+        if (username === 'gv_dientu' && (a.lecturer_username === 'thai.bq' || a.faculty_id === 'DDT')) return true;
+        if (username === 'gv_dulich' && (a.lecturer_username === 'vinh.dq' || a.faculty_id === 'DL')) return true;
+        if (facultyId && facultyId !== 'ALL' && a.faculty_id === facultyId) return true;
+        return false;
+      });
+    } else if (userRole === 'student') {
+      userAssignments = assignmentsStore.filter(a => {
+        if (className && a.class_name === className) return true;
+        if (facultyId && facultyId !== 'ALL' && a.faculty_id === facultyId) return true;
+        return false;
+      });
     }
 
     res.json({
@@ -604,6 +717,30 @@ exports.getHierarchyAndAssignments = async (req, res) => {
             dean: 'TS. Nguyễn Thị Hồng',
             majors: [
               { id: 'QTKD', name: 'Quản trị Kinh doanh', code: '7340101' }
+            ]
+          },
+          {
+            id: 'NN',
+            name: 'Khoa Ngoại Ngữ',
+            dean: 'TS. Phạm Thu Hương',
+            majors: [
+              { id: 'NNA', name: 'Ngôn ngữ Anh', code: '7220201' }
+            ]
+          },
+          {
+            id: 'DDT',
+            name: 'Khoa Điện - Điện Tử & Tự Động Hóa',
+            dean: 'TS. Bùi Quốc Thái',
+            majors: [
+              { id: 'DDT', name: 'Kỹ thuật Điện - Điện tử & IoT', code: '7510301' }
+            ]
+          },
+          {
+            id: 'DL',
+            name: 'Khoa Du Lịch & Khách Sạn',
+            dean: 'ThS. Đỗ Quang Vinh',
+            majors: [
+              { id: 'DL', name: 'Quản trị Dịch vụ Du lịch & Lữ hành', code: '7810103' }
             ]
           }
         ],
@@ -887,109 +1024,6 @@ exports.signAppraisalMinutes = async (req, res) => {
 };
 
 // 2.10. Sổ điểm sinh viên chi tiết theo từng học kỳ & toàn khóa tích lũy (TT 08/2021)
-const studentDetailedTranscripts = {
-  '1': {
-    student_id: 1,
-    student_code: '261IT001',
-    full_name: 'Trần Văn Nam',
-    birth_date: '15/08/2004',
-    gender: 'Nam',
-    email: 'nam.tv@techcorp.edu.vn',
-    class_name: '66.CNTT-1',
-    faculty_id: 'CNTT',
-    faculty_name: 'Khoa Công Nghệ Thông Tin',
-    major_id: 'CNPM',
-    major_code: '7480103',
-    major_name: 'Kỹ thuật Phần mềm (Software Engineering)',
-    cohort: 'K66',
-    training_system: 'Đại học Chính quy (Theo hệ thống tín chỉ TT 08/2021)',
-    advisor: 'TS. Hoàng Đức Em',
-    cumulative: {
-      total_credits_registered: 64,
-      total_credits_passed: 64,
-      cpa_10: 8.88,
-      cpa_4: 3.87,
-      academic_rank: 'XUẤT SẮC',
-      status: 'Bình thường (Đạt chuẩn TT 08/2021/TT-BGDĐT)'
-    },
-    semesters: [
-      {
-        semester_number: 1,
-        semester_name: 'Học kỳ 1 - Năm học 2024-2025',
-        academic_year: '2024-2025',
-        total_credits: 16,
-        passed_credits: 16,
-        gpa_10: 8.95,
-        gpa_4: 3.91,
-        academic_rank: 'XUẤT SẮC',
-        courses: [
-          { code: 'MLN101', name: 'Triết học Mác - Lênin', credits: 3, attendance_score: 9.0, assignment_score: 8.5, midterm_score: 8.0, final_exam_score: 8.5, course_score_10: 8.45, course_score_letter: 'B+', course_score_4: 3.5, course_result: 'ĐẠT (PASS)' },
-          { code: 'ENG101', name: 'Tiếng Anh Học Thuật 1 (B1)', credits: 3, attendance_score: 9.5, assignment_score: 9.0, midterm_score: 8.5, final_exam_score: 9.0, course_score_10: 8.95, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
-          { code: 'MATH101', name: 'Toán Cao Cấp 1 (Giải tích 1)', credits: 3, attendance_score: 9.0, assignment_score: 9.0, midterm_score: 9.0, final_exam_score: 9.0, course_score_10: 9.00, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
-          { code: 'MATH102', name: 'Đại Số Tuyến Tính & Hình Học', credits: 3, attendance_score: 10.0, assignment_score: 9.0, midterm_score: 8.5, final_exam_score: 9.0, course_score_10: 9.00, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
-          { code: 'IT101', name: 'Nhập Môn Lập Trình C/C++', credits: 4, attendance_score: 9.5, assignment_score: 9.0, midterm_score: 9.0, final_exam_score: 9.5, course_score_10: 9.35, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' }
-        ]
-      },
-      {
-        semester_number: 2,
-        semester_name: 'Học kỳ 2 - Năm học 2024-2025',
-        academic_year: '2024-2025',
-        total_credits: 15,
-        passed_credits: 15,
-        gpa_10: 8.66,
-        gpa_4: 3.80,
-        academic_rank: 'XUẤT SẮC',
-        courses: [
-          { code: 'MLN102', name: 'Kinh tế Chính trị Mác - Lênin', credits: 2, attendance_score: 9.0, assignment_score: 8.5, midterm_score: 8.0, final_exam_score: 8.0, course_score_10: 8.20, course_score_letter: 'B+', course_score_4: 3.5, course_result: 'ĐẠT (PASS)' },
-          { code: 'ENG102', name: 'Tiếng Anh Học Thuật 2 (B2)', credits: 3, attendance_score: 9.5, assignment_score: 8.5, midterm_score: 8.5, final_exam_score: 8.5, course_score_10: 8.65, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
-          { code: 'PHYS101', name: 'Vật Lý Đại Cương & Thí Nghiệm', credits: 3, attendance_score: 8.5, assignment_score: 8.0, midterm_score: 8.0, final_exam_score: 8.5, course_score_10: 8.30, course_score_letter: 'B+', course_score_4: 3.5, course_result: 'ĐẠT (PASS)' },
-          { code: 'IT201', name: 'Cơ Sở Dữ Liệu (Database Systems)', credits: 3, attendance_score: 10.0, assignment_score: 9.5, midterm_score: 9.0, final_exam_score: 9.0, course_score_10: 9.20, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
-          { code: 'IT301', name: 'Cấu Trúc Dữ Liệu & Giải Thuật', credits: 3, attendance_score: 9.5, assignment_score: 9.0, midterm_score: 8.5, final_exam_score: 9.0, course_score_10: 8.95, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
-          { code: 'PE101', name: 'Giáo Dục Thể Chất 1 (Bóng chuyền)', credits: 1, attendance_score: 10.0, assignment_score: 9.0, midterm_score: 9.0, final_exam_score: 9.0, course_score_10: 9.10, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' }
-        ]
-      },
-      {
-        semester_number: 3,
-        semester_name: 'Học kỳ 3 - Năm học 2025-2026',
-        academic_year: '2025-2026',
-        total_credits: 18,
-        passed_credits: 18,
-        gpa_10: 8.92,
-        gpa_4: 3.86,
-        academic_rank: 'XUẤT SẮC',
-        courses: [
-          { code: 'MLN103', name: 'Chủ Nghĩa Xã Hội Khoa Học', credits: 2, attendance_score: 9.0, assignment_score: 8.0, midterm_score: 8.0, final_exam_score: 8.0, course_score_10: 8.10, course_score_letter: 'B+', course_score_4: 3.5, course_result: 'ĐẠT (PASS)' },
-          { code: 'IT302', name: 'Kiến Trúc Máy Tính & Hợp Ngữ', credits: 3, attendance_score: 9.0, assignment_score: 8.5, midterm_score: 8.5, final_exam_score: 9.0, course_score_10: 8.80, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
-          { code: 'IT401', name: 'Mạng Máy Tính & Truyền Số Liệu', credits: 3, attendance_score: 9.5, assignment_score: 9.0, midterm_score: 9.0, final_exam_score: 9.0, course_score_10: 9.10, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
-          { code: 'SE301', name: 'Công Nghệ Phần Mềm & Quản Lý Dự Án', credits: 3, attendance_score: 10.0, assignment_score: 9.5, midterm_score: 9.5, final_exam_score: 9.5, course_score_10: 9.60, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
-          { code: 'SE302', name: 'Lập Trình Hướng Đối Tượng Nâng Cao (OOP)', credits: 4, attendance_score: 9.5, assignment_score: 9.0, midterm_score: 9.0, final_exam_score: 9.5, course_score_10: 9.30, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
-          { code: 'STAT101', name: 'Xác Suất Thống Kê & Phân Tích Dữ Liệu', credits: 3, attendance_score: 9.0, assignment_score: 8.0, midterm_score: 8.0, final_exam_score: 8.5, course_score_10: 8.35, course_score_letter: 'B+', course_score_4: 3.5, course_result: 'ĐẠT (PASS)' }
-        ]
-      },
-      {
-        semester_number: 4,
-        semester_name: 'Học kỳ 4 - Năm học 2025-2026',
-        academic_year: '2025-2026',
-        total_credits: 15,
-        passed_credits: 15,
-        gpa_10: 8.96,
-        gpa_4: 3.90,
-        academic_rank: 'XUẤT SẮC',
-        courses: [
-          { code: 'HCM101', name: 'Tư Tưởng Hồ Chí Minh', credits: 2, attendance_score: 9.5, assignment_score: 8.5, midterm_score: 8.5, final_exam_score: 8.5, course_score_10: 8.65, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
-          { code: 'IT402', name: 'Hệ Điều Hành (Operating Systems)', credits: 3, attendance_score: 9.0, assignment_score: 8.5, midterm_score: 8.5, final_exam_score: 9.0, course_score_10: 8.80, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
-          { code: 'SE401', name: 'Phát Triển Ứng Dụng Web Fullstack (MERN)', credits: 4, attendance_score: 10.0, assignment_score: 9.5, midterm_score: 9.5, final_exam_score: 9.5, course_score_10: 9.60, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
-          { code: 'AI202', name: 'Lập Trình Python Cho Khoa Học Dữ Liệu & AI', credits: 3, attendance_score: 9.5, assignment_score: 9.0, midterm_score: 9.0, final_exam_score: 9.0, course_score_10: 9.10, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)' },
-          { code: 'IT303', name: 'An Toàn Thông Tin & Mật Mã Ứng Dụng', credits: 3, attendance_score: 9.0, assignment_score: 8.5, midterm_score: 8.0, final_exam_score: 8.5, course_score_10: 8.45, course_score_letter: 'B+', course_score_4: 3.5, course_result: 'ĐẠT (PASS)' }
-        ]
-      }
-    ]
-  }
-};
-
-// Aliases cho các ID người dùng khác nhau của sinh viên (id 3: đăng nhập, id 1: dữ liệu mẫu)
-studentDetailedTranscripts['3'] = studentDetailedTranscripts['1'];
-
 exports.getStudentTranscript = async (req, res) => {
   try {
     const { studentId } = req.params;
@@ -1051,6 +1085,7 @@ exports.getStudentTranscript = async (req, res) => {
           class_name: transcript.class_name,
           training_system: transcript.training_system,
           advisor: transcript.advisor,
+          dean_name: transcript.dean_name,
           email: transcript.email
         },
         semesters_list: transcript.semesters.map(s => ({
@@ -1074,16 +1109,14 @@ exports.getStudentTranscript = async (req, res) => {
 };
 
 exports.getClassTranscript = async (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      section_id: 1,
-      course_name: 'Nhập môn Lập trình C/C++ (IT101)',
-      class_name: '66.CNTT-1',
-      semester: 'Học kỳ 1 - Năm học 2026-2027',
-      faculty: 'Khoa Công Nghệ Thông Tin',
-      lecturer: 'TS. Hoàng Đức Em',
-      students: transcriptData.students
-    }
-  });
+  try {
+    const sectionId = Number(req.params.sectionId || req.query.sectionId || 1);
+    const transcript = sectionClassTranscripts[sectionId] || sectionClassTranscripts[1];
+    res.json({
+      success: true,
+      data: transcript
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 };
