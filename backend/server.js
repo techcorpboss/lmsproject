@@ -158,9 +158,16 @@ io.on('connection', (socket) => {
 // Cổng chạy dịch vụ (mặc định 5009 trên máy chủ)
 const PORT = process.env.PORT || 5009;
 
+const seedEnterpriseLecturers = require('./scripts/seed_lecturers_users');
+
 sequelize.authenticate()
-  .then(() => {
+  .then(async () => {
     console.log('[MySQL] Database connected successfully to lms_db.');
+    try {
+      await seedEnterpriseLecturers();
+    } catch (e) {
+      console.warn('[Seed Warning] Lecturer auto-seed warning:', e.message);
+    }
     server.listen(PORT, () => {
       console.log(`[LMS Platform] Server is running on port ${PORT}`);
       console.log(`[Domain] Configured for: https://lms.techcorp.info.vn`);

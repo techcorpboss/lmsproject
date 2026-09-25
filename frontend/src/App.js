@@ -345,12 +345,12 @@ function App() {
             icon: <RocketOutlined style={{ color: '#fa541c' }} />,
             label: 'Học Liệu SCORM & xAPI'
           },
-          {
-            key: 'lti_tools_hub',
-            icon: <ApartmentOutlined style={{ color: '#52c41a' }} />,
-            label: 'Công Cụ LTI 1.3 (3rd Party)'
-          },
-          ...(isTeacherOrAdmin ? [
+          ...(isAdmin ? [
+            {
+              key: 'lti_tools_hub',
+              icon: <ApartmentOutlined style={{ color: '#52c41a' }} />,
+              label: 'Công Cụ LTI 1.3 (3rd Party)'
+            },
             {
               key: 'hierarchy_assignment',
               icon: <ApartmentOutlined />,
@@ -362,14 +362,22 @@ function App() {
             icon: <FileTextOutlined />,
             label: isTeacherOrAdmin ? 'Sổ Điểm & Bảng Điểm In' : 'Bảng Điểm Cá Nhân'
           },
-          {
-            key: 'curriculum_framework',
-            icon: <AuditOutlined />,
-            label: isTeacherOrAdmin ? 'Khung Đào Tạo Độc Lập' : 'Chương Trình Đào Tạo Của Tôi'
-          }
+          ...(isAdmin ? [
+            {
+              key: 'curriculum_framework',
+              icon: <AuditOutlined />,
+              label: 'Khung Đào Tạo Độc Lập'
+            }
+          ] : (currentUser.role === 'student' ? [
+            {
+              key: 'curriculum_framework',
+              icon: <AuditOutlined />,
+              label: 'Chương Trình Đào Tạo Của Tôi'
+            }
+          ] : []))
         ]
       },
-      ...(isTeacherOrAdmin ? [
+      ...(isAdmin ? [
         {
           key: 'sub_catalogs',
           icon: <BankOutlined style={{ color: '#13c2c2' }} />,

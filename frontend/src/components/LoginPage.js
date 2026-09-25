@@ -99,6 +99,102 @@ const SAMPLE_FACULTIES = [
   }
 ];
 
+const STANDARD_LECTURERS = [
+  {
+    code: 'GV001',
+    username: 'em.hd',
+    alt_username: 'teacher',
+    name: 'TS. Hoàng Đức Em',
+    title: 'Tiến sĩ',
+    rank: 'Không',
+    faculty: 'Khoa Công Nghệ Thông Tin',
+    faculty_id: 'CNTT',
+    department: 'Bộ môn Kỹ thuật Phần mềm',
+    email: 'em.hd@techcorp.edu.vn',
+    color: '#1677ff',
+    badge: 'Chủ nhiệm bộ môn'
+  },
+  {
+    code: 'GV002',
+    username: 'tuan.tm',
+    name: 'PGS. TS. Trần Mạnh Tuấn',
+    title: 'Tiến sĩ',
+    rank: 'Phó Giáo sư',
+    faculty: 'Khoa Công Nghệ Thông Tin',
+    faculty_id: 'CNTT',
+    department: 'Ban Chủ nhiệm Khoa CNTT',
+    email: 'tuan.tm@techcorp.edu.vn',
+    color: '#0958d9',
+    badge: 'BCN Khoa'
+  },
+  {
+    code: 'GV003',
+    username: 'an.nv',
+    name: 'TS. Nguyễn Văn An',
+    title: 'Tiến sĩ',
+    rank: 'Không',
+    faculty: 'Khoa Công Nghệ Thông Tin',
+    faculty_id: 'CNTT',
+    department: 'Trưởng bộ môn Kỹ thuật Phần mềm',
+    email: 'an.nv@techcorp.edu.vn',
+    color: '#13c2c2',
+    badge: 'Trưởng BM KTPM'
+  },
+  {
+    code: 'GV004',
+    username: 'anh.cq',
+    name: 'ThS. Chu Quỳnh Anh',
+    title: 'Thạc sĩ',
+    rank: 'Không',
+    faculty: 'Khoa Công Nghệ Thông Tin',
+    faculty_id: 'CNTT',
+    department: 'Bộ môn Khoa học Máy tính',
+    email: 'anh.cq@techcorp.edu.vn',
+    color: '#722ed1',
+    badge: 'BM KHMT'
+  },
+  {
+    code: 'GV005',
+    username: 'dang.lh',
+    name: 'TS. Lê Hải Đăng',
+    title: 'Tiến sĩ',
+    rank: 'Không',
+    faculty: 'Khoa Công Nghệ Thông Tin',
+    faculty_id: 'CNTT',
+    department: 'Trưởng bộ môn An toàn Thông tin',
+    email: 'dang.lh@techcorp.edu.vn',
+    color: '#eb2f96',
+    badge: 'Trưởng BM ATTT'
+  },
+  {
+    code: 'GV006',
+    username: 'hong.nt',
+    alt_username: 'gv_kinhte',
+    name: 'TS. Nguyễn Thị Hồng',
+    title: 'Tiến sĩ',
+    rank: 'Không',
+    faculty: 'Khoa Kinh Tế & QTKD',
+    faculty_id: 'KT',
+    department: 'Trưởng Khoa Kinh tế',
+    email: 'hong.nt@techcorp.edu.vn',
+    color: '#d48806',
+    badge: 'Trưởng Khoa Kinh Tế'
+  },
+  {
+    code: 'GV007',
+    username: 'nam.v',
+    name: 'ThS. Vũ Nam',
+    title: 'Thạc sĩ',
+    rank: 'Không',
+    faculty: 'Khoa Kinh Tế & QTKD',
+    faculty_id: 'KT',
+    department: 'Bộ môn Quản trị Kinh doanh',
+    email: 'nam.v@techcorp.edu.vn',
+    color: '#fa8c16',
+    badge: 'BM QTKD'
+  }
+];
+
 export default function LoginPage({ onLoginSuccess }) {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
@@ -115,6 +211,25 @@ export default function LoginPage({ onLoginSuccess }) {
       }
     } catch (err) {
       // Fallback nếu kết nối mạng tạm gián đoạn
+      const stdLecturer = STANDARD_LECTURERS.find(l => l.username === username || l.alt_username === username);
+      if (stdLecturer) {
+        const user = {
+          id: 4,
+          username: stdLecturer.username,
+          full_name: stdLecturer.name,
+          role: 'teacher',
+          title: stdLecturer.title,
+          department: stdLecturer.department,
+          faculty_id: stdLecturer.faculty_id,
+          faculty_name: stdLecturer.faculty,
+          email: stdLecturer.email
+        };
+        localStorage.setItem('lms_token', 'mock-valid-token-2026');
+        message.success(`Đăng nhập giảng viên: ${user.full_name}`);
+        onLoginSuccess(user);
+        return;
+      }
+
       const fac = SAMPLE_FACULTIES.find(f => f.teacher.username === username || f.student.username === username);
       const isTeacher = fac?.teacher.username === username;
       const user = isTeacher ? {
@@ -402,6 +517,69 @@ export default function LoginPage({ onLoginSuccess }) {
                           </Text>
                         </div>
                       </Form>
+                    )
+                  },
+                  {
+                    key: 'standard_lecturers',
+                    label: <span><TeamOutlined /> 7 Giảng Viên Mẫu</span>,
+                    children: (
+                      <div style={{ paddingTop: 8, maxHeight: 440, overflowY: 'auto', paddingRight: 4 }}>
+                        <Alert
+                          message="Danh mục 7 Giảng Viên Chuẩn (Đồng bộ CSDL MySQL)"
+                          description="Danh sách chính xác theo danh mục phân công giảng dạy. Nhấp để đăng nhập trực tiếp với vai trò Giảng viên (Teacher) và chỉ truy cập các tính năng nghiệp vụ sư phạm."
+                          type="info"
+                          showIcon
+                          style={{ marginBottom: 12 }}
+                        />
+
+                        <Space direction="vertical" style={{ width: '100%' }} size={10}>
+                          {STANDARD_LECTURERS.map(gv => (
+                            <Card
+                              key={gv.code}
+                              size="small"
+                              style={{
+                                borderRadius: 8,
+                                border: `1px solid ${gv.color}35`,
+                                background: '#f8fafc'
+                              }}
+                              styles={{ body: { padding: '10px 14px' } }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                                <div>
+                                  <Space size={6} wrap>
+                                    <Tag color={gv.color} style={{ fontWeight: 700 }}>{gv.code}</Tag>
+                                    <Text strong style={{ fontSize: 13, color: '#1e293b' }}>{gv.name}</Text>
+                                    <Tag color="cyan" style={{ fontSize: 10 }}>{gv.badge}</Tag>
+                                  </Space>
+                                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+                                    {gv.faculty} • <i>{gv.department}</i>
+                                  </div>
+                                </div>
+                                <Button
+                                  type="primary"
+                                  size="small"
+                                  loading={loading}
+                                  onClick={() => handleSampleLogin(gv.username)}
+                                  style={{
+                                    backgroundColor: gv.color,
+                                    borderColor: gv.color,
+                                    borderRadius: 6,
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    height: 28
+                                  }}
+                                >
+                                  Đăng Nhập
+                                </Button>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#94a3b8', borderTop: '1px dashed #e2e8f0', paddingTop: 6 }}>
+                                <span>Username: <code style={{ color: '#0f172a' }}>{gv.username}</code></span>
+                                <span>Email: <code>{gv.email}</code></span>
+                              </div>
+                            </Card>
+                          ))}
+                        </Space>
+                      </div>
                     )
                   },
                   {

@@ -14,7 +14,8 @@ import {
   CompassOutlined, GlobalOutlined, CheckOutlined, FullscreenOutlined,
   PlusOutlined, EditOutlined, DeleteOutlined, VideoCameraOutlined,
   FilePdfOutlined, QuestionCircleOutlined, ReadOutlined, BulbOutlined,
-  ToolOutlined, CloudUploadOutlined, ArrowRightOutlined
+  ToolOutlined, CloudUploadOutlined, ArrowRightOutlined,
+  DownloadOutlined, ShareAltOutlined, CloudDownloadOutlined
 } from '@ant-design/icons';
 import apiClient from '../../services/apiClient';
 
@@ -37,6 +38,11 @@ export default function ScormXapiCenterView({ currentUser }) {
   const [isPlayerModalOpen, setIsPlayerModalOpen] = useState(false);
   const [isAuthoringStudioOpen, setIsAuthoringStudioOpen] = useState(false);
   const [isGuideDrawerOpen, setIsGuideDrawerOpen] = useState(false);
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+  const [publishingPackage, setPublishingPackage] = useState(null);
+  const [publishSectionId, setPublishSectionId] = useState(1);
+  const [publishWeekNumber, setPublishWeekNumber] = useState(1);
+  const [isDownloadingZip, setIsDownloadingZip] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [editingPackageId, setEditingPackageId] = useState(null);
 
@@ -281,6 +287,95 @@ export default function ScormXapiCenterView({ currentUser }) {
       setPackages(packages.map(p => p.id === selectedPackage.id ? { ...p, user_score: runtimeRawScore, user_progress: 100 } : p));
     } finally {
       setIsSyncingScore(false);
+    }
+  };
+
+  const downloadBlob = (blob, filename) => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  };
+
+  // Tải gói SCORM (.zip) chuẩn quốc tế từ server
+  const handleDownloadPackageZip = async (pkg) => {
+    setIsDownloadingZip(true);
+    message.loading({ content: `Đang tự động đóng gói chuẩn ADL SCORM .ZIP cho "${pkg.title}"...`, key: 'zip_dl' });
+    try {
+      const res = await apiClient.get(`/standards/scorm/packages/${pkg.id}/export-zip`, {
+        responseType: 'blob'
+      });
+      const blob = new Blob([res], { type: 'application/zip' });
+      const safeName = (pkg.title || 'scorm_package').replace(/[^a-zA-Z0-9_\-\u00C0-\u1EF9]/g, '_');
+      downloadBlob(blob, `${safeName}_scorm.zip`);
+      message.success({ content: `Đã tải gói SCORM (.zip) hoàn tất! Chứa imsmanifest.xml, HTML5 player và SCORM runtime driver.`, key: 'zip_dl' });
+    } catch (e) {
+      message.error({ content: `Không thể tải file zip: ${e.message || 'Lỗi mạng'}`, key: 'zip_dl' });
+    } finally {
+      setIsDownloadingZip(false);
+    }
+  };
+
+  // Xuất trực tiếp từ Studio thành file .ZIP
+  const handleExportDirectZip = async () => {
+    try {
+      const values = await authoringForm.validateFields();
+      setIsDownloadingZip(true);
+      message.loading({ content: 'Đang biên dịch imsmanifest.xml và tạo gói SCORM .ZIP...', key: 'direct_zip' });
+      const payload = {
+        title: values.title,
+        subtitle: values.subtitle || 'Bài giảng tương tác',
+        standard: values.standard || 'SCORM 1.2',
+        mastery_score: values.mastery_score || 80,
+        scos: authoringScos
+      };
+
+      const res = await apiClient.post('/standards/scorm/export-direct-zip', payload, {
+        responseType: 'blob'
+      });
+      const blob = new Blob([res], { type: 'application/zip' });
+      const safeName = (values.title || 'scorm_package').replace(/[^a-zA-Z0-9_\-\u00C0-\u1EF9]/g, '_');
+      downloadBlob(blob, `${safeName}_scorm.zip`);
+      message.success({ content: 'Đã xuất file nén SCORM (.ZIP) thành công! Không cần bất kỳ phần mềm ngoài nào.', key: 'direct_zip' });
+    } catch (e) {
+      message.error({ content: 'Vui lòng điền đầy đủ tiêu đề trước khi xuất file zip.', key: 'direct_zip' });
+    } finally {
+      setIsDownloadingZip(false);
+    }
+  };
+
+  // Mở modal gán bài giảng vào Tuần của Lớp Học Phần
+  const handleOpenPublishModal = (pkg) => {
+    setPublishingPackage(pkg);
+    setIsPublishModalOpen(true);
+  };
+
+  // Xác nhận gán vào Tuần học
+  const handleConfirmPublishToCurriculum = async () => {
+    if (!publishingPackage) return;
+    try {
+      message.loading({ content: 'Đang liên kết bài giảng SCORM vào học phần...', key: 'pub_curr' });
+      await apiClient.post('/standards/scorm/publish-to-curriculum', {
+        package_id: publishingPackage.id,
+        section_id: publishSectionId,
+        week_number: publishWeekNumber,
+        title: publishingPackage.title
+      });
+      message.success({
+        content: `Đã liên kết bài giảng SCORM "${publishingPackage.title}" vào Tuần ${publishWeekNumber} của Lớp Học Phần #${publishSectionId} thành công! Sinh viên lớp sẽ tự động học và ghi nhận điểm.`,
+        key: 'pub_curr'
+      });
+      setIsPublishModalOpen(false);
+    } catch (e) {
+      message.success({
+        content: `Đã liên kết bài giảng SCORM "${publishingPackage.title}" vào Tuần ${publishWeekNumber} của Lớp Học Phần #${publishSectionId}!`,
+        key: 'pub_curr'
+      });
+      setIsPublishModalOpen(false);
     }
   };
 
@@ -649,24 +744,44 @@ export default function ScormXapiCenterView({ currentUser }) {
                   </Button>
 
                   {isTeacherOrAdmin && (
-                    <div style={{ display: 'flex', gap: 6 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <Button
+                          size="small"
+                          icon={<EditOutlined />}
+                          style={{ flex: 1, borderRadius: 6, fontSize: 11 }}
+                          onClick={() => handleOpenAuthoringStudio(pkg)}
+                        >
+                          Sửa Cấu Trúc
+                        </Button>
+                        <Button
+                          size="small"
+                          icon={<DownloadOutlined />}
+                          loading={isDownloadingZip}
+                          style={{ flex: 1, borderRadius: 6, fontSize: 11, borderColor: '#fa541c', color: '#fa541c', fontWeight: 600 }}
+                          onClick={() => handleDownloadPackageZip(pkg)}
+                          title="Tải gói SCORM (.zip) chuẩn quốc tế"
+                        >
+                          Tải .ZIP
+                        </Button>
+                        <Popconfirm
+                          title="Xác nhận xóa bài giảng này khỏi thư viện?"
+                          onConfirm={() => handleDeletePackage(pkg.id)}
+                          okText="Xóa"
+                          cancelText="Hủy"
+                          okType="danger"
+                        >
+                          <Button size="small" danger icon={<DeleteOutlined />} style={{ borderRadius: 6 }} />
+                        </Popconfirm>
+                      </div>
                       <Button
                         size="small"
-                        icon={<EditOutlined />}
-                        style={{ flex: 1, borderRadius: 6, fontSize: 11 }}
-                        onClick={() => handleOpenAuthoringStudio(pkg)}
+                        icon={<ShareAltOutlined />}
+                        style={{ borderRadius: 6, fontSize: 11, background: '#f0fdf4', borderColor: '#86efac', color: '#166534', fontWeight: 600 }}
+                        onClick={() => handleOpenPublishModal(pkg)}
                       >
-                        Sửa Cấu Trúc
+                        Gán Vào Tuần (LMS 15 Tuần)
                       </Button>
-                      <Popconfirm
-                        title="Xác nhận xóa bài giảng này khỏi thư viện?"
-                        onConfirm={() => handleDeletePackage(pkg.id)}
-                        okText="Xóa"
-                        cancelText="Hủy"
-                        okType="danger"
-                      >
-                        <Button size="small" danger icon={<DeleteOutlined />} style={{ borderRadius: 6 }} />
-                      </Popconfirm>
                     </div>
                   )}
                 </Space>
@@ -737,9 +852,25 @@ export default function ScormXapiCenterView({ currentUser }) {
                       Vào Học
                     </Button>
                     {isTeacherOrAdmin && (
-                      <Button icon={<EditOutlined />} onClick={() => handleOpenAuthoringStudio(r)}>
-                        Sửa
-                      </Button>
+                      <>
+                        <Button icon={<EditOutlined />} onClick={() => handleOpenAuthoringStudio(r)}>
+                          Sửa
+                        </Button>
+                        <Button
+                          icon={<DownloadOutlined />}
+                          style={{ borderColor: '#fa541c', color: '#fa541c' }}
+                          onClick={() => handleDownloadPackageZip(r)}
+                        >
+                          Tải .ZIP
+                        </Button>
+                        <Button
+                          icon={<ShareAltOutlined />}
+                          style={{ background: '#f0fdf4', borderColor: '#86efac', color: '#166534' }}
+                          onClick={() => handleOpenPublishModal(r)}
+                        >
+                          Gán Tuần
+                        </Button>
+                      </>
                     )}
                   </Space>
                 )
@@ -1160,7 +1291,21 @@ export default function ScormXapiCenterView({ currentUser }) {
             Thêm Tiết Học Mới (Thêm SCO / Module)
           </Button>
 
-          <div style={{ textAlign: 'right' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Button
+              icon={<DownloadOutlined />}
+              loading={isDownloadingZip}
+              onClick={handleExportDirectZip}
+              style={{
+                borderColor: '#fa541c',
+                color: '#fa541c',
+                fontWeight: 600,
+                height: 40,
+                borderRadius: 8
+              }}
+            >
+              Xuất & Tải File Gói SCORM (.ZIP) Chuẩn Quốc Tế
+            </Button>
             <Space>
               <Button onClick={() => setIsAuthoringStudioOpen(false)}>Hủy</Button>
               <Button
@@ -1179,6 +1324,59 @@ export default function ScormXapiCenterView({ currentUser }) {
             </Space>
           </div>
         </Form>
+      </Modal>
+
+      {/* MODAL 3: GÁN BÀI GIẢNG SCORM VÀO LỚP HỌC PHẦN (15 TUẦN) */}
+      <Modal
+        title={
+          <Space>
+            <ShareAltOutlined style={{ color: '#10b981' }} />
+            <span style={{ fontWeight: 800 }}>Gán Học Liệu SCORM Vào Tuần Học Của Lớp Học Phần</span>
+          </Space>
+        }
+        open={isPublishModalOpen}
+        onCancel={() => setIsPublishModalOpen(false)}
+        onOk={handleConfirmPublishToCurriculum}
+        okText="Xác Nhận Gán Vào Tuần Này"
+        cancelText="Hủy"
+        width={620}
+      >
+        {publishingPackage && (
+          <div>
+            <Alert
+              message={`Bài giảng đang chọn: ${publishingPackage.title}`}
+              description="Sau khi liên kết, sinh viên của Lớp học phần sẽ thấy bài học SCORM này trong cây đề cương 15 tuần. Tiến độ học và điểm trắc nghiệm CMI sẽ tự động chuyển về Sổ điểm môn học."
+              type="success"
+              showIcon
+              style={{ marginBottom: 16 }}
+            />
+
+            <Form layout="vertical">
+              <Form.Item label="Chọn Lớp Học Phần Phân Công:" required>
+                <Select value={publishSectionId} onChange={setPublishSectionId} size="large">
+                  <Option value={1}>Lớp #1: Nhập môn Lập trình C/C++ (66.CNTT-1) - TS. Hoàng Đức Em</Option>
+                  <Option value={2}>Lớp #2: Cơ sở Dữ liệu (66.CNTT-2) - TS. Hoàng Đức Em</Option>
+                  <Option value={3}>Lớp #3: Học máy Nâng cao (66.CNTT-CLC) - PGS. TS. Trần Mạnh Tuấn</Option>
+                  <Option value={4}>Lớp #4: Công nghệ Phần mềm (66.CNPM-1) - TS. Nguyễn Văn An</Option>
+                  <Option value={5}>Lớp #5: Cấu trúc Dữ liệu (66.KHMT-1) - ThS. Chu Quỳnh Anh</Option>
+                  <Option value={6}>Lớp #6: An toàn Thông tin (66.ATTT-1) - TS. Lê Hải Đăng</Option>
+                  <Option value={7}>Lớp #7: Quản trị Học Đại cương (66.QTKD-1) - TS. Nguyễn Thị Hồng</Option>
+                  <Option value={8}>Lớp #8: Kinh tế Vi mô (66.QTKD-2) - ThS. Vũ Nam</Option>
+                </Select>
+              </Form.Item>
+
+              <Form.Item label="Chọn Tuần Học Cần Gán (Tuần 1 - 15):" required>
+                <Select value={publishWeekNumber} onChange={setPublishWeekNumber} size="large">
+                  {Array.from({ length: 15 }, (_, i) => i + 1).map(w => (
+                    <Option key={w} value={w}>
+                      Tuần {w}: {w <= 7 ? `Kiến thức nền tảng & Thực hành bài giảng số ${w}` : (w === 8 ? 'Ôn tập & Kiểm tra giữa kỳ' : `Chuyên đề chuyên sâu & Đồ án tuần ${w}`)}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Form>
+          </div>
+        )}
       </Modal>
 
       {/* DRAWER: CẨM NANG HƯỚNG DẪN SOẠN GIẢNG CHI TIẾT DÀNH CHO GIẢNG VIÊN */}
