@@ -213,12 +213,31 @@ const academicTrainingApi = {
     }
   },
 
-  // 7. Lưu / Xóa Tài liệu
+  // 6.1. Trợ lý AI tự động soạn Slide bài giảng
+  aiGenerateSlides: async (payload) => {
+    try {
+      return await apiClient.post('/academic/lms/ai-generate-slides', payload);
+    } catch (e) {
+      console.error('[AI Slide API] error:', e);
+      throw e;
+    }
+  },
+
+  // 7. Lưu / Xóa / Cập nhật Slide Tài liệu
   saveLmsMaterial: async (payload) => {
     try {
       return await apiClient.post('/academic/lms/materials', payload);
     } catch (e) {}
     return { success: true, message: 'Đã lưu tài liệu học tập thành công!' };
+  },
+
+  updateMaterialSlides: async (materialId, slides) => {
+    try {
+      return await apiClient.put(`/academic/lms/materials/${materialId}/slides`, { slides });
+    } catch (e) {
+      console.error('[Update Slides API] error:', e);
+      throw e;
+    }
   },
 
   deleteLmsMaterial: async (id) => {

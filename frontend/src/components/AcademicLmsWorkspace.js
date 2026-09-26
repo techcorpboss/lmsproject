@@ -20,7 +20,8 @@ import {
   ZoomInOutlined, ZoomOutOutlined, CopyOutlined, FileWordOutlined,
   FilePdfOutlined, DesktopOutlined, LeftOutlined, RightOutlined,
   FilePptOutlined, SoundOutlined, ForwardOutlined, LockOutlined,
-  UnlockOutlined, UploadOutlined
+  UnlockOutlined, UploadOutlined, SaveOutlined, ArrowUpOutlined,
+  ArrowDownOutlined, BulbOutlined
 } from '@ant-design/icons';
 import academicTrainingApi from '../services/academicTrainingApi';
 
@@ -110,6 +111,125 @@ function AcademicLmsWorkspace({
   const [isViewerFullscreen, setIsViewerFullscreen] = useState(false);
   const [fontSizeOffset, setFontSizeOffset] = useState(0);
 
+  // Quản lý Chế độ Soạn thảo Slide (PowerPoint Editor) & AI Tạo Slide
+  const [slideEditMode, setSlideEditMode] = useState(false); // false: Trình chiếu, true: Soạn thảo PowerPoint
+  const [deckSlides, setDeckSlides] = useState([]); // Danh sách slides hiện hành
+  const [isAiSlideModalOpen, setIsAiSlideModalOpen] = useState(false);
+  const [isGeneratingAiSlides, setIsGeneratingAiSlides] = useState(false);
+  const [isSavingDeckSlides, setIsSavingDeckSlides] = useState(false);
+  const [aiSlideTopic, setAiSlideTopic] = useState('');
+  const [aiSlideClo, setAiSlideClo] = useState('CLO1: Nắm vững lý thuyết, CLO2: Vận dụng thực tiễn');
+  const [aiSlideCount, setAiSlideCount] = useState(8);
+  const [aiSlideStyle, setAiSlideStyle] = useState('STANDARD');
+
+  // Khởi tạo bộ 8 slide chuẩn sư phạm Đại học
+  const getDefaultDeckSlides = useCallback((title, courseName, teacherName) => [
+    {
+      slideNum: 1,
+      title: title || 'Giới thiệu Tổng quan Bài học',
+      sub: `Học phần: ${courseName || 'Môn học'} • Khoa Công nghệ Thông tin`,
+      bullets: [
+        `Giảng viên biên soạn & giảng dạy: ${teacherName || 'Giảng viên'}`,
+        'Hệ thống E-Learning chuẩn Thông tư 08/2021/TT-BGDĐT',
+        'Trường Đại học Công nghệ TCU - Trung tâm Học liệu Số',
+        'Mục tiêu học phần: Nắm vững kiến thức nền tảng và năng lực vận dụng thực tiễn'
+      ],
+      footerTag: 'BÀI GIẢNG ĐIỆN TỬ CHÍNH THỨC',
+      notes: 'Giảng viên giới thiệu tổng quan, quy chế đánh giá điểm thành phần và mục tiêu sinh viên cần đạt sau buổi học.'
+    },
+    {
+      slideNum: 2,
+      title: 'Mục Tiêu & Chuẩn Đầu Ra Học Phần (CLO / PLO)',
+      sub: 'Định vị năng lực người học sau khi hoàn thành bài học',
+      bullets: [
+        'CLO1: Hiểu và giải thích được các khái niệm, kiến trúc và nguyên lý vận hành cốt lõi.',
+        'CLO2: Vận dụng các công cụ, phương pháp và mô hình thực hành vào bài toán cụ thể.',
+        'CLO3: Phát triển kỹ năng tư duy phản biện, làm việc nhóm và giải quyết vấn đề kỹ thuật.',
+        'Đánh giá kết quả thông qua bài tập quá trình (Quiz) và đồ án thực tế.'
+      ],
+      footerTag: 'CHUẨN ĐẦU RA AUN-QA',
+      notes: 'Nhấn mạnh vai trò của CLO trong việc hoàn thành chuẩn đầu ra toàn khóa (PLO).'
+    },
+    {
+      slideNum: 3,
+      title: 'Nền Tảng Lý Thuyết Cốt Lõi',
+      sub: 'Hệ thống hóa kiến thức trọng tâm',
+      bullets: [
+        'Bản chất và định nghĩa khoa học của các thành phần trong hệ thống.',
+        'Mối liên hệ giữa mô hình lý thuyết và kiến trúc hệ thống hiện đại.',
+        'Các tiêu chuẩn kỹ thuật quốc tế (IEEE / ISO / W3C) liên quan.',
+        'Phân tích ưu điểm và hạn chế của từng phương pháp tiếp cận.'
+      ],
+      footerTag: 'KIẾN THỨC NỀN TẢNG',
+      notes: 'Phân tích kỹ lưỡng các tiên đề, định nghĩa và định lý nền tảng.'
+    },
+    {
+      slideNum: 4,
+      title: 'Kiến Trúc & Quy Trình Vận Hành',
+      sub: 'Sơ đồ khối và luồng xử lý dữ liệu chi tiết',
+      bullets: [
+        'Bước 1: Tiếp nhận yêu cầu nghiệp vụ và cấu trúc dữ liệu đầu vào.',
+        'Bước 2: Xử lý logic nghiệp vụ, tính toán và chuyển đổi trạng thái.',
+        'Bước 3: Tối ưu hóa hiệu năng, lưu trữ an toàn và quản lý phiên làm việc.',
+        'Bước 4: Trả về kết quả xác thực và đồng bộ dữ liệu thời gian thực.'
+      ],
+      footerTag: 'QUY TRÌNH HỆ THỐNG',
+      notes: 'Vẽ sơ đồ khối trên bảng hoặc trình chiếu animation để sinh viên hình dung luồng dữ liệu.'
+    },
+    {
+      slideNum: 5,
+      title: 'Nghiên Cứu Tình Huống Thực Tế (Case Study)',
+      sub: 'Áp dụng vào hệ thống quản lý tại các doanh nghiệp và trường học lớn',
+      bullets: [
+        'Bài toán thực tế: Xử lý tải cao đồng thời và đảm bảo tính toàn vẹn dữ liệu.',
+        'Giải pháp thiết kế: Kiến trúc mô-đun hóa, bộ nhớ đệm và phân quyền nhiều lớp.',
+        'Kết quả đạt được: Độ trễ phản hồi giảm 60%, độ tin cậy đạt chuẩn 99.9%.',
+        'Bài học kinh nghiệm: Tầm quan trọng của việc chuẩn hóa dữ liệu từ ban đầu.'
+      ],
+      footerTag: 'VÍ DỤ THỰC TIỄN',
+      notes: 'Đặt câu hỏi tình huống mở để sinh viên thảo luận nhóm trong 5 phút.'
+    },
+    {
+      slideNum: 6,
+      title: 'Lỗi Thường Gặp & Phương Pháp Gỡ Lỗi (Troubleshooting)',
+      sub: 'Hướng dẫn tự khắc phục sự cố trong quá trình học và làm bài tập',
+      bullets: [
+        'Lỗi xung đột kiểu dữ liệu và sai lệch tham số đầu vào.',
+        'Lỗi không đồng bộ trạng thái khi thực hiện nhiều giao dịch song song.',
+        'Quy trình debug chuẩn: Kiểm tra log hệ thống, cô lập nguyên nhân và chạy test case.',
+        'Khuyến nghị: Luôn viết tài liệu chú thích code và kiểm thử trước khi nộp.'
+      ],
+      footerTag: 'KỸ NĂNG DEBUG',
+      notes: 'Trình diễn thao tác debug trên IDE thực tế.'
+    },
+    {
+      slideNum: 7,
+      title: 'Bài Tập Vận Dụng & Yêu Cầu Thực Hành',
+      sub: 'Nhiệm vụ bắt buộc học viên cần hoàn thành trong tuần',
+      bullets: [
+        'Nhiệm vụ 1: Đọc lại các phần tài liệu tham khảo được chỉ định trong đề cương.',
+        'Nhiệm vụ 2: Hoàn thành bài trắc nghiệm đánh giá quá trình (Quiz 10 điểm).',
+        'Nhiệm vụ 3: Tham gia thảo luận trên diễn đàn lớp học với ít nhất 1 câu hỏi/ý kiến.',
+        'Thời hạn nộp bài: Trước buổi học trực tiếp của tuần kế tiếp.'
+      ],
+      footerTag: 'NHIỆM VỤ HỌC TẬP',
+      notes: 'Quy định rõ thời hạn và hình thức nộp bài.'
+    },
+    {
+      slideNum: 8,
+      title: 'Tổng Kết Học Phần & Tài Liệu Nghiên Cứu Tiếp Theo',
+      sub: 'Khép lại bài giảng và chuẩn bị cho chủ đề tuần sau',
+      bullets: [
+        'Tóm tắt 3 thông điệp quan trọng nhất của bài học hôm nay.',
+        'Xem trước giáo trình chương tiếp theo tại mục Tài liệu E-Learning.',
+        'Liên hệ giải đáp: Đặt câu hỏi tại Diễn đàn hoặc qua email giảng viên.',
+        'Chúc các bạn học viên học tập hiệu quả và đạt kết quả xuất sắc!'
+      ],
+      footerTag: 'KẾT THÚC BÀI HỌC',
+      notes: 'Lời chào và dặn dò sinh viên tự học.'
+    }
+  ], []);
+
   // Mở Trình Chiếu / Đọc Học Liệu Đa Phương Tiện
   const handleOpenContentViewer = (material) => {
     setActiveViewerMaterial(material);
@@ -118,7 +238,181 @@ function AcademicLmsWorkspace({
     setIsVideoPlaying(true);
     setVideoProgressPercent(35);
     setFontSizeOffset(0);
+    setSlideEditMode(false);
+
+    // Nạp slides nếu có sẵn trong material, nếu không khởi tạo mẫu chuẩn
+    if (material && Array.isArray(material.slides) && material.slides.length > 0) {
+      setDeckSlides(material.slides);
+    } else {
+      setDeckSlides(getDefaultDeckSlides(material?.title, lmsData.course?.name, lecturerName));
+    }
+
+    setAiSlideTopic(material?.title || 'Kiến thức cốt lõi tuần học');
     setIsContentViewerOpen(true);
+  };
+
+  // Thao tác chỉnh sửa Slide: Thêm Slide mới
+  const handleAddSlide = () => {
+    const newSlide = {
+      slideNum: deckSlides.length + 1,
+      title: 'Tiêu Đề Slide Mới',
+      sub: 'Nhập phụ đề hoặc lời dẫn giải tại đây',
+      bullets: [
+        'Ý chính 1 cần trình bày...',
+        'Ý chính 2 cần làm rõ...',
+        'Ví dụ minh họa hoặc trường hợp ứng dụng...'
+      ],
+      footerTag: 'NỘI DUNG MỚI',
+      notes: 'Ghi chú thuyết trình của giảng viên...'
+    };
+    const updated = [...deckSlides];
+    const insertIdx = currentSlidePage;
+    updated.splice(insertIdx, 0, newSlide);
+    const renumbered = updated.map((s, idx) => ({ ...s, slideNum: idx + 1 }));
+    setDeckSlides(renumbered);
+    setCurrentSlidePage(insertIdx + 1);
+    message.success(`Đã thêm Slide #${insertIdx + 1} thành công!`);
+  };
+
+  // Xóa Slide hiện tại
+  const handleDeleteSlide = () => {
+    if (deckSlides.length <= 1) {
+      message.warning('Bộ slide phải có tối thiểu 1 slide!');
+      return;
+    }
+    const targetIdx = currentSlidePage - 1;
+    const updated = deckSlides.filter((_, idx) => idx !== targetIdx);
+    const renumbered = updated.map((s, idx) => ({ ...s, slideNum: idx + 1 }));
+    setDeckSlides(renumbered);
+    setCurrentSlidePage(Math.max(1, Math.min(targetIdx + 1, renumbered.length)));
+    message.success('Đã xóa slide thành công!');
+  };
+
+  // Di chuyển thứ tự Slide
+  const handleMoveSlide = (dir) => {
+    const idx = currentSlidePage - 1;
+    if (dir === 'UP' && idx === 0) return;
+    if (dir === 'DOWN' && idx === deckSlides.length - 1) return;
+    const targetIdx = dir === 'UP' ? idx - 1 : idx + 1;
+    const updated = [...deckSlides];
+    const temp = updated[idx];
+    updated[idx] = updated[targetIdx];
+    updated[targetIdx] = temp;
+    const renumbered = updated.map((s, i) => ({ ...s, slideNum: i + 1 }));
+    setDeckSlides(renumbered);
+    setCurrentSlidePage(targetIdx + 1);
+  };
+
+  // Cập nhật trường của slide hiện tại
+  const handleSlideFieldChange = (field, val) => {
+    const idx = currentSlidePage - 1;
+    if (idx < 0 || idx >= deckSlides.length) return;
+    const updated = [...deckSlides];
+    updated[idx] = { ...updated[idx], [field]: val };
+    setDeckSlides(updated);
+  };
+
+  // Cập nhật từng bullet point
+  const handleSlideBulletChange = (bIdx, val) => {
+    const idx = currentSlidePage - 1;
+    if (idx < 0 || idx >= deckSlides.length) return;
+    const updated = [...deckSlides];
+    const bullets = [...(updated[idx].bullets || [])];
+    bullets[bIdx] = val;
+    updated[idx] = { ...updated[idx], bullets };
+    setDeckSlides(updated);
+  };
+
+  // Thêm bullet point
+  const handleAddBullet = () => {
+    const idx = currentSlidePage - 1;
+    if (idx < 0 || idx >= deckSlides.length) return;
+    const updated = [...deckSlides];
+    const bullets = [...(updated[idx].bullets || []), 'Ý trình bày mới...'];
+    updated[idx] = { ...updated[idx], bullets };
+    setDeckSlides(updated);
+  };
+
+  // Xóa bullet point
+  const handleDeleteBullet = (bIdx) => {
+    const idx = currentSlidePage - 1;
+    if (idx < 0 || idx >= deckSlides.length) return;
+    const updated = [...deckSlides];
+    const bullets = (updated[idx].bullets || []).filter((_, i) => i !== bIdx);
+    updated[idx] = { ...updated[idx], bullets };
+    setDeckSlides(updated);
+  };
+
+  // Khôi phục bộ slide mẫu chuẩn
+  const handleResetDefaultSlides = () => {
+    const defaults = getDefaultDeckSlides(activeViewerMaterial?.title, lmsData.course?.name, lecturerName);
+    setDeckSlides(defaults);
+    setCurrentSlidePage(1);
+    message.info('Đã khôi phục bộ 8 slide mẫu chuẩn sư phạm!');
+  };
+
+  // Lưu Slide vào Backend (lms_curriculum_store.json)
+  const handleSaveDeckSlides = async () => {
+    if (!activeViewerMaterial?.id) {
+      message.error('Không tìm thấy mã học liệu để lưu slide!');
+      return;
+    }
+    try {
+      setIsSavingDeckSlides(true);
+      const res = await academicTrainingApi.updateMaterialSlides(activeViewerMaterial.id, deckSlides);
+      if (res && res.success) {
+        message.success('🎉 Đã lưu bài giảng slide vào hệ thống đào tạo thành công!');
+        setActiveViewerMaterial(prev => ({ ...prev, slides: deckSlides }));
+        setLmsData(prev => {
+          if (!prev?.modules) return prev;
+          const updatedModules = prev.modules.map(mod => ({
+            ...mod,
+            materials: (mod.materials || []).map(mat => 
+              String(mat.id) === String(activeViewerMaterial.id)
+                ? { ...mat, slides: deckSlides }
+                : mat
+            )
+          }));
+          return { ...prev, modules: updatedModules };
+        });
+        notifyLmsUpdated();
+      } else {
+        message.error(res?.message || 'Lỗi khi lưu slide');
+      }
+    } catch (err) {
+      message.error('Lỗi lưu slide: ' + err.message);
+    } finally {
+      setIsSavingDeckSlides(false);
+    }
+  };
+
+  // AI Tự động sinh Slide
+  const handleTriggerAiGenerateSlides = async () => {
+    try {
+      setIsGeneratingAiSlides(true);
+      const payload = {
+        topic: aiSlideTopic || activeViewerMaterial?.title || 'Chủ đề học phần',
+        target_clo: aiSlideClo,
+        slide_count: aiSlideCount,
+        style: aiSlideStyle,
+        course_name: lmsData.course?.name || 'Học Phần Chuyên Ngành',
+        week_number: activeViewerMaterial?.module_id || 1
+      };
+      const res = await academicTrainingApi.aiGenerateSlides(payload);
+      if (res && res.success && res.data?.slides) {
+        const generated = res.data.slides;
+        setDeckSlides(generated);
+        setCurrentSlidePage(1);
+        setIsAiSlideModalOpen(false);
+        message.success(`✨ AI đã thiết kế thành công bộ ${generated.length} slide chuẩn sư phạm! Bấm "Lưu Bài Giảng Slide" để cập nhật.`);
+      } else {
+        message.error(res?.message || 'Không thể tạo slide bằng AI');
+      }
+    } catch (err) {
+      message.error('Lỗi khi AI tạo slide: ' + err.message);
+    } finally {
+      setIsGeneratingAiSlides(false);
+    }
   };
 
   // 1. Tải dữ liệu Modules & Quizzes
@@ -1370,166 +1664,370 @@ function AcademicLmsWorkspace({
             );
           }
 
-          // ==================== 2. CHẾ ĐỘ SLIDE TRÌNH CHIẾU ====================
+          // ==================== 2. CHẾ ĐỘ SLIDE TRÌNH CHIẾU & SOẠN THẢO POWERPOINT ====================
           if (isSlide) {
-            const totalSlides = 8;
-            const slideContents = [
-              {
-                slideNum: 1,
-                title: m.title,
-                sub: `Học phần: ${lmsData.course?.name || 'Môn học'} • Mã lớp: ${lmsData.section?.section_code || ''}`,
-                bullets: [
-                  `Giảng viên biên soạn & giảng dạy: ${lecturerName}`,
-                  'Hệ thống E-Learning chuẩn Thông tư 08/2021/TT-BGDĐT',
-                  'Khoa Công nghệ Thông tin - Trường Đại học TCU',
-                  'Mục tiêu học phần: Nắm vững kiến thức nền tảng và năng lực vận dụng thực tiễn'
-                ],
-                footerTag: 'BÀI GIẢNG ĐIỆN TỬ CHÍNH THỨC'
-              },
-              {
-                slideNum: 2,
-                title: 'Mục Tiêu & Chuẩn Đầu Ra Học Phần (CLO / PLO)',
-                sub: 'Định vị năng lực người học sau khi hoàn thành bài học',
-                bullets: [
-                  'CLO1: Hiểu và giải thích được các khái niệm, kiến trúc và nguyên lý vận hành cốt lõi.',
-                  'CLO2: Vận dụng các công cụ, phương pháp và mô hình thực hành vào bài toán cụ thể.',
-                  'CLO3: Phát triển kỹ năng tư duy phản biện, làm việc nhóm và giải quyết vấn đề kỹ thuật.',
-                  'Đánh giá kết quả thông qua bài tập quá trình (Quiz) và đồ án thực tế.'
-                ],
-                footerTag: 'CHUẨN ĐẦU RA AUN-QA'
-              },
-              {
-                slideNum: 3,
-                title: 'Nền Tảng Lý Thuyết Cốt Lõi',
-                sub: 'Hệ thống hóa kiến thức trọng tâm',
-                bullets: [
-                  'Bản chất và định nghĩa khoa học của các thành phần trong hệ thống.',
-                  'Mối liên hệ giữa mô hình lý thuyết và kiến trúc hệ thống hiện đại.',
-                  'Các tiêu chuẩn kỹ thuật quốc tế (IEEE / ISO / W3C) liên quan.',
-                  'Phân tích ưu điểm và hạn chế của từng phương pháp tiếp cận.'
-                ],
-                footerTag: 'KIẾN THỨC NỀN TẢNG'
-              },
-              {
-                slideNum: 4,
-                title: 'Kiến Trúc & Quy Trình Vận Hành',
-                sub: 'Sơ đồ khối và luồng xử lý dữ liệu chi tiết',
-                bullets: [
-                  'Bước 1: Tiếp nhận yêu cầu nghiệp vụ và cấu trúc dữ liệu đầu vào.',
-                  'Bước 2: Xử lý logic nghiệp vụ, tính toán và chuyển đổi trạng thái.',
-                  'Bước 3: Tối ưu hóa hiệu năng, lưu trữ an toàn và quản lý phiên làm việc.',
-                  'Bước 4: Trả về kết quả xác thực và đồng bộ dữ liệu thời gian thực.'
-                ],
-                footerTag: 'QUY TRÌNH HỆ THỐNG'
-              },
-              {
-                slideNum: 5,
-                title: 'Nghiên Cứu Tình Huống Thực Tế (Case Study)',
-                sub: 'Áp dụng vào hệ thống quản lý tại các doanh nghiệp và trường học lớn',
-                bullets: [
-                  'Bài toán thực tế: Xử lý tải cao đồng thời và đảm bảo tính toàn vẹn dữ liệu.',
-                  'Giải pháp thiết kế: Kiến trúc mô-đun hóa, bộ nhớ đệm và phân quyền nhiều lớp.',
-                  'Kết quả đạt được: Độ trễ phản hồi giảm 60%, độ tin cậy đạt chuẩn 99.9%.',
-                  'Bài học kinh nghiệm: Tầm quan trọng của việc chuẩn hóa dữ liệu từ ban đầu.'
-                ],
-                footerTag: 'VÍ DỤ THỰC TIỄN'
-              },
-              {
-                slideNum: 6,
-                title: 'Lỗi Thường Gặp & Phương Pháp Gỡ Lỗi (Troubleshooting)',
-                sub: 'Hướng dẫn tự khắc phục sự cố trong quá trình học và làm bài tập',
-                bullets: [
-                  'Lỗi xung đột kiểu dữ liệu và sai lệch tham số đầu vào.',
-                  'Lỗi không đồng bộ trạng thái khi thực hiện nhiều giao dịch song song.',
-                  'Quy trình debug chuẩn: Kiểm tra log hệ thống, cô lập nguyên nhân và chạy test case.',
-                  'Khuyến nghị: Luôn viết tài liệu chú thích code và kiểm thử trước khi nộp.'
-                ],
-                footerTag: 'KỸ NĂNG DEBUG'
-              },
-              {
-                slideNum: 7,
-                title: 'Bài Tập Vận Dụng & Yêu Cầu Thực Hành',
-                sub: 'Nhiệm vụ bắt buộc học viên cần hoàn thành trong tuần',
-                bullets: [
-                  'Nhiệm vụ 1: Đọc lại các phần tài liệu tham khảo được chỉ định trong đề cương.',
-                  'Nhiệm vụ 2: Hoàn thành bài trắc nghiệm đánh giá quá trình (Quiz 10 điểm).',
-                  'Nhiệm vụ 3: Tham gia thảo luận trên diễn đàn lớp học với ít nhất 1 câu hỏi/ý kiến.',
-                  'Thời hạn nộp bài: Trước buổi học trực tiếp của tuần kế tiếp.'
-                ],
-                footerTag: 'NHIỆM VỤ HỌC TẬP'
-              },
-              {
-                slideNum: 8,
-                title: 'Tổng Kết Học Phần & Tài Liệu Nghiên Cứu Tiếp Theo',
-                sub: 'Khép lại bài giảng và chuẩn bị cho chủ đề tuần sau',
-                bullets: [
-                  'Tóm tắt 3 thông điệp quan trọng nhất của bài học hôm nay.',
-                  'Xem trước giáo trình chương tiếp theo tại mục Tài liệu E-Learning.',
-                  'Liên hệ giải đáp: Đặt câu hỏi tại Diễn đàn hoặc qua email giảng viên.',
-                  'Chúc các bạn học viên học tập hiệu quả và đạt kết quả xuất sắc!'
-                ],
-                footerTag: 'KẾT THÚC BÀI HỌC'
-              }
-            ];
-
-            const curSlide = slideContents[currentSlidePage - 1] || slideContents[0];
+            const slideContents = (deckSlides && deckSlides.length > 0) ? deckSlides : getDefaultDeckSlides(m.title, lmsData.course?.name, lecturerName);
+            const totalSlides = slideContents.length;
+            const curSlide = slideContents[currentSlidePage - 1] || slideContents[0] || {};
 
             return (
               <div>
-                {/* Khung chiếu Slide 16:9 */}
-                <div
-                  style={{
-                    width: '100%',
-                    aspectRatio: '16 / 9',
-                    background: 'linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%)',
-                    borderRadius: 12,
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-                    color: '#fff',
-                    padding: isViewerFullscreen ? '48px 64px' : '32px 40px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    position: 'relative',
-                    border: '1px solid #312e81'
-                  }}
-                >
-                  {/* Header Slide */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.15)', paddingBottom: 12 }}>
-                    <Space>
-                      <Tag color="cyan" style={{ fontSize: 13, padding: '2px 10px' }}>TCU UNIVERSITY</Tag>
-                      <span style={{ fontSize: 13, color: '#93c5fd' }}>{lmsData.course?.name || 'Môn học'}</span>
-                    </Space>
-                    <Tag color="gold">{curSlide.footerTag}</Tag>
+                {/* THANH ĐIỀU KHIỂN CHẾ ĐỘ: TRÌNH CHIẾU VS SOẠN THẢO POWERPOINT (GIẢNG VIÊN / QUẢN TRỊ VIÊN) */}
+                {isStaff && (
+                  <div
+                    style={{
+                      marginBottom: 14,
+                      background: '#0f172a',
+                      padding: '10px 16px',
+                      borderRadius: 8,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: 10,
+                      border: '1px solid #334155'
+                    }}
+                  >
+                    <Radio.Group
+                      value={slideEditMode ? 'EDIT' : 'PRESENT'}
+                      onChange={e => setSlideEditMode(e.target.value === 'EDIT')}
+                      buttonStyle="solid"
+                      size="small"
+                    >
+                      <Radio.Button value="PRESENT">
+                        <DesktopOutlined style={{ marginRight: 6 }} /> Trình Chiếu (Presenter)
+                      </Radio.Button>
+                      <Radio.Button value="EDIT">
+                        <EditOutlined style={{ marginRight: 6 }} /> Soạn Thảo PowerPoint (Editor)
+                      </Radio.Button>
+                    </Radio.Group>
+
+                    {slideEditMode ? (
+                      <Space wrap>
+                        <Button
+                          size="small"
+                          icon={<PlusOutlined />}
+                          style={{ background: '#0284c7', borderColor: '#0284c7', color: '#fff' }}
+                          onClick={handleAddSlide}
+                        >
+                          Thêm Slide
+                        </Button>
+                        <Popconfirm
+                          title="Bạn có chắc chắn muốn xóa slide này không?"
+                          onConfirm={handleDeleteSlide}
+                          okText="Xóa"
+                          cancelText="Hủy"
+                          disabled={totalSlides <= 1}
+                        >
+                          <Button
+                            size="small"
+                            danger
+                            icon={<DeleteOutlined />}
+                            disabled={totalSlides <= 1}
+                          >
+                            Xóa Slide
+                          </Button>
+                        </Popconfirm>
+                        <Button
+                          size="small"
+                          icon={<ArrowUpOutlined />}
+                          disabled={currentSlidePage <= 1}
+                          onClick={() => handleMoveSlide('UP')}
+                        >
+                          Lên
+                        </Button>
+                        <Button
+                          size="small"
+                          icon={<ArrowDownOutlined />}
+                          disabled={currentSlidePage >= totalSlides}
+                          onClick={() => handleMoveSlide('DOWN')}
+                        >
+                          Xuống
+                        </Button>
+                        <Button
+                          size="small"
+                          icon={<ThunderboltOutlined />}
+                          style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)', borderColor: '#6d28d9', color: '#fff' }}
+                          onClick={() => setIsAiSlideModalOpen(true)}
+                        >
+                          ✨ AI Tạo Slide
+                        </Button>
+                        <Popconfirm
+                          title="Khôi phục về bộ 8 slide mẫu chuẩn? Các chỉnh sửa chưa lưu sẽ bị đặt lại."
+                          onConfirm={handleResetDefaultSlides}
+                        >
+                          <Button size="small" icon={<ReloadOutlined />}>
+                            Mẫu Gốc
+                          </Button>
+                        </Popconfirm>
+                        <Button
+                          size="small"
+                          type="primary"
+                          icon={<SaveOutlined />}
+                          loading={isSavingDeckSlides}
+                          style={{ background: '#16a34a', borderColor: '#16a34a' }}
+                          onClick={handleSaveDeckSlides}
+                        >
+                          Lưu Slide Bài Giảng
+                        </Button>
+                      </Space>
+                    ) : (
+                      <Space wrap>
+                        <Button
+                          size="small"
+                          icon={<ThunderboltOutlined />}
+                          style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)', borderColor: '#6d28d9', color: '#fff' }}
+                          onClick={() => {
+                            setSlideEditMode(true);
+                            setIsAiSlideModalOpen(true);
+                          }}
+                        >
+                          ✨ AI Thiết Kế Slide
+                        </Button>
+                        <Button
+                          size="small"
+                          type="primary"
+                          icon={<EditOutlined />}
+                          onClick={() => setSlideEditMode(true)}
+                        >
+                          Chế Độ Soạn Thảo (PowerPoint)
+                        </Button>
+                      </Space>
+                    )}
                   </div>
+                )}
 
-                  {/* Body Slide */}
-                  <div style={{ margin: 'auto 0' }}>
-                    <Title level={isViewerFullscreen ? 1 : 2} style={{ color: '#f8fafc', margin: '0 0 8px 0' }}>
-                      {curSlide.title}
-                    </Title>
-                    <Text style={{ color: '#94a3b8', fontSize: isViewerFullscreen ? 18 : 14, display: 'block', marginBottom: 24 }}>
-                      {curSlide.sub}
-                    </Text>
+                {/* KHUNG SLIDE: CHẾ ĐỘ BIÊN SOẠN POWERPOINT HOẶC TRÌNH CHIẾU */}
+                {slideEditMode && isStaff ? (
+                  /* ================= GIAO DIỆN SOẠN THẢO POWERPOINT ================= */
+                  <div
+                    style={{
+                      width: '100%',
+                      minHeight: isViewerFullscreen ? 580 : 460,
+                      background: 'linear-gradient(135deg, #090d16 0%, #1e1b4b 100%)',
+                      borderRadius: 12,
+                      boxShadow: '0 10px 30px rgba(0,0,0,0.4)',
+                      color: '#fff',
+                      padding: '24px 32px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      border: '2px solid #6366f1',
+                      position: 'relative'
+                    }}
+                  >
+                    {/* Header Soạn Thảo */}
+                    <Row justify="space-between" align="middle" style={{ borderBottom: '1px solid rgba(255,255,255,0.15)', paddingBottom: 10, marginBottom: 14 }}>
+                      <Col>
+                        <Space>
+                          <Tag color="cyan">TCU UNIVERSITY</Tag>
+                          <span style={{ fontSize: 13, color: '#93c5fd' }}>{lmsData.course?.name || 'Môn học'}</span>
+                          <Tag color="purple">Slide #{curSlide.slideNum || currentSlidePage} / {totalSlides}</Tag>
+                        </Space>
+                      </Col>
+                      <Col>
+                        <Space align="center">
+                          <span style={{ fontSize: 12, color: '#cbd5e1' }}>Phân loại Slide:</span>
+                          <Select
+                            size="small"
+                            value={curSlide.footerTag || 'BÀI GIẢNG ĐIỆN TỬ CHÍNH THỨC'}
+                            onChange={val => handleSlideFieldChange('footerTag', val)}
+                            style={{ width: 220 }}
+                            dropdownStyle={{ zIndex: 2000 }}
+                          >
+                            <Option value="BÀI GIẢNG ĐIỆN TỬ CHÍNH THỨC">BÀI GIẢNG ĐIỆN TỬ CHÍNH THỨC</Option>
+                            <Option value="CHUẨN ĐẦU RA AUN-QA">CHUẨN ĐẦU RA AUN-QA</Option>
+                            <Option value="BỐI CẢNH THỰC TIỄN">BỐI CẢNH THỰC TIỄN</Option>
+                            <Option value="KIẾN THỨC NỀN TẢNG">KIẾN THỨC NỀN TẢNG</Option>
+                            <Option value="LÝ THUYẾT TRỌNG TÂM">LÝ THUYẾT TRỌNG TÂM</Option>
+                            <Option value="QUY TRÌNH HỆ THỐNG">QUY TRÌNH HỆ THỐNG</Option>
+                            <Option value="KIẾN TRÚC HỆ THỐNG">KIẾN TRÚC HỆ THỐNG</Option>
+                            <Option value="VÍ DỤ THỰC TIỄN">VÍ DỤ THỰC TIỄN</Option>
+                            <Option value="KỸ NĂNG DEBUG">KỸ NĂNG DEBUG</Option>
+                            <Option value="NHIỆM VỤ HỌC TẬP">NHIỆM VỤ HỌC TẬP</Option>
+                            <Option value="MỞ RỘNG CÔNG NGHỆ">MỞ RỘNG CÔNG NGHỆ</Option>
+                            <Option value="KẾT THÚC BÀI HỌC">KẾT THÚC BÀI HỌC</Option>
+                          </Select>
+                        </Space>
+                      </Col>
+                    </Row>
 
-                    <div style={{ background: 'rgba(255,255,255,0.05)', padding: isViewerFullscreen ? '24px 32px' : '16px 24px', borderRadius: 8, borderLeft: '4px solid #38bdf8' }}>
-                      {curSlide.bullets.map((b, idx) => (
-                        <div key={idx} style={{ fontSize: isViewerFullscreen ? 16 : 14, marginBottom: 10, display: 'flex', alignItems: 'flex-start' }}>
-                          <span style={{ color: '#38bdf8', marginRight: 10, fontSize: 18 }}>•</span>
-                          <span style={{ color: '#e2e8f0', lineHeight: 1.6 }}>{b}</span>
+                    {/* Vùng Nhập Nội Dung Slide */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {/* Tiêu đề Slide */}
+                      <div>
+                        <span style={{ fontSize: 11, color: '#38bdf8', textTransform: 'uppercase', fontWeight: 600, letterSpacing: 0.5 }}>
+                          Tiêu Đề Slide:
+                        </span>
+                        <Input
+                          value={curSlide.title}
+                          onChange={e => handleSlideFieldChange('title', e.target.value)}
+                          placeholder="Nhập tiêu đề slide..."
+                          style={{
+                            background: 'rgba(255,255,255,0.08)',
+                            border: '1px solid #4f46e5',
+                            color: '#ffffff',
+                            fontSize: 18,
+                            fontWeight: 'bold',
+                            borderRadius: 6,
+                            marginTop: 4
+                          }}
+                        />
+                      </div>
+
+                      {/* Phụ đề Slide */}
+                      <div>
+                        <span style={{ fontSize: 11, color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600, letterSpacing: 0.5 }}>
+                          Phụ Đề / Lời Dẫn Dắt:
+                        </span>
+                        <Input
+                          value={curSlide.sub}
+                          onChange={e => handleSlideFieldChange('sub', e.target.value)}
+                          placeholder="Nhập phụ đề hoặc lời dẫn..."
+                          style={{
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid #334155',
+                            color: '#cbd5e1',
+                            fontSize: 13,
+                            borderRadius: 6,
+                            marginTop: 4
+                          }}
+                        />
+                      </div>
+
+                      {/* Danh sách Bullet Points */}
+                      <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px 16px', borderRadius: 8, borderLeft: '4px solid #38bdf8' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                          <span style={{ fontSize: 12, color: '#38bdf8', fontWeight: 600 }}>
+                            📋 Các Ý Nội Dung Trọng Tâm ({curSlide.bullets?.length || 0} ý):
+                          </span>
+                          <Button
+                            size="small"
+                            icon={<PlusOutlined />}
+                            onClick={handleAddBullet}
+                            style={{ background: 'rgba(56, 189, 248, 0.15)', borderColor: '#38bdf8', color: '#38bdf8' }}
+                          >
+                            Thêm Ý Mới
+                          </Button>
                         </div>
-                      ))}
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 220, overflowY: 'auto', paddingRight: 4 }}>
+                          {(curSlide.bullets || []).map((b, bIdx) => (
+                            <div key={bIdx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ color: '#38bdf8', fontSize: 16 }}>•</span>
+                              <Input
+                                value={b}
+                                onChange={e => handleSlideBulletChange(bIdx, e.target.value)}
+                                placeholder={`Nội dung ý thứ ${bIdx + 1}...`}
+                                style={{
+                                  background: 'rgba(255,255,255,0.06)',
+                                  border: '1px solid #334155',
+                                  color: '#e2e8f0',
+                                  fontSize: 13,
+                                  borderRadius: 4,
+                                  flex: 1
+                                }}
+                              />
+                              <Button
+                                size="small"
+                                type="text"
+                                danger
+                                icon={<DeleteOutlined />}
+                                onClick={() => handleDeleteBullet(bIdx)}
+                                disabled={(curSlide.bullets || []).length <= 1}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Ghi chú thuyết trình Giảng viên (Speaker Notes) */}
+                      <div>
+                        <span style={{ fontSize: 11, color: '#fbbf24', fontWeight: 600 }}>
+                          🎤 Ghi Chú Thuyết Trình (Speaker Notes):
+                        </span>
+                        <TextArea
+                          rows={2}
+                          value={curSlide.notes || ''}
+                          onChange={e => handleSlideFieldChange('notes', e.target.value)}
+                          placeholder="Ghi chú sư phạm dành cho giảng viên khi giảng giải slide này..."
+                          style={{
+                            background: 'rgba(255,255,255,0.04)',
+                            border: '1px solid #475569',
+                            color: '#e2e8f0',
+                            fontSize: 12,
+                            borderRadius: 6,
+                            marginTop: 4
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Footer Soạn Thảo */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: 10, marginTop: 14, fontSize: 11, color: '#94a3b8' }}>
+                      <span>Giảng viên: {lecturerName} • ĐHQG / TCU E-Learning LMS</span>
+                      <Space>
+                        <span style={{ color: '#38bdf8', fontWeight: 'bold' }}>Trang {currentSlidePage} / {totalSlides}</span>
+                        <Tag color="blue">PowerPoint Edit Mode</Tag>
+                      </Space>
                     </div>
                   </div>
+                ) : (
+                  /* ================= GIAO DIỆN TRÌNH CHIẾU (PRESENTER) ================= */
+                  <div
+                    style={{
+                      width: '100%',
+                      aspectRatio: '16 / 9',
+                      background: 'linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%)',
+                      borderRadius: 12,
+                      boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+                      color: '#fff',
+                      padding: isViewerFullscreen ? '48px 64px' : '32px 40px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      position: 'relative',
+                      border: '1px solid #312e81'
+                    }}
+                  >
+                    {/* Header Slide */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.15)', paddingBottom: 12 }}>
+                      <Space>
+                        <Tag color="cyan" style={{ fontSize: 13, padding: '2px 10px' }}>TCU UNIVERSITY</Tag>
+                        <span style={{ fontSize: 13, color: '#93c5fd' }}>{lmsData.course?.name || 'Môn học'}</span>
+                      </Space>
+                      <Tag color="gold">{curSlide.footerTag || 'BÀI GIẢNG ĐIỆN TỬ'}</Tag>
+                    </div>
 
-                  {/* Footer Slide */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: 10, fontSize: 12, color: '#64748b' }}>
-                    <span>Giảng viên: {lecturerName} • ĐHQG / TCU E-Learning LMS</span>
-                    <span style={{ fontWeight: 'bold', color: '#93c5fd' }}>Trang {currentSlidePage} / {totalSlides}</span>
+                    {/* Body Slide */}
+                    <div style={{ margin: 'auto 0' }}>
+                      <Title level={isViewerFullscreen ? 1 : 2} style={{ color: '#f8fafc', margin: '0 0 8px 0' }}>
+                        {curSlide.title}
+                      </Title>
+                      <Text style={{ color: '#94a3b8', fontSize: isViewerFullscreen ? 18 : 14, display: 'block', marginBottom: 24 }}>
+                        {curSlide.sub}
+                      </Text>
+
+                      <div style={{ background: 'rgba(255,255,255,0.05)', padding: isViewerFullscreen ? '24px 32px' : '16px 24px', borderRadius: 8, borderLeft: '4px solid #38bdf8' }}>
+                        {(curSlide.bullets || []).map((b, idx) => (
+                          <div key={idx} style={{ fontSize: isViewerFullscreen ? 16 : 14, marginBottom: 10, display: 'flex', alignItems: 'flex-start' }}>
+                            <span style={{ color: '#38bdf8', marginRight: 10, fontSize: 18 }}>•</span>
+                            <span style={{ color: '#e2e8f0', lineHeight: 1.6 }}>{b}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Footer Slide */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: 10, fontSize: 12, color: '#64748b' }}>
+                      <span>Giảng viên: {lecturerName} • ĐHQG / TCU E-Learning LMS</span>
+                      <span style={{ fontWeight: 'bold', color: '#93c5fd' }}>Trang {currentSlidePage} / {totalSlides}</span>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {/* Thanh điều khiển Slide */}
-                <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '10px 20px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                {/* THANH ĐIỀU KHIỂN & CHUYỂN TRANG */}
+                <div style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '10px 20px', borderRadius: 8, border: '1px solid #e2e8f0', flexWrap: 'wrap', gap: 10 }}>
                   <Space>
                     <Button
                       icon={<LeftOutlined />}
@@ -1552,9 +2050,9 @@ function AcademicLmsWorkspace({
                   </Space>
 
                   {/* Nhảy nhanh trang */}
-                  <Space>
+                  <Space wrap>
                     <Text type="secondary" style={{ fontSize: 12 }}>Nhảy trang:</Text>
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map(p => (
+                    {Array.from({ length: totalSlides }, (_, i) => i + 1).map(p => (
                       <Button
                         key={p}
                         size="small"
@@ -1568,33 +2066,62 @@ function AcademicLmsWorkspace({
                   </Space>
                 </div>
 
-                {/* Dải Thumbnail bên dưới */}
-                <div style={{ marginTop: 12, display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 6 }}>
+                {/* DẢI THUMBNAIL PHONG CÁCH POWERPOINT FILMSTRIP */}
+                <div style={{ marginTop: 12, display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 6, alignItems: 'center' }}>
                   {slideContents.map((sc, idx) => (
                     <div
                       key={idx}
                       onClick={() => setCurrentSlidePage(idx + 1)}
                       style={{
-                        minWidth: 110,
-                        height: 65,
-                        background: currentSlidePage === idx + 1 ? '#1e1b4b' : '#334155',
+                        minWidth: 120,
+                        height: 70,
+                        background: currentSlidePage === idx + 1 ? '#1e1b4b' : '#1e293b',
                         borderRadius: 6,
                         cursor: 'pointer',
-                        padding: 6,
-                        border: currentSlidePage === idx + 1 ? '2px solid #38bdf8' : '1px solid #475569',
+                        padding: '6px 8px',
+                        border: currentSlidePage === idx + 1 ? '2px solid #38bdf8' : '1px solid #334155',
                         color: '#fff',
                         fontSize: 10,
                         display: 'flex',
                         flexDirection: 'column',
-                        justifyContent: 'space-between'
+                        justifyContent: 'space-between',
+                        boxShadow: currentSlidePage === idx + 1 ? '0 0 10px rgba(56, 189, 248, 0.4)' : 'none',
+                        transition: 'all 0.15s ease-in-out'
                       }}
                     >
                       <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
-                        {sc.title}
+                        {sc.title || `Slide #${idx + 1}`}
                       </div>
-                      <div style={{ textAlign: 'right', color: '#94a3b8' }}>#{idx + 1}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#94a3b8' }}>
+                        <span style={{ fontSize: 9, color: '#38bdf8' }}>{sc.footerTag?.slice(0, 12) || 'SLIDE'}</span>
+                        <span>#{idx + 1}</span>
+                      </div>
                     </div>
                   ))}
+
+                  {/* Nút thêm nhanh slide ở cuối Filmstrip khi ở chế độ Soạn Thảo */}
+                  {slideEditMode && isStaff && (
+                    <Button
+                      type="dashed"
+                      icon={<PlusOutlined />}
+                      onClick={handleAddSlide}
+                      style={{
+                        minWidth: 90,
+                        height: 70,
+                        borderRadius: 6,
+                        borderColor: '#6366f1',
+                        color: '#a5b4fc',
+                        background: 'rgba(99, 102, 241, 0.08)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 4
+                      }}
+                    >
+                      <span style={{ fontSize: 10 }}>Thêm Slide</span>
+                    </Button>
+                  )}
                 </div>
               </div>
             );
@@ -3437,8 +3964,42 @@ int main() {
               setIsViewerFullscreen(false);
             }}
           >
-            Đóng Trình Chiếu
+            Đóng Cửa Sổ
           </Button>,
+          (activeViewerMaterial?.material_type === 'SLIDE' || activeViewerMaterial?.category === 'LECTURE_SLIDE' || (activeViewerMaterial?.title || '').toLowerCase().includes('slide')) && isStaff && (
+            <Button
+              key="ai-slide"
+              icon={<ThunderboltOutlined />}
+              style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)', borderColor: '#6d28d9', color: '#fff' }}
+              onClick={() => {
+                setSlideEditMode(true);
+                setIsAiSlideModalOpen(true);
+              }}
+            >
+              ✨ AI Tạo Slide
+            </Button>
+          ),
+          (activeViewerMaterial?.material_type === 'SLIDE' || activeViewerMaterial?.category === 'LECTURE_SLIDE' || (activeViewerMaterial?.title || '').toLowerCase().includes('slide')) && isStaff && (
+            <Button
+              key="toggle-mode"
+              icon={slideEditMode ? <DesktopOutlined /> : <EditOutlined />}
+              onClick={() => setSlideEditMode(!slideEditMode)}
+            >
+              {slideEditMode ? 'Chế Độ Trình Chiếu' : 'Chế Độ Soạn Thảo (PowerPoint)'}
+            </Button>
+          ),
+          (activeViewerMaterial?.material_type === 'SLIDE' || activeViewerMaterial?.category === 'LECTURE_SLIDE' || (activeViewerMaterial?.title || '').toLowerCase().includes('slide')) && isStaff && (
+            <Button
+              key="save-slides"
+              type="primary"
+              icon={<SaveOutlined />}
+              loading={isSavingDeckSlides}
+              style={{ background: '#16a34a', borderColor: '#16a34a' }}
+              onClick={handleSaveDeckSlides}
+            >
+              Lưu Bài Giảng Slide
+            </Button>
+          ),
           role === 'STUDENT' && activeViewerMaterial && (
             <Button
               key="complete"
@@ -3460,6 +4021,89 @@ int main() {
         ]}
       >
         {renderContentViewerBody()}
+      </Modal>
+
+      {/* 7.1. MODAL: TRỢ LÝ AI THIẾT KẾ SLIDE BÀI GIẢNG TỰ ĐỘNG */}
+      <Modal
+        title={
+          <Space>
+            <ThunderboltOutlined style={{ color: '#7c3aed', fontSize: 20 }} />
+            <span style={{ fontWeight: 'bold', fontSize: 16 }}>✨ Trợ Lý AI Thiết Kế Slide Bài Giảng Chuẩn Sư Phạm</span>
+          </Space>
+        }
+        open={isAiSlideModalOpen}
+        onCancel={() => setIsAiSlideModalOpen(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setIsAiSlideModalOpen(false)}>
+            Hủy Bỏ
+          </Button>,
+          <Button
+            key="submit"
+            type="primary"
+            icon={<ThunderboltOutlined />}
+            loading={isGeneratingAiSlides}
+            style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)', borderColor: '#6d28d9', fontWeight: 600 }}
+            onClick={handleTriggerAiGenerateSlides}
+          >
+            {isGeneratingAiSlides ? 'AI Đang Thiết Kế Bộ Slide...' : `🚀 AI Soạn ${aiSlideCount} Slide Ngay`}
+          </Button>
+        ]}
+        width={700}
+        destroyOnClose
+      >
+        <Alert
+          type="info"
+          showIcon
+          message="Khung Sư Phạm Đại Học Tín Chỉ (TT 08/2021 & Chuẩn AUN-QA)"
+          description="Trợ lý AI sẽ tự động phân tích học phần và mục tiêu CLO để kiến tạo bộ Slide trình chiếu đầy đủ: Bìa bài giảng, Chuẩn đầu ra, Đặt vấn đề thực tiễn, Lý thuyết cốt lõi, Sơ đồ quy trình, Tình huống thực tế (Case study), Lỗi thường gặp & Debug, Bài tập vận dụng và Ghi chú dành riêng cho Giảng viên."
+          style={{ marginBottom: 18 }}
+        />
+
+        <Form layout="vertical">
+          <Form.Item label={<strong>Chủ Đề / Tên Bài Giảng Cần Soạn Slide</strong>} required>
+            <Input
+              value={aiSlideTopic}
+              onChange={e => setAiSlideTopic(e.target.value)}
+              placeholder="Ví dụ: Giới thiệu Tổng quan về Ngôn ngữ C/C++ & Môi trường Lập trình..."
+              size="large"
+            />
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col xs={24} sm={12}>
+              <Form.Item label={<strong>Số Lượng Slide</strong>}>
+                <Select value={aiSlideCount} onChange={setAiSlideCount} size="large">
+                  <Option value={5}>5 Slides (Cô đọng & Trọng tâm)</Option>
+                  <Option value={8}>8 Slides (Chuẩn Sư phạm Đại học)</Option>
+                  <Option value={10}>10 Slides (Chuyên sâu & Mở rộng)</Option>
+                  <Option value={12}>12 Slides (Toàn diện & Case Study lớn)</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item label={<strong>Định Hướng Sư Phạm</strong>}>
+                <Select value={aiSlideStyle} onChange={setAiSlideStyle} size="large">
+                  <Option value="STANDARD">📘 Chuẩn Sư phạm (Lý thuyết + Thực tiễn)</Option>
+                  <Option value="TECHNICAL_CODE">💻 Thực hành Lập trình & Debug Mã nguồn</Option>
+                  <Option value="CASE_STUDY">🏢 Nghiên cứu Tình huống Doanh nghiệp</Option>
+                  <Option value="REVIEW">🎯 Ôn tập & Hệ thống hóa Kiến thức</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item label={<strong>Mục Tiêu Chuẩn Đầu Ra (CLO) Phụ Trách</strong>}>
+            <Input
+              value={aiSlideClo}
+              onChange={e => setAiSlideClo(e.target.value)}
+              placeholder="Ví dụ: CLO1 (Hiểu kiến trúc), CLO2 (Vận dụng lập trình thực tế)..."
+            />
+          </Form.Item>
+
+          <div style={{ background: '#f8fafc', padding: 12, borderRadius: 6, border: '1px dashed #cbd5e1', fontSize: 12, color: '#64748b' }}>
+            💡 <strong>Mẹo giảng viên:</strong> Sau khi AI hoàn thành soạn slide, bạn có thể chuyển qua tab <strong>"Soạn Thảo PowerPoint"</strong> để trực tiếp thêm, sửa, xóa ý hoặc sắp xếp lại từng slide trước khi bấm Lưu vào bài giảng.
+          </div>
+        </Form>
       </Modal>
 
       {/* 8. MODAL: SOẠN & THIẾT LẬP BÀI KIỂM TRA QUIZ KÈM CÂU HỎI & ĐÁP ÁN (GIẢNG VIÊN) */}
