@@ -482,7 +482,7 @@ exports.uploadFile = async (req, res) => {
       else if (['.doc', '.docx'].includes(ext)) fileType = 'WORD';
       else if (['.cpp', '.c', '.java', '.py', '.sql', '.js', '.html'].includes(ext)) fileType = 'CODE';
 
-      const fileUrl = `/uploads/${req.file.filename}`;
+      const fileUrl = `/api/uploads/${req.file.filename}`;
       const sizeMb = Number((req.file.size / (1024 * 1024)).toFixed(2));
 
       return res.json({
@@ -521,7 +521,7 @@ exports.uploadFile = async (req, res) => {
         success: true,
         message: 'Tải tệp tin lên hệ thống thành công!',
         data: {
-          url: `/uploads/${filename}`,
+          url: `/api/uploads/${filename}`,
           filename,
           original_name: originalName,
           size_mb: sizeMb,

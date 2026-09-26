@@ -232,6 +232,13 @@ function AcademicLmsWorkspace({
     }
   ], []);
 
+  // Helper kiểm tra xem URL có phải là địa chỉ placeholder mẫu (như slides.techcorp.edu.vn) hay không
+  const isMockPlaceholderUrl = (url) => {
+    if (!url) return true;
+    const u = url.toLowerCase().trim();
+    return u.includes('slides.techcorp.edu.vn') || u.includes('techcorp.edu.vn') || u.includes('example.com') || u.includes('placeholder') || u.includes('sample.pdf');
+  };
+
   // Mở Trình Chiếu / Đọc Học Liệu Đa Phương Tiện
   const handleOpenContentViewer = (material) => {
     setActiveViewerMaterial(material);
@@ -241,7 +248,9 @@ function AcademicLmsWorkspace({
     setVideoProgressPercent(35);
     setFontSizeOffset(0);
     setSlideEditMode(false);
-    setViewerTabMode(material?.file_url ? 'ATTACHED' : 'SUMMARY');
+
+    const hasRealFile = Boolean(material?.file_url && !isMockPlaceholderUrl(material.file_url));
+    setViewerTabMode(hasRealFile ? 'ATTACHED' : 'SUMMARY');
 
     // Nạp slides nếu có sẵn trong material, nếu không khởi tạo mẫu chuẩn
     if (material && Array.isArray(material.slides) && material.slides.length > 0) {
@@ -1411,18 +1420,30 @@ function AcademicLmsWorkspace({
   // Helper chuyển đổi URL tệp tin nội bộ thành URL có thể truy cập được từ trình duyệt
   const getResolvedFileUrl = (url) => {
     if (!url) return '';
-    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:') || url.startsWith('data:')) {
+    if (url.startsWith('blob:') || url.startsWith('data:')) {
       return url;
     }
+    let normalized = url.trim();
+    // Chuẩn hóa đường dẫn tệp tải lên: tự động thêm tiền tố /api/uploads/
+    // để Nginx chuyển tiếp (proxy_pass) đến Express backend trên cổng 5000, tránh lỗi 404 Nginx!
+    if (normalized.startsWith('/uploads/')) {
+      normalized = `/api${normalized}`;
+    } else if (normalized.startsWith('uploads/')) {
+      normalized = `/api/${normalized}`;
+    }
+
+    if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
+      return normalized;
+    }
+
     const apiUrl = process.env.REACT_APP_API_URL;
     if (apiUrl && (apiUrl.startsWith('http://') || apiUrl.startsWith('https://'))) {
       try {
         const origin = new URL(apiUrl).origin;
-        const normalized = url.startsWith('/') ? url : `/${url}`;
-        return `${origin}${normalized}`;
+        return `${origin}${normalized.startsWith('/') ? '' : '/'}${normalized}`;
       } catch (e) {}
     }
-    return url.startsWith('/') ? url : `/${url}`;
+    return normalized.startsWith('/') ? normalized : `/${normalized}`;
   };
 
   const getAbsolutePublicUrl = (url) => {
@@ -1440,7 +1461,8 @@ function AcademicLmsWorkspace({
           const urlLower = (m.file_url || '').toLowerCase();
           const resolvedFileUrl = getResolvedFileUrl(m.file_url);
           const absolutePublicUrl = getAbsolutePublicUrl(m.file_url);
-          const hasRealFile = Boolean(m.file_url && m.file_url.trim());
+          const isPlaceholder = isMockPlaceholderUrl(m.file_url);
+          const hasRealFile = Boolean(m.file_url && m.file_url.trim() && !isPlaceholder);
 
           const isVideo = m.material_type === 'VIDEO' || urlLower.includes('youtube') || urlLower.includes('.mp4') || urlLower.includes('.webm') || urlLower.includes('.mov') || titleLower.includes('video') || !!activeVideoUrl;
           const isSlide = m.material_type === 'SLIDE' || m.category === 'LECTURE_SLIDE' || urlLower.includes('.ppt') || urlLower.includes('.pptx') || titleLower.includes('slide') || titleLower.includes('powerpoint');
@@ -2780,10 +2802,33 @@ int main() {
               {hasRealFile && viewerTabMode === 'ATTACHED' ? (
                 /* HIỂN THỊ TỆP PDF THỰC TẾ TRONG TRÌNH XEM CHUYÊN DỤNG */
                 <div>
+                  <Alert
+                    type="info"
+                    showIcon
+                    style={{ marginBottom: 12, borderRadius: 6 }}
+                    message={
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                        <span>
+                          Đang hiển thị tệp PDF đính kèm: <strong>{m.title}</strong>
+                        </span>
+                        <Space>
+                          <Button size="small" type="primary" icon={<DownloadOutlined />} style={{ background: '#dc2626', borderColor: '#dc2626' }} onClick={() => window.open(resolvedFileUrl, '_blank')}>
+                            Tải File PDF
+                          </Button>
+                          <Button size="small" icon={<ExportOutlined />} onClick={() => window.open(resolvedFileUrl, '_blank')}>
+                            Mở Tab Mới
+                          </Button>
+                          <Button size="small" onClick={() => setViewerTabMode('SUMMARY')}>
+                            Xem Bản Tóm Tắt (Abstract)
+                          </Button>
+                        </Space>
+                      </div>
+                    }
+                  />
                   <div
                     style={{
                       width: '100%',
-                      height: isViewerFullscreen ? 'calc(100vh - 190px)' : '720px',
+                      height: isViewerFullscreen ? 'calc(100vh - 250px)' : '680px',
                       background: '#525659',
                       borderRadius: 8,
                       overflow: 'hidden',
@@ -2802,7 +2847,7 @@ int main() {
                   <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#64748b', fontSize: 12 }}>
                     <span>💡 <strong>Tính năng PDF nâng cao:</strong> Trình duyệt hỗ trợ đầy đủ các thao tác: Tìm kiếm từ khóa (Ctrl+F), Thu phóng, Chọn trang, Đánh dấu, In ấn và Tải về trực tiếp.</span>
                     <a href={resolvedFileUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: 600 }}>
-                      Bấm vào đây để mở toàn màn hình trong tab mới ↗
+                      Nếu tệp không tự hiển thị, bấm vào đây để mở trực tiếp ↗
                     </a>
                   </div>
                 </div>
