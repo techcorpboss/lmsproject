@@ -21,7 +21,8 @@ import {
   FilePdfOutlined, DesktopOutlined, LeftOutlined, RightOutlined,
   FilePptOutlined, SoundOutlined, ForwardOutlined, LockOutlined,
   UnlockOutlined, UploadOutlined, SaveOutlined, ArrowUpOutlined,
-  ArrowDownOutlined, BulbOutlined
+  ArrowDownOutlined, BulbOutlined, ExportOutlined, CloudDownloadOutlined,
+  WindowsOutlined, FileExcelOutlined
 } from '@ant-design/icons';
 import academicTrainingApi from '../services/academicTrainingApi';
 
@@ -110,6 +111,7 @@ function AcademicLmsWorkspace({
   const [videoProgressPercent, setVideoProgressPercent] = useState(30);
   const [isViewerFullscreen, setIsViewerFullscreen] = useState(false);
   const [fontSizeOffset, setFontSizeOffset] = useState(0);
+  const [viewerTabMode, setViewerTabMode] = useState('ATTACHED'); // 'ATTACHED' (real file) | 'SUMMARY' (abstract) | 'ONLINE_VIEW' (cloud reader)
 
   // Quản lý Chế độ Soạn thảo Slide (PowerPoint Editor) & AI Tạo Slide
   const [slideEditMode, setSlideEditMode] = useState(false); // false: Trình chiếu, true: Soạn thảo PowerPoint
@@ -239,6 +241,7 @@ function AcademicLmsWorkspace({
     setVideoProgressPercent(35);
     setFontSizeOffset(0);
     setSlideEditMode(false);
+    setViewerTabMode(material?.file_url ? 'ATTACHED' : 'SUMMARY');
 
     // Nạp slides nếu có sẵn trong material, nếu không khởi tạo mẫu chuẩn
     if (material && Array.isArray(material.slides) && material.slides.length > 0) {
@@ -1320,16 +1323,16 @@ function AcademicLmsWorkspace({
     const m = activeViewerMaterial || {};
     const titleLower = (m.title || '').toLowerCase();
     const urlLower = (m.file_url || '').toLowerCase();
-    const isVideo = m.material_type === 'VIDEO' || urlLower.includes('youtube') || urlLower.includes('.mp4') || titleLower.includes('video') || !!activeVideoUrl;
-    const isSlide = m.material_type === 'SLIDE' || m.category === 'LECTURE_SLIDE' || urlLower.includes('.ppt') || titleLower.includes('slide');
-    const isWord = m.material_type === 'WORD' || urlLower.includes('.doc') || titleLower.includes('word') || titleLower.includes('đề cương') || titleLower.includes('kế hoạch');
-    const isPdf = m.material_type === 'PDF' || (m.material_type === 'DOCUMENT' && !isWord) || urlLower.includes('.pdf');
+    const isVideo = m.material_type === 'VIDEO' || urlLower.includes('youtube') || urlLower.includes('.mp4') || urlLower.includes('.webm') || urlLower.includes('.mov') || titleLower.includes('video') || !!activeVideoUrl;
+    const isSlide = m.material_type === 'SLIDE' || m.category === 'LECTURE_SLIDE' || urlLower.includes('.ppt') || urlLower.includes('.pptx') || titleLower.includes('slide') || titleLower.includes('powerpoint');
+    const isWord = m.material_type === 'WORD' || urlLower.includes('.doc') || urlLower.includes('.docx') || titleLower.includes('word') || titleLower.includes('đề cương') || titleLower.includes('kế hoạch');
+    const isPdf = m.material_type === 'PDF' || urlLower.includes('.pdf') || (m.material_type === 'DOCUMENT' && !isWord);
     const isCode = m.material_type === 'CODE' || m.category === 'SOURCE_CODE' || urlLower.includes('.cpp') || urlLower.includes('.java') || urlLower.includes('.py') || urlLower.includes('github') || titleLower.includes('code');
 
     if (isVideo) return <VideoCameraOutlined style={{ fontSize: 22, color: '#ef4444' }} />;
     if (isSlide) return <FilePptOutlined style={{ fontSize: 22, color: '#d97706' }} />;
     if (isWord) return <FileWordOutlined style={{ fontSize: 22, color: '#1d4ed8' }} />;
-    if (isPdf) return <FilePdfOutlined style={{ fontSize: 22, color: '#b91c1c' }} />;
+    if (isPdf) return <FilePdfOutlined style={{ fontSize: 22, color: '#dc2626' }} />;
     if (isCode) return <CodeOutlined style={{ fontSize: 22, color: '#ea580c' }} />;
     return <BookOutlined style={{ fontSize: 22, color: '#2563eb' }} />;
   };
@@ -1405,13 +1408,43 @@ function AcademicLmsWorkspace({
     );
   };
 
+  // Helper chuyển đổi URL tệp tin nội bộ thành URL có thể truy cập được từ trình duyệt
+  const getResolvedFileUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('blob:') || url.startsWith('data:')) {
+      return url;
+    }
+    const apiUrl = process.env.REACT_APP_API_URL;
+    if (apiUrl && (apiUrl.startsWith('http://') || apiUrl.startsWith('https://'))) {
+      try {
+        const origin = new URL(apiUrl).origin;
+        const normalized = url.startsWith('/') ? url : `/${url}`;
+        return `${origin}${normalized}`;
+      } catch (e) {}
+    }
+    return url.startsWith('/') ? url : `/${url}`;
+  };
+
+  const getAbsolutePublicUrl = (url) => {
+    const resolved = getResolvedFileUrl(url);
+    if (!resolved) return '';
+    if (resolved.startsWith('http://') || resolved.startsWith('https://')) {
+      return resolved;
+    }
+    return `${window.location.origin}${resolved.startsWith('/') ? '' : '/'}${resolved}`;
+  };
+
   const renderContentViewerBody = () => {
           const m = activeViewerMaterial || { title: 'Bài Giảng Đa Phương Tiện', file_url: activeVideoUrl };
           const titleLower = (m.title || '').toLowerCase();
           const urlLower = (m.file_url || '').toLowerCase();
-          const isVideo = m.material_type === 'VIDEO' || urlLower.includes('youtube') || urlLower.includes('.mp4') || titleLower.includes('video') || !!activeVideoUrl;
-          const isSlide = m.material_type === 'SLIDE' || m.category === 'LECTURE_SLIDE' || urlLower.includes('.ppt') || titleLower.includes('slide');
-          const isWord = m.material_type === 'WORD' || urlLower.includes('.doc') || titleLower.includes('word') || titleLower.includes('đề cương') || titleLower.includes('kế hoạch');
+          const resolvedFileUrl = getResolvedFileUrl(m.file_url);
+          const absolutePublicUrl = getAbsolutePublicUrl(m.file_url);
+          const hasRealFile = Boolean(m.file_url && m.file_url.trim());
+
+          const isVideo = m.material_type === 'VIDEO' || urlLower.includes('youtube') || urlLower.includes('.mp4') || urlLower.includes('.webm') || urlLower.includes('.mov') || titleLower.includes('video') || !!activeVideoUrl;
+          const isSlide = m.material_type === 'SLIDE' || m.category === 'LECTURE_SLIDE' || urlLower.includes('.ppt') || urlLower.includes('.pptx') || titleLower.includes('slide') || titleLower.includes('powerpoint');
+          const isWord = m.material_type === 'WORD' || urlLower.includes('.doc') || urlLower.includes('.docx') || titleLower.includes('word') || titleLower.includes('đề cương') || titleLower.includes('kế hoạch');
           const isCode = m.material_type === 'CODE' || m.category === 'SOURCE_CODE' || urlLower.includes('.cpp') || urlLower.includes('.java') || urlLower.includes('.py') || urlLower.includes('github') || titleLower.includes('code');
           // Mặc định là PDF nếu không rơi vào các trường hợp trên
           const isPdf = !isVideo && !isSlide && !isWord && !isCode;
@@ -1496,6 +1529,50 @@ function AcademicLmsWorkspace({
                           </Space>
                         </Col>
                       </Row>
+                    </div>
+                  </div>
+                ) : (hasRealFile && (urlLower.endsWith('.mp4') || urlLower.endsWith('.webm') || urlLower.endsWith('.mov') || urlLower.includes('/uploads/'))) ? (
+                  /* Video thực tế tải lên máy chủ (HTML5 Video Player) */
+                  <div style={{ background: '#090d16', borderRadius: 12, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.3)', border: '1px solid #1e293b' }}>
+                    <video
+                      controls
+                      autoPlay
+                      playsInline
+                      src={resolvedFileUrl}
+                      style={{
+                        width: '100%',
+                        height: isViewerFullscreen ? 'calc(100vh - 280px)' : 420,
+                        background: '#000',
+                        display: 'block'
+                      }}
+                      onTimeUpdate={(e) => {
+                        const { currentTime, duration } = e.target;
+                        if (duration > 0) {
+                          const pct = Math.round((currentTime / duration) * 100);
+                          setVideoProgressPercent(pct);
+                          if (pct >= 80 && role === 'STUDENT' && m.id && !m.is_completed) {
+                            handleToggleProgress(m.id, false);
+                            message.success('🎉 Bạn đã theo dõi đạt 80% video bài giảng! Điểm chuyên cần đã tự động cập nhật.');
+                          }
+                        }
+                      }}
+                    />
+                    <div style={{ padding: '10px 18px', background: '#0b1120', borderTop: '1px solid #1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Space>
+                        <Tag color="error">🔴 VIDEO BÀI GIẢNG ĐÍNH KÈM</Tag>
+                        <span style={{ color: '#cbd5e1', fontSize: 13, fontWeight: 600 }}>{m.title}</span>
+                        {m.file_size_mb && <Tag color="blue">{m.file_size_mb} MB</Tag>}
+                      </Space>
+                      <Space>
+                        <Button
+                          size="small"
+                          icon={<DownloadOutlined />}
+                          style={{ color: '#38bdf8', borderColor: '#0284c7', background: 'transparent' }}
+                          onClick={() => window.open(resolvedFileUrl, '_blank')}
+                        >
+                          Tải Video Về Máy
+                        </Button>
+                      </Space>
                     </div>
                   </div>
                 ) : (
@@ -1666,12 +1743,158 @@ function AcademicLmsWorkspace({
 
           // ==================== 2. CHẾ ĐỘ SLIDE TRÌNH CHIẾU & SOẠN THẢO POWERPOINT ====================
           if (isSlide) {
+            const isPdfSlide = urlLower.endsWith('.pdf');
+            const isPptSlide = urlLower.endsWith('.ppt') || urlLower.endsWith('.pptx');
             const slideContents = (deckSlides && deckSlides.length > 0) ? deckSlides : getDefaultDeckSlides(m.title, lmsData.course?.name, lecturerName);
             const totalSlides = slideContents.length;
             const curSlide = slideContents[currentSlidePage - 1] || slideContents[0] || {};
 
             return (
               <div>
+                {/* THANH ĐIỀU HƯỚNG TỆP SLIDE GỐC ĐÍNH KÈM VS BÀI GIẢNG TƯƠNG TÁC */}
+                {hasRealFile && (
+                  <div
+                    style={{
+                      marginBottom: 14,
+                      background: '#fff',
+                      padding: '10px 18px',
+                      borderRadius: 8,
+                      border: '1px solid #e2e8f0',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: 10
+                    }}
+                  >
+                    <Space wrap>
+                      <FilePptOutlined style={{ fontSize: 20, color: '#d97706' }} />
+                      <span style={{ fontWeight: 600, color: '#92400e' }}>SLIDE BÀI GIẢNG ĐIỆN TỬ</span>
+                      <Radio.Group
+                        value={viewerTabMode}
+                        onChange={e => setViewerTabMode(e.target.value)}
+                        size="small"
+                        buttonStyle="solid"
+                      >
+                        <Radio.Button value="ATTACHED">
+                          <DesktopOutlined style={{ marginRight: 4 }} /> File Slide Đính Kèm {isPdfSlide ? '(PDF)' : '(PowerPoint)'}
+                        </Radio.Button>
+                        <Radio.Button value="SUMMARY">
+                          <ThunderboltOutlined style={{ marginRight: 4 }} /> Bài Giảng Tương Tác ({totalSlides} Slide)
+                        </Radio.Button>
+                      </Radio.Group>
+                    </Space>
+                    <Space>
+                      <Button
+                        size="small"
+                        type="primary"
+                        icon={<DownloadOutlined />}
+                        style={{ background: '#d97706', borderColor: '#d97706' }}
+                        onClick={() => window.open(resolvedFileUrl, '_blank')}
+                      >
+                        Tải Slide Gốc
+                      </Button>
+                      <Button
+                        size="small"
+                        icon={<ExportOutlined />}
+                        onClick={() => window.open(resolvedFileUrl, '_blank')}
+                      >
+                        Mở Tab Mới
+                      </Button>
+                    </Space>
+                  </div>
+                )}
+
+                {/* NẾU ĐANG CHỌN XEM TỆP SLIDE GỐC ĐÍNH KÈM */}
+                {hasRealFile && viewerTabMode === 'ATTACHED' ? (
+                  isPdfSlide ? (
+                    /* Slide dạng file PDF */
+                    <div>
+                      <div
+                        style={{
+                          width: '100%',
+                          height: isViewerFullscreen ? 'calc(100vh - 190px)' : '700px',
+                          background: '#525659',
+                          borderRadius: 8,
+                          overflow: 'hidden',
+                          boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+                          border: '1px solid #cbd5e1'
+                        }}
+                      >
+                        <iframe
+                          src={`${resolvedFileUrl}#toolbar=1&navpanes=1&scrollbar=1&view=FitH`}
+                          width="100%"
+                          height="100%"
+                          style={{ border: 'none', display: 'block' }}
+                          title={m.title || 'Slide PDF'}
+                        />
+                      </div>
+                      <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#64748b', fontSize: 12 }}>
+                        <span>💡 Slide bài giảng PDF: Hỗ trợ chuyển trang, phóng to toàn màn hình, in ấn và tải về máy.</span>
+                        <a href={resolvedFileUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: 600 }}>
+                          Mở slide trong tab riêng biệt ↗
+                        </a>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Slide dạng file PPT / PPTX */
+                    <div>
+                      <Card
+                        size="small"
+                        style={{
+                          marginBottom: 16,
+                          borderRadius: 8,
+                          border: '1px solid #fed7aa',
+                          background: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)'
+                        }}
+                      >
+                        <Row justify="space-between" align="middle">
+                          <Col>
+                            <Space size="middle">
+                              <Avatar size={48} icon={<FilePptOutlined />} style={{ backgroundColor: '#ea580c', color: '#fff' }} />
+                              <div>
+                                <Title level={5} style={{ margin: 0, color: '#9a3412' }}>{m.title}</Title>
+                                <Text type="secondary" style={{ fontSize: 12 }}>
+                                  Tệp trình chiếu Microsoft PowerPoint (.pptx / .ppt) • {m.file_size_mb ? `${m.file_size_mb} MB` : 'Bản chuẩn PPTX'}
+                                </Text>
+                              </div>
+                            </Space>
+                          </Col>
+                          <Col>
+                            <Space wrap>
+                              <Button
+                                type="primary"
+                                icon={<DownloadOutlined />}
+                                style={{ background: '#ea580c', borderColor: '#ea580c' }}
+                                onClick={() => window.open(resolvedFileUrl, '_blank')}
+                              >
+                                Tải File PowerPoint (.pptx) Về Máy
+                              </Button>
+                              <Button
+                                icon={<GlobalOutlined />}
+                                onClick={() => window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(absolutePublicUrl)}`, '_blank')}
+                              >
+                                Xem Qua Google Docs
+                              </Button>
+                            </Space>
+                          </Col>
+                        </Row>
+                      </Card>
+
+                      <div style={{ width: '100%', height: isViewerFullscreen ? 'calc(100vh - 270px)' : '600px', borderRadius: 8, overflow: 'hidden', border: '1px solid #e2e8f0', background: '#fff', boxShadow: '0 4px 16px rgba(0,0,0,0.06)' }}>
+                        <iframe
+                          src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(absolutePublicUrl)}`}
+                          width="100%"
+                          height="100%"
+                          style={{ border: 'none' }}
+                          title={m.title}
+                        />
+                      </div>
+                    </div>
+                  )
+                ) : (
+                /* BÀI GIẢNG TƯƠNG TÁC (PRESENTER / POWERPOINT IN-PLACE EDITOR) */
+                <div>
                 {/* THANH ĐIỀU KHIỂN CHẾ ĐỘ: TRÌNH CHIẾU VS SOẠN THẢO POWERPOINT (GIẢNG VIÊN / QUẢN TRỊ VIÊN) */}
                 {isStaff && (
                   <div
@@ -2123,6 +2346,8 @@ function AcademicLmsWorkspace({
                     </Button>
                   )}
                 </div>
+                </div>
+                )}
               </div>
             );
           }
@@ -2132,22 +2357,136 @@ function AcademicLmsWorkspace({
             return (
               <div>
                 {/* Toolbar Word */}
-                <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '10px 18px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                  <Space>
+                <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '10px 18px', borderRadius: 8, border: '1px solid #e2e8f0', flexWrap: 'wrap', gap: 10 }}>
+                  <Space wrap>
                     <FileWordOutlined style={{ fontSize: 20, color: '#1d4ed8' }} />
                     <span style={{ fontWeight: 600, color: '#1e3a8a' }}>TRÌNH ĐỌC VĂN BẢN WORD CHUẨN NGHỊ ĐỊNH 30/2020/NĐ-CP</span>
-                    <Tag color="blue">Khổ A4 Căn Chuẩn</Tag>
+                    <Tag color="blue">{hasRealFile ? 'Tệp Word Đính Kèm' : 'Khổ A4 Căn Chuẩn'}</Tag>
+                    {hasRealFile && (
+                      <Radio.Group
+                        value={viewerTabMode}
+                        onChange={e => setViewerTabMode(e.target.value)}
+                        size="small"
+                        buttonStyle="solid"
+                      >
+                        <Radio.Button value="ATTACHED">
+                          <FileWordOutlined style={{ marginRight: 4 }} /> Tệp Word Thực Tế
+                        </Radio.Button>
+                        <Radio.Button value="ONLINE_VIEW">
+                          <GlobalOutlined style={{ marginRight: 4 }} /> Xem Trực Tuyến
+                        </Radio.Button>
+                        <Radio.Button value="SUMMARY">
+                          <FileTextOutlined style={{ marginRight: 4 }} /> Đề Cương (Chuẩn A4)
+                        </Radio.Button>
+                      </Radio.Group>
+                    )}
                   </Space>
-                  <Space>
-                    <Text type="secondary" style={{ fontSize: 12 }}>Cỡ chữ:</Text>
-                    <Button size="small" onClick={() => setFontSizeOffset(o => Math.max(-3, o - 1))}>A-</Button>
-                    <Button size="small" onClick={() => setFontSizeOffset(0)}>Mặc định</Button>
-                    <Button size="small" onClick={() => setFontSizeOffset(o => Math.min(6, o + 1))}>A+</Button>
-                    <Button size="small" icon={<PrinterOutlined />} onClick={() => window.print()}>In văn bản</Button>
-                  </Space>
+
+                  {hasRealFile && (
+                    <Space>
+                      <Button
+                        size="small"
+                        type="primary"
+                        icon={<DownloadOutlined />}
+                        style={{ background: '#1d4ed8', borderColor: '#1d4ed8' }}
+                        onClick={() => window.open(resolvedFileUrl, '_blank')}
+                      >
+                        Tải File Word Về Máy
+                      </Button>
+                      <Button
+                        size="small"
+                        icon={<ExportOutlined />}
+                        onClick={() => window.open(resolvedFileUrl, '_blank')}
+                      >
+                        Mở Tệp
+                      </Button>
+                    </Space>
+                  )}
+
+                  {(!hasRealFile || viewerTabMode === 'SUMMARY') && (
+                    <Space>
+                      <Text type="secondary" style={{ fontSize: 12 }}>Cỡ chữ:</Text>
+                      <Button size="small" onClick={() => setFontSizeOffset(o => Math.max(-3, o - 1))}>A-</Button>
+                      <Button size="small" onClick={() => setFontSizeOffset(0)}>Mặc định</Button>
+                      <Button size="small" onClick={() => setFontSizeOffset(o => Math.min(6, o + 1))}>A+</Button>
+                      <Button size="small" icon={<PrinterOutlined />} onClick={() => window.print()}>In văn bản</Button>
+                    </Space>
+                  )}
                 </div>
 
-                {/* Khổ giấy A4 Word */}
+                {hasRealFile && viewerTabMode === 'ATTACHED' ? (
+                  /* Thẻ hiển thị tệp Word thực tế */
+                  <Card
+                    style={{
+                      maxWidth: 840,
+                      margin: '20px auto',
+                      borderRadius: 12,
+                      border: '1px solid #bfdbfe',
+                      background: 'linear-gradient(180deg, #f8faff 0%, #ffffff 100%)',
+                      boxShadow: '0 8px 30px rgba(0,0,0,0.06)',
+                      textAlign: 'center',
+                      padding: '36px 24px'
+                    }}
+                  >
+                    <div style={{ marginBottom: 16 }}>
+                      <Avatar size={72} icon={<FileWordOutlined />} style={{ backgroundColor: '#1d4ed8', color: '#fff', boxShadow: '0 4px 16px rgba(29, 78, 216, 0.25)' }} />
+                    </div>
+                    <Title level={3} style={{ color: '#1e3a8a', marginBottom: 8 }}>
+                      {m.title}
+                    </Title>
+                    <Paragraph style={{ color: '#475569', fontSize: 14, marginBottom: 20 }}>
+                      Tệp văn bản Word chính thức đính kèm bài học • {m.file_size_mb ? `${m.file_size_mb} MB • ` : ''}Định dạng Microsoft Word (.docx / .doc)
+                    </Paragraph>
+
+                    <Alert
+                      type="info"
+                      showIcon
+                      style={{ maxWidth: 620, margin: '0 auto 24px auto', textAlign: 'left', borderRadius: 8 }}
+                      message="Văn bản đã được số hóa và sẵn sàng tải về"
+                      description="Để đảm bảo cấu trúc trình bày, công thức toán học và bảng biểu được hiển thị chuẩn xác nhất, bạn có thể tải tệp tin về để mở bằng Microsoft Word / LibreOffice hoặc xem trực tuyến qua Google Docs / Office Live."
+                    />
+
+                    <Space size="middle" wrap style={{ justifyContent: 'center' }}>
+                      <Button
+                        type="primary"
+                        size="large"
+                        icon={<DownloadOutlined />}
+                        style={{ background: '#1d4ed8', borderColor: '#1d4ed8', height: 46, padding: '0 28px', fontSize: 15, fontWeight: 600, borderRadius: 8 }}
+                        onClick={() => window.open(resolvedFileUrl, '_blank')}
+                      >
+                        Tải File Word (.docx) Về Máy
+                      </Button>
+                      <Button
+                        size="large"
+                        icon={<ExportOutlined />}
+                        style={{ height: 46, padding: '0 24px', fontSize: 15, borderRadius: 8 }}
+                        onClick={() => window.open(resolvedFileUrl, '_blank')}
+                      >
+                        Mở Trong Tab Mới
+                      </Button>
+                      <Button
+                        size="large"
+                        icon={<GlobalOutlined />}
+                        style={{ height: 46, padding: '0 24px', fontSize: 15, borderRadius: 8, color: '#0369a1', borderColor: '#7dd3fc' }}
+                        onClick={() => window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(absolutePublicUrl)}`, '_blank')}
+                      >
+                        Xem Qua Google Docs
+                      </Button>
+                    </Space>
+                  </Card>
+                ) : hasRealFile && viewerTabMode === 'ONLINE_VIEW' ? (
+                  /* Xem trực tuyến qua Google Docs / Office Viewer */
+                  <div style={{ width: '100%', height: isViewerFullscreen ? 'calc(100vh - 190px)' : '700px', borderRadius: 8, overflow: 'hidden', border: '1px solid #cbd5e1', background: '#fff' }}>
+                    <iframe
+                      src={`https://docs.google.com/viewer?url=${encodeURIComponent(absolutePublicUrl)}&embedded=true`}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 'none' }}
+                      title={m.title}
+                    />
+                  </div>
+                ) : (
+                /* Khổ giấy A4 Word */
                 <div
                   style={{
                     background: '#ffffff',
@@ -2256,6 +2595,7 @@ function AcademicLmsWorkspace({
                     </Row>
                   </div>
                 </div>
+                )}
               </div>
             );
           }
@@ -2349,49 +2689,125 @@ int main() {
           return (
             <div>
               {/* Toolbar PDF Reader */}
-              <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '10px 18px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                <Space>
+              <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '10px 18px', borderRadius: 8, border: '1px solid #e2e8f0', flexWrap: 'wrap', gap: 10 }}>
+                <Space wrap>
                   <FilePdfOutlined style={{ fontSize: 20, color: '#dc2626' }} />
                   <span style={{ fontWeight: 600, color: '#0f172a' }}>TRÌNH ĐỌC TÀI LIỆU PDF HỌC THUẬT E-LEARNING</span>
-                  <Tag color="volcano">Bản Chuẩn PDF</Tag>
+                  <Tag color="volcano">{hasRealFile ? 'Bản Gốc PDF' : 'Bản Chuẩn PDF'}</Tag>
+                  {hasRealFile && (
+                    <Radio.Group
+                      value={viewerTabMode}
+                      onChange={e => setViewerTabMode(e.target.value)}
+                      size="small"
+                      buttonStyle="solid"
+                    >
+                      <Radio.Button value="ATTACHED">
+                        <FilePdfOutlined style={{ marginRight: 4 }} /> Tệp PDF Gốc Đính Kèm
+                      </Radio.Button>
+                      <Radio.Button value="SUMMARY">
+                        <FileTextOutlined style={{ marginRight: 4 }} /> Đề Cương Tóm Tắt (Abstract)
+                      </Radio.Button>
+                    </Radio.Group>
+                  )}
                 </Space>
-                <Space>
-                  <Tooltip title="Thu nhỏ">
-                    <Button size="small" icon={<ZoomOutOutlined />} onClick={() => setPdfZoomLevel(z => Math.max(60, z - 15))} />
-                  </Tooltip>
-                  <span style={{ fontSize: 12, fontWeight: 600 }}>{pdfZoomLevel}%</span>
-                  <Tooltip title="Phóng to">
-                    <Button size="small" icon={<ZoomInOutlined />} onClick={() => setPdfZoomLevel(z => Math.min(160, z + 15))} />
-                  </Tooltip>
 
-                  <Divider type="vertical" />
-                  <Text type="secondary" style={{ fontSize: 12 }}>Chế độ màu:</Text>
-                  <Button
-                    size="small"
-                    type={readingTheme === 'LIGHT' ? 'primary' : 'default'}
-                    onClick={() => setReadingTheme('LIGHT')}
-                  >
-                    Sáng
-                  </Button>
-                  <Button
-                    size="small"
-                    type={readingTheme === 'SEPIA' ? 'primary' : 'default'}
-                    style={readingTheme === 'SEPIA' ? { background: '#d97706', borderColor: '#d97706' } : {}}
-                    onClick={() => setReadingTheme('SEPIA')}
-                  >
-                    Vàng Dịu (Sepia)
-                  </Button>
-                  <Button
-                    size="small"
-                    type={readingTheme === 'DARK' ? 'primary' : 'default'}
-                    onClick={() => setReadingTheme('DARK')}
-                  >
-                    Tối
-                  </Button>
-                </Space>
+                {hasRealFile && (
+                  <Space>
+                    <Button
+                      size="small"
+                      type="primary"
+                      icon={<DownloadOutlined />}
+                      style={{ background: '#dc2626', borderColor: '#dc2626' }}
+                      onClick={() => window.open(resolvedFileUrl, '_blank')}
+                    >
+                      Tải File PDF Gốc
+                    </Button>
+                    <Button
+                      size="small"
+                      icon={<ExportOutlined />}
+                      onClick={() => window.open(resolvedFileUrl, '_blank')}
+                    >
+                      Mở Cửa Sổ Mới
+                    </Button>
+                    <Button
+                      size="small"
+                      icon={<PrinterOutlined />}
+                      onClick={() => window.open(resolvedFileUrl, '_blank')}
+                    >
+                      In
+                    </Button>
+                  </Space>
+                )}
+
+                {(!hasRealFile || viewerTabMode === 'SUMMARY') && (
+                  <Space>
+                    <Tooltip title="Thu nhỏ">
+                      <Button size="small" icon={<ZoomOutOutlined />} onClick={() => setPdfZoomLevel(z => Math.max(60, z - 15))} />
+                    </Tooltip>
+                    <span style={{ fontSize: 12, fontWeight: 600 }}>{pdfZoomLevel}%</span>
+                    <Tooltip title="Phóng to">
+                      <Button size="small" icon={<ZoomInOutlined />} onClick={() => setPdfZoomLevel(z => Math.min(160, z + 15))} />
+                    </Tooltip>
+
+                    <Divider type="vertical" />
+                    <Text type="secondary" style={{ fontSize: 12 }}>Chế độ màu:</Text>
+                    <Button
+                      size="small"
+                      type={readingTheme === 'LIGHT' ? 'primary' : 'default'}
+                      onClick={() => setReadingTheme('LIGHT')}
+                    >
+                      Sáng
+                    </Button>
+                    <Button
+                      size="small"
+                      type={readingTheme === 'SEPIA' ? 'primary' : 'default'}
+                      style={readingTheme === 'SEPIA' ? { background: '#d97706', borderColor: '#d97706' } : {}}
+                      onClick={() => setReadingTheme('SEPIA')}
+                    >
+                      Vàng Dịu (Sepia)
+                    </Button>
+                    <Button
+                      size="small"
+                      type={readingTheme === 'DARK' ? 'primary' : 'default'}
+                      onClick={() => setReadingTheme('DARK')}
+                    >
+                      Tối
+                    </Button>
+                  </Space>
+                )}
               </div>
 
-              {/* Trang PDF */}
+              {hasRealFile && viewerTabMode === 'ATTACHED' ? (
+                /* HIỂN THỊ TỆP PDF THỰC TẾ TRONG TRÌNH XEM CHUYÊN DỤNG */
+                <div>
+                  <div
+                    style={{
+                      width: '100%',
+                      height: isViewerFullscreen ? 'calc(100vh - 190px)' : '720px',
+                      background: '#525659',
+                      borderRadius: 8,
+                      overflow: 'hidden',
+                      boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+                      border: '1px solid #cbd5e1'
+                    }}
+                  >
+                    <iframe
+                      src={`${resolvedFileUrl}#toolbar=1&navpanes=1&scrollbar=1&view=FitH`}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 'none', display: 'block' }}
+                      title={m.title || 'Tài liệu PDF'}
+                    />
+                  </div>
+                  <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#64748b', fontSize: 12 }}>
+                    <span>💡 <strong>Tính năng PDF nâng cao:</strong> Trình duyệt hỗ trợ đầy đủ các thao tác: Tìm kiếm từ khóa (Ctrl+F), Thu phóng, Chọn trang, Đánh dấu, In ấn và Tải về trực tiếp.</span>
+                    <a href={resolvedFileUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontWeight: 600 }}>
+                      Bấm vào đây để mở toàn màn hình trong tab mới ↗
+                    </a>
+                  </div>
+                </div>
+              ) : (
+              /* Trang PDF mẫu giả lập */
               <div
                 style={{
                   transform: `scale(${pdfZoomLevel / 100})`,
@@ -2474,6 +2890,7 @@ int main() {
                   <span>Trang 1 / 1</span>
                 </div>
               </div>
+              )}
             </div>
           );
   };
@@ -2809,10 +3226,10 @@ int main() {
                               renderItem={mat => {
                                 const titleLower = (mat.title || '').toLowerCase();
                                 const urlLower = (mat.file_url || '').toLowerCase();
-                                const isVideo = mat.material_type === 'VIDEO' || urlLower.includes('youtube') || urlLower.includes('.mp4') || titleLower.includes('video');
-                                const isSlide = mat.material_type === 'SLIDE' || mat.category === 'LECTURE_SLIDE' || urlLower.includes('.ppt') || titleLower.includes('slide');
-                                const isWord = mat.material_type === 'WORD' || urlLower.includes('.doc') || titleLower.includes('word') || titleLower.includes('đề cương') || titleLower.includes('kế hoạch');
-                                const isPdf = mat.material_type === 'PDF' || (mat.material_type === 'DOCUMENT' && !isWord) || urlLower.includes('.pdf');
+                                const isVideo = mat.material_type === 'VIDEO' || urlLower.includes('youtube') || urlLower.includes('.mp4') || urlLower.includes('.webm') || urlLower.includes('.mov') || titleLower.includes('video');
+                                const isSlide = mat.material_type === 'SLIDE' || mat.category === 'LECTURE_SLIDE' || urlLower.includes('.ppt') || urlLower.includes('.pptx') || titleLower.includes('slide') || titleLower.includes('powerpoint');
+                                const isWord = mat.material_type === 'WORD' || urlLower.includes('.doc') || urlLower.includes('.docx') || titleLower.includes('word') || titleLower.includes('đề cương') || titleLower.includes('kế hoạch');
+                                const isPdf = mat.material_type === 'PDF' || urlLower.includes('.pdf') || (mat.material_type === 'DOCUMENT' && !isWord);
                                 const isCode = mat.material_type === 'CODE' || mat.category === 'SOURCE_CODE' || urlLower.includes('.cpp') || urlLower.includes('.java') || urlLower.includes('.py') || urlLower.includes('github') || titleLower.includes('code') || titleLower.includes('mã nguồn');
 
                                 let avatarIcon = <BookOutlined style={{ fontSize: 24, color: '#2563eb' }} />;
@@ -2904,7 +3321,7 @@ int main() {
                                           size="small"
                                           type="link"
                                           icon={mat.external_source ? <LinkOutlined /> : <DownloadOutlined />}
-                                          onClick={() => window.open(mat.file_url, '_blank')}
+                                          onClick={() => window.open(getResolvedFileUrl(mat.file_url), '_blank')}
                                         >
                                           {mat.external_source ? `Mở ${mat.external_source}` : 'Tải Về / Link Ngoài'}
                                         </Button>
@@ -3911,7 +4328,7 @@ int main() {
                     <Button
                       size="small"
                       icon={<DownloadOutlined />}
-                      onClick={() => window.open(activeViewerMaterial.file_url, '_blank')}
+                      onClick={() => window.open(getResolvedFileUrl(activeViewerMaterial.file_url), '_blank')}
                     >
                       Tải File
                     </Button>
