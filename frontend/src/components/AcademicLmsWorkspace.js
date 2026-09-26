@@ -1436,7 +1436,7 @@ function AcademicLmsWorkspace({
                   <div style={{ background: '#000', borderRadius: 8, overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}>
                     <iframe
                       width="100%"
-                      height={isViewerFullscreen ? 580 : 440}
+                      height={isViewerFullscreen ? 'calc(100vh - 280px)' : 440}
                       src={`${ytEmbedUrl}?autoplay=1&rel=0`}
                       title={m.title}
                       frameBorder="0"
@@ -1502,7 +1502,7 @@ function AcademicLmsWorkspace({
                   // TCU University Lecture Theater Video Player
                   <div style={{ background: '#090d16', borderRadius: 12, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.3)', border: '1px solid #1e293b' }}>
                     {/* Màn hình phát video */}
-                    <div style={{ position: 'relative', height: isViewerFullscreen ? 540 : 380, background: 'linear-gradient(135deg, #020617 0%, #0f172a 100%)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#fff' }}>
+                    <div style={{ position: 'relative', height: isViewerFullscreen ? 'calc(100vh - 280px)' : 380, background: 'linear-gradient(135deg, #020617 0%, #0f172a 100%)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', color: '#fff' }}>
                       <div style={{ position: 'absolute', top: 16, left: 20, zIndex: 2 }}>
                         <Tag color="error">🔴 TCU E-LEARNING LECTURE THEATER</Tag>
                         <Tag color="blue">{lmsData.course?.name || 'Môn học'}</Tag>
@@ -3944,13 +3944,16 @@ int main() {
           setActiveVideoUrl(null);
           setIsViewerFullscreen(false);
         }}
-        width={isViewerFullscreen ? '98vw' : 980}
-        style={isViewerFullscreen ? { top: 10, paddingBottom: 0 } : { top: 30 }}
+        width={isViewerFullscreen ? '100vw' : 1080}
+        zIndex={2500}
+        wrapClassName={isViewerFullscreen ? 'lms-fullscreen-viewer-modal' : ''}
+        style={isViewerFullscreen ? { top: 0, left: 0, margin: 0, padding: 0, maxWidth: '100vw', height: '100vh' } : { top: 24 }}
         styles={{
           body: {
-            maxHeight: isViewerFullscreen ? 'calc(92vh - 110px)' : '72vh',
+            maxHeight: isViewerFullscreen ? 'calc(100vh - 120px)' : '74vh',
+            height: isViewerFullscreen ? 'calc(100vh - 120px)' : undefined,
             overflowY: 'auto',
-            padding: '16px 24px',
+            padding: isViewerFullscreen ? '20px 32px' : '16px 24px',
             background: readingTheme === 'DARK' ? '#0f172a' : readingTheme === 'SEPIA' ? '#fbf0d9' : '#f8fafc'
           }
         }}
@@ -4032,6 +4035,7 @@ int main() {
           </Space>
         }
         open={isAiSlideModalOpen}
+        zIndex={2600}
         onCancel={() => setIsAiSlideModalOpen(false)}
         footer={[
           <Button key="cancel" onClick={() => setIsAiSlideModalOpen(false)}>

@@ -498,7 +498,7 @@ function App() {
           left: 0,
           background: '#07162c',
           boxShadow: '2px 0 10px rgba(0,0,0,0.25)',
-          zIndex: 1001
+          zIndex: 100
         }}
         trigger={null}
       >
@@ -571,7 +571,7 @@ function App() {
             justifyContent: 'space-between',
             position: 'sticky',
             top: 0,
-            zIndex: 1000,
+            zIndex: 99,
             height: 64,
             boxShadow: '0 1px 4px rgba(0,21,41,0.08)',
             borderBottom: '1px solid #e2e8f0'
