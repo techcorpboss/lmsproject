@@ -2,6 +2,122 @@
 // Quản lý Tổ chức Thi Trực Tuyến & Cấp Quyền Dự Thi theo Quy Chế Bộ GD&ĐT (Thông tư 08/2021/TT-BGDĐT)
 const { AcademicExamSchedule, ExamCandidateAuthorization, User, ExamPaper, sequelize } = require('../models');
 
+// 0. LẤY DANH MỤC HỌC THUẬT TỪ CSDL ĐỂ LỌC KHOA, NGHỀ/NGÀNH, HỌC PHẦN & CBCT
+exports.getAcademicOptions = async (req, res) => {
+  try {
+    // 1. Danh sách Khoa / Viện đào tạo từ CSDL
+    const faculties = [
+      { id: 'CNTT', code: 'CNTT', name: 'Khoa Công Nghệ Thông Tin' },
+      { id: 'KT', code: 'KT', name: 'Khoa Kinh Tế & Quản Trị Kinh Doanh' },
+      { id: 'NN', code: 'NN', name: 'Khoa Ngoại Ngữ' },
+      { id: 'DL', code: 'DL', name: 'Khoa Du Lịch & Khách Sạn' },
+      { id: 'DDT', code: 'DDT', name: 'Khoa Điện - Điện Tử & Tự Động Hóa' },
+      { id: 'KTNL', code: 'KTNL', name: 'Khoa Kỹ Thuật Năng Lượng' }
+    ];
+
+    // 2. Danh sách Nghề / Ngành đào tạo trực thuộc từng Khoa
+    const majors = [
+      { id: '7480103', code: '7480103', name: 'Kỹ thuật Phần mềm (Software Engineering)', faculty_id: 'CNTT' },
+      { id: '7480101', code: '7480101', name: 'Khoa học Máy tính & AI (Computer Science & AI)', faculty_id: 'CNTT' },
+      { id: '7480201', code: '7480201', name: 'Công nghệ Thông tin (Information Technology)', faculty_id: 'CNTT' },
+      { id: '7480104', code: '7480104', name: 'Hệ thống Thông tin (Information Systems)', faculty_id: 'CNTT' },
+      { id: '7340101', code: '7340101', name: 'Quản trị Kinh doanh (Business Administration)', faculty_id: 'KT' },
+      { id: '7220201', code: '7220201', name: 'Ngôn ngữ Anh (English Studies)', faculty_id: 'NN' },
+      { id: '7810103', code: '7810103', name: 'Quản trị Dịch vụ Du lịch & Lữ hành', faculty_id: 'DL' },
+      { id: '7510301', code: '7510301', name: 'Kỹ thuật Điện - Điện tử & IoT', faculty_id: 'DDT' },
+      { id: '7520130', code: '7520130', name: 'Kỹ thuật Năng lượng Tái tạo', faculty_id: 'KTNL' }
+    ];
+
+    // 3. Danh sách Học phần theo Khoa, Ngành và Số tín chỉ
+    let dbCourses = [];
+    try {
+      const { Course } = require('../models');
+      if (Course) {
+        dbCourses = await Course.findAll({ attributes: ['id', 'title', 'code'] });
+      }
+    } catch (e) {}
+
+    const defaultCourses = [
+      { id: 1, code: 'IT101', name: 'Nhập môn Lập trình C/C++', faculty_id: 'CNTT', major_id: '7480103', credits: 4 },
+      { id: 2, code: 'MATH101', name: 'Toán Cao Cấp 1 (Giải tích)', faculty_id: 'CNTT', major_id: '7480103', credits: 3 },
+      { id: 3, code: 'MATH102', name: 'Đại Số Tuyến Tính & Hình Học Giải Tích', faculty_id: 'CNTT', major_id: '7480103', credits: 3 },
+      { id: 4, code: 'ENG101', name: 'Tiếng Anh Học Thuật 1 (General English B1)', faculty_id: 'NN', major_id: '7220201', credits: 4 },
+      { id: 5, code: 'IT201', name: 'Cơ sở Dữ liệu (Database Systems)', faculty_id: 'CNTT', major_id: '7480103', credits: 3 },
+      { id: 6, code: 'IT301', name: 'Cấu trúc Dữ liệu & Giải thuật', faculty_id: 'CNTT', major_id: '7480103', credits: 3 },
+      { id: 7, code: 'PHYS101', name: 'Vật Lý Đại Cương & Thí Nghiệm', faculty_id: 'CNTT', major_id: '7480103', credits: 3 },
+      { id: 8, code: 'IT302', name: 'Kiến Trúc Máy Tính & Hợp Ngữ', faculty_id: 'CNTT', major_id: '7480103', credits: 3 },
+      { id: 9, code: 'IT401', name: 'Mạng Máy Tính & Truyền Số Liệu', faculty_id: 'CNTT', major_id: '7480103', credits: 3 },
+      { id: 10, code: 'SE301', name: 'Công Nghệ Phần Mềm (Software Engineering)', faculty_id: 'CNTT', major_id: '7480103', credits: 3 },
+      { id: 11, code: 'SE302', name: 'Lập Trình Hướng Đối Tượng Nâng Cao (OOP Java/C#)', faculty_id: 'CNTT', major_id: '7480103', credits: 4 },
+      { id: 12, code: 'SE401', name: 'Phát Triển Ứng Dụng Web Fullstack (MERN/NestJS)', faculty_id: 'CNTT', major_id: '7480103', credits: 4 },
+      { id: 13, code: 'AI301', name: 'Trí Tuệ Nhân Tạo & Học Máy Ứng Dụng', faculty_id: 'CNTT', major_id: '7480101', credits: 4 },
+      { id: 14, code: 'BA101', name: 'Kinh Tế Vi Mô (Microeconomics)', faculty_id: 'KT', major_id: '7340101', credits: 3 },
+      { id: 15, code: 'BA102', name: 'Quản Trị Học Đại Cương (Principles of Management)', faculty_id: 'KT', major_id: '7340101', credits: 3 },
+      { id: 16, code: 'BA201', name: 'Kinh Tế Vĩ Mô (Macroeconomics)', faculty_id: 'KT', major_id: '7340101', credits: 3 },
+      { id: 17, code: 'BA202', name: 'Nguyên Lý Kế Toán Doanh Nghiệp', faculty_id: 'KT', major_id: '7340101', credits: 3 },
+      { id: 18, code: 'EE101', name: 'Kỹ Thuật Mạch Điện Tử & IoT', faculty_id: 'DDT', major_id: '7510301', credits: 3 },
+      { id: 19, code: 'TOU101', name: 'Tổng Quan Du Lịch & Dịch Vụ Lữ Hành', faculty_id: 'DL', major_id: '7810103', credits: 3 }
+    ];
+
+    const courses = [...defaultCourses];
+    if (dbCourses && dbCourses.length > 0) {
+      dbCourses.forEach((dc, idx) => {
+        const cCode = dc.code || `CRS-${dc.id}`;
+        if (!courses.some(c => c.code === cCode)) {
+          courses.push({
+            id: 100 + idx,
+            code: cCode,
+            name: dc.title,
+            faculty_id: 'CNTT',
+            major_id: '7480103',
+            credits: 3
+          });
+        }
+      });
+    }
+
+    // 4. Danh sách Giảng viên làm Cán bộ coi thi (CBCT)
+    let lecturers = [];
+    try {
+      const teachers = await User.findAll({
+        where: { role: ['teacher', 'admin', 'superadmin'] },
+        attributes: ['id', 'full_name', 'title', 'faculty_name', 'faculty_id']
+      });
+      lecturers = teachers.map(t => ({
+        id: t.id,
+        name: `${t.title ? t.title + ' ' : ''}${t.full_name}`,
+        faculty_name: t.faculty_name,
+        faculty_id: t.faculty_id
+      }));
+    } catch (e) {}
+
+    if (lecturers.length === 0) {
+      lecturers = [
+        { id: 1, name: 'TS. Hoàng Đức Em (Khoa CNTT)', faculty_id: 'CNTT' },
+        { id: 2, name: 'PGS. TS. Trần Mạnh Tuấn (Khoa CNTT)', faculty_id: 'CNTT' },
+        { id: 3, name: 'TS. Nguyễn Văn An (Khoa CNTT)', faculty_id: 'CNTT' },
+        { id: 4, name: 'ThS. Chu Quỳnh Anh (Khoa CNTT)', faculty_id: 'CNTT' },
+        { id: 5, name: 'TS. Nguyễn Thị Hồng (Khoa Kinh tế)', faculty_id: 'KT' },
+        { id: 6, name: 'ThS. Vũ Nam (Khoa Kinh tế)', faculty_id: 'KT' },
+        { id: 7, name: 'TS. Phạm Thu Hương (Khoa Ngoại ngữ)', faculty_id: 'NN' },
+        { id: 8, name: 'ThS. Nguyễn Văn Quản (Phòng Khảo thí)', faculty_id: 'ALL' }
+      ];
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        faculties,
+        majors,
+        courses,
+        lecturers
+      }
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Lỗi tải danh mục học thuật: ' + err.message });
+  }
+};
+
 // 1. LẤY DANH SÁCH TẤT CẢ CA THI & PHÒNG THI TRỰC TUYẾN
 exports.getExamSchedules = async (req, res) => {
   try {

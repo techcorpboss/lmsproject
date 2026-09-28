@@ -209,6 +209,10 @@ const AcademicExamSchedule = sequelize.define('AcademicExamSchedule', {
   proctor_2: { type: DataTypes.STRING(150), defaultValue: 'ThS. Nguyễn Văn Quản' },
   security_level: { type: DataTypes.STRING(50), defaultValue: 'AI_PROCTORING_WEBCAM' },
   status: { type: DataTypes.STRING(50), defaultValue: 'SCHEDULED' },
+  faculty_id: { type: DataTypes.STRING(50), allowNull: true },
+  faculty_name: { type: DataTypes.STRING(150), allowNull: true },
+  major_id: { type: DataTypes.STRING(50), allowNull: true },
+  major_name: { type: DataTypes.STRING(150), allowNull: true },
   notes: { type: DataTypes.TEXT, allowNull: true }
 }, { tableName: 'academic_exam_schedules', underscored: true, timestamps: true });
 

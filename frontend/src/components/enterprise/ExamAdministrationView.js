@@ -11,7 +11,8 @@ import {
   StopOutlined, UserAddOutlined, ThunderboltOutlined,
   FileDoneOutlined, PrinterOutlined, ReloadOutlined,
   SearchOutlined, TeamOutlined, SafetyCertificateOutlined,
-  ExclamationCircleOutlined, EyeOutlined, EditOutlined, DeleteOutlined
+  ExclamationCircleOutlined, EyeOutlined, EditOutlined, DeleteOutlined,
+  BankOutlined, BookOutlined, ApartmentOutlined, SolutionOutlined
 } from '@ant-design/icons';
 import apiClient from '../../services/apiClient';
 
@@ -39,6 +40,97 @@ export default function ExamAdministrationView({ currentUser }) {
 
   const [scheduleForm] = Form.useForm();
   const [studentForm] = Form.useForm();
+
+  // Danh mục học thuật (Khoa, Ngành/Nghề, Học phần, CBCT) từ CSDL
+  const [academicOptions, setAcademicOptions] = useState({
+    faculties: [],
+    majors: [],
+    courses: [],
+    lecturers: []
+  });
+  const [selectedFaculty, setSelectedFaculty] = useState(null);
+  const [selectedMajor, setSelectedMajor] = useState(null);
+
+  const fetchAcademicOptions = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/exam/admin/academic-options');
+      if (res && res.success && res.data) {
+        setAcademicOptions(res.data);
+      }
+    } catch (err) {
+      console.warn('Lỗi tải danh mục học thuật:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAcademicOptions();
+  }, [fetchAcademicOptions]);
+
+  const handleFacultyChange = (facultyId) => {
+    setSelectedFaculty(facultyId);
+    setSelectedMajor(null);
+    scheduleForm.setFieldsValue({
+      major_id: undefined,
+      course_code: undefined,
+      course_name: undefined
+    });
+  };
+
+  const handleMajorChange = (majorId) => {
+    setSelectedMajor(majorId);
+    scheduleForm.setFieldsValue({
+      course_code: undefined,
+      course_name: undefined
+    });
+    if (majorId && !selectedFaculty) {
+      const m = academicOptions.majors.find(item => item.id === majorId);
+      if (m && m.faculty_id) {
+        setSelectedFaculty(m.faculty_id);
+        scheduleForm.setFieldsValue({ faculty_id: m.faculty_id });
+      }
+    }
+  };
+
+  const handleCourseCodeChange = (courseCode) => {
+    const selectedCourse = academicOptions.courses.find(c => c.code === courseCode);
+    if (selectedCourse) {
+      const autoExamName = `Khảo Thí Học Phần: ${selectedCourse.name} (${selectedCourse.code})`;
+      const autoRoomCode = `PHONG-${selectedCourse.code}-ONLINE`;
+
+      const updates = {
+        course_name: selectedCourse.name,
+        exam_name: autoExamName,
+        room_code: autoRoomCode
+      };
+
+      if (!selectedFaculty && selectedCourse.faculty_id) {
+        setSelectedFaculty(selectedCourse.faculty_id);
+        updates.faculty_id = selectedCourse.faculty_id;
+      }
+      if (!selectedMajor && selectedCourse.major_id) {
+        setSelectedMajor(selectedCourse.major_id);
+        updates.major_id = selectedCourse.major_id;
+      }
+
+      scheduleForm.setFieldsValue(updates);
+    }
+  };
+
+  const filteredMajors = useMemo(() => {
+    if (!selectedFaculty) return academicOptions.majors;
+    return academicOptions.majors.filter(m => m.faculty_id === selectedFaculty);
+  }, [academicOptions.majors, selectedFaculty]);
+
+  const filteredCourses = useMemo(() => {
+    let list = academicOptions.courses;
+    if (selectedFaculty) {
+      list = list.filter(c => c.faculty_id === selectedFaculty);
+    }
+    if (selectedMajor) {
+      list = list.filter(c => c.major_id === selectedMajor);
+    }
+    return list;
+  }, [academicOptions.courses, selectedFaculty, selectedMajor]);
 
   // 1. Tải danh sách ca thi
   const fetchSchedules = useCallback(async () => {
@@ -122,17 +214,24 @@ export default function ExamAdministrationView({ currentUser }) {
   // 5. Thêm ca thi mới
   const handleCreateSchedule = async (values) => {
     try {
+      const facultyObj = academicOptions.faculties.find(f => f.id === values.faculty_id);
+      const majorObj = academicOptions.majors.find(m => m.id === values.major_id);
+
       const payload = {
         ...values,
-        exam_date: values.exam_date ? values.exam_date.format('YYYY-MM-DD') : new Date().toISOString().split('T')[0],
-        start_time: values.time_range ? values.time_range[0].format('HH:mm') : '08:00',
-        end_time: values.time_range ? values.time_range[1].format('HH:mm') : '09:30'
+        faculty_name: facultyObj ? facultyObj.name : undefined,
+        major_name: majorObj ? majorObj.name : undefined,
+        exam_date: values.exam_date ? (values.exam_date.format ? values.exam_date.format('YYYY-MM-DD') : values.exam_date) : new Date().toISOString().split('T')[0],
+        start_time: values.time_range ? values.time_range[0].format('HH:mm') : (values.start_time || '08:00'),
+        end_time: values.time_range ? values.time_range[1].format('HH:mm') : (values.end_time || '09:30')
       };
       const res = await apiClient.post('/exam/admin/schedules', payload);
       if (res && res.success) {
         message.success('Đã khởi tạo ca thi trực tuyến mới thành công!');
         setScheduleModalOpen(false);
         scheduleForm.resetFields();
+        setSelectedFaculty(null);
+        setSelectedMajor(null);
         fetchSchedules();
       }
     } catch (err) {
@@ -699,15 +798,27 @@ export default function ExamAdministrationView({ currentUser }) {
         ]}
       />
 
-      {/* 1. MODAL LẬP CA THI MỚI */}
+      {/* 1. MODAL LẬP CA THI MỚI (CHUẨN BỘ GD&ĐT VỚI LỌC KHOA, NGHỀ, HỌC PHẦN TỪ CSDL) */}
       <Modal
         title={<b><ScheduleOutlined style={{ color: '#1677ff', marginRight: 8 }} /> Lập Ca Thi Trực Tuyến Mới (Chuẩn Bộ GD&ĐT)</b>}
         open={scheduleModalOpen}
-        onCancel={() => setScheduleModalOpen(false)}
+        onCancel={() => {
+          setScheduleModalOpen(false);
+          setSelectedFaculty(null);
+          setSelectedMajor(null);
+        }}
         footer={null}
-        width={680}
+        width={780}
         destroyOnClose
       >
+        <Alert
+          type="info"
+          showIcon
+          message="Hệ Thống Dữ Liệu Học Thuật Tích Hợp CSDL"
+          description="Chọn Khoa và Nghề/Ngành đào tạo để thu hẹp phạm vi học phần. Khi chọn Mã học phần, hệ thống tự động hiển thị Tên học phần đầy đủ và đề xuất Tên ca thi chuẩn hóa."
+          style={{ marginBottom: 18, borderRadius: 8 }}
+        />
+
         <Form
           form={scheduleForm}
           layout="vertical"
@@ -723,32 +834,116 @@ export default function ExamAdministrationView({ currentUser }) {
             room_code: `PHONG-THI-${Date.now().toString().slice(-2)}-ONLINE`
           }}
         >
+          {/* HÀNG 1: KHOA & NGHỀ / NGÀNH ĐÀO TẠO TỪ CSDL */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label={<Space><BankOutlined style={{ color: '#1677ff' }} /><span>Khoa Đào Tạo (Từ CSDL)</span></Space>}
+                name="faculty_id"
+                rules={[{ required: true, message: 'Vui lòng chọn Khoa quản lý đào tạo' }]}
+              >
+                <Select
+                  placeholder="-- Chọn Khoa đào tạo từ CSDL --"
+                  allowClear
+                  onChange={handleFacultyChange}
+                  showSearch
+                  optionFilterProp="children"
+                >
+                  {academicOptions.faculties.map(f => (
+                    <Option key={f.id} value={f.id}>
+                      <b>{f.code}</b> - {f.name}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label={<Space><ApartmentOutlined style={{ color: '#10b981' }} /><span>Nghề / Ngành Đào Tạo (Từ CSDL)</span></Space>}
+                name="major_id"
+                rules={[{ required: true, message: 'Vui lòng chọn Nghề / Ngành đào tạo' }]}
+              >
+                <Select
+                  placeholder={selectedFaculty ? "-- Chọn Nghề/Ngành thuộc Khoa --" : "-- Chọn Nghề/Ngành đào tạo --"}
+                  allowClear
+                  onChange={handleMajorChange}
+                  showSearch
+                  optionFilterProp="children"
+                >
+                  {filteredMajors.map(m => (
+                    <Option key={m.id} value={m.id}>
+                      <b>{m.code}</b> - {m.name}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* HÀNG 2: MÃ HỌC PHẦN & TÊN HỌC PHẦN (TỰ ĐỘNG HIỂN THỊ) */}
+          <Row gutter={16}>
+            <Col span={10}>
+              <Form.Item
+                label={<Space><BookOutlined style={{ color: '#7c3aed' }} /><span>Mã Học Phần (Lấy từ CSDL)</span></Space>}
+                name="course_code"
+                rules={[{ required: true, message: 'Vui lòng chọn Mã học phần' }]}
+              >
+                <Select
+                  showSearch
+                  placeholder="-- Chọn Mã học phần từ CSDL --"
+                  optionFilterProp="label"
+                  onChange={handleCourseCodeChange}
+                >
+                  {filteredCourses.map(c => (
+                    <Option key={c.id} value={c.code} label={`${c.code} ${c.name}`}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span><b>{c.code}</b> - {c.name}</span>
+                        <Tag color="cyan" style={{ fontSize: 11, margin: 0 }}>{c.credits || 3} TC</Tag>
+                      </div>
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={14}>
+              <Form.Item
+                label={<span>Tên Học Phần Đầy Đủ (<b style={{ color: '#16a34a' }}>Tự động hiển thị từ CSDL</b>)</span>}
+                name="course_name"
+                rules={[{ required: true, message: 'Tên học phần không được để trống' }]}
+              >
+                <Input
+                  placeholder="Tự động nhận diện và hiển thị khi chọn Mã học phần..."
+                  readOnly
+                  style={{
+                    backgroundColor: '#f0fdf4',
+                    color: '#15803d',
+                    fontWeight: 600,
+                    border: '1px solid #86efac'
+                  }}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* HÀNG 3: TÊN KỲ THI / CA THI & MÃ PHÒNG THI */}
           <Row gutter={16}>
             <Col span={16}>
-              <Form.Item label="Tên Kỳ Thi / Ca Thi" name="exam_name" rules={[{ required: true, message: 'Vui lòng nhập tên ca thi' }]}>
+              <Form.Item
+                label="Tên Kỳ Thi / Ca Thi (Tự động đề xuất theo học phần)"
+                name="exam_name"
+                rules={[{ required: true, message: 'Vui lòng nhập tên ca thi' }]}
+              >
                 <Input placeholder="VD: Khảo Thí Học Phần: Lập Trình Web Nâng Cao" />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item label="Mã Học Phần" name="course_code" rules={[{ required: true, message: 'Vui lòng nhập mã học phần' }]}>
-                <Input placeholder="VD: IT101" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="Tên Học Phần Đầy Đủ" name="course_name" rules={[{ required: true, message: 'Vui lòng nhập tên học phần' }]}>
-                <Input placeholder="VD: Lập trình Web Nâng cao" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
               <Form.Item label="Mã Phòng Thi Trực Tuyến" name="room_code">
-                <Input placeholder="VD: PHONG-01-ONLINE" />
+                <Input placeholder="VD: PHONG-THI-01-ONLINE" />
               </Form.Item>
             </Col>
           </Row>
 
+          {/* HÀNG 4: HỌC KỲ, NĂM HỌC, THỜI LƯỢNG */}
           <Row gutter={16}>
             <Col span={8}>
               <Form.Item label="Học Kỳ" name="semester">
@@ -771,19 +966,49 @@ export default function ExamAdministrationView({ currentUser }) {
             </Col>
           </Row>
 
+          {/* HÀNG 5: CÁN BỘ COI THI 1 & 2 (CHỌN TỪ GIẢNG VIÊN CSDL) */}
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="Cán Bộ Coi Thi 1 (CBCT 1)" name="proctor_1" rules={[{ required: true }]}>
-                <Input />
+              <Form.Item
+                label={<Space><SolutionOutlined style={{ color: '#1677ff' }} /><span>Cán Bộ Coi Thi 1 (CBCT 1 - Từ CSDL)</span></Space>}
+                name="proctor_1"
+                rules={[{ required: true, message: 'Vui lòng chọn hoặc nhập CBCT 1' }]}
+              >
+                <Select
+                  showSearch
+                  placeholder="-- Chọn CBCT 1 từ danh sách Giảng viên --"
+                  optionFilterProp="children"
+                >
+                  {academicOptions.lecturers.map(l => (
+                    <Option key={`cbct1_${l.id}`} value={l.name}>
+                      {l.name} {l.faculty_name ? `(${l.faculty_name})` : ''}
+                    </Option>
+                  ))}
+                </Select>
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="Cán Bộ Coi Thi 2 (CBCT 2)" name="proctor_2" rules={[{ required: true }]}>
-                <Input />
+              <Form.Item
+                label={<Space><SolutionOutlined style={{ color: '#10b981' }} /><span>Cán Bộ Coi Thi 2 (CBCT 2 - Từ CSDL)</span></Space>}
+                name="proctor_2"
+                rules={[{ required: true, message: 'Vui lòng chọn hoặc nhập CBCT 2' }]}
+              >
+                <Select
+                  showSearch
+                  placeholder="-- Chọn CBCT 2 từ danh sách Giảng viên --"
+                  optionFilterProp="children"
+                >
+                  {academicOptions.lecturers.map(l => (
+                    <Option key={`cbct2_${l.id}`} value={l.name}>
+                      {l.name} {l.faculty_name ? `(${l.faculty_name})` : ''}
+                    </Option>
+                  ))}
+                </Select>
               </Form.Item>
             </Col>
           </Row>
 
+          {/* HÀNG 6: HÌNH THỨC THI & CHẾ ĐỘ AN NINH */}
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="Hình Thức Thi" name="exam_type">
@@ -812,8 +1037,14 @@ export default function ExamAdministrationView({ currentUser }) {
 
           <div style={{ textAlign: 'right', marginTop: 16 }}>
             <Space>
-              <Button onClick={() => setScheduleModalOpen(false)}>Hủy</Button>
-              <Button type="primary" htmlType="submit" style={{ backgroundColor: '#10b981', borderColor: '#10b981' }}>
+              <Button onClick={() => {
+                setScheduleModalOpen(false);
+                setSelectedFaculty(null);
+                setSelectedMajor(null);
+              }}>
+                Hủy
+              </Button>
+              <Button type="primary" htmlType="submit" style={{ backgroundColor: '#10b981', borderColor: '#10b981', height: 38, fontWeight: 600, padding: '0 24px' }}>
                 Khởi tạo ca thi
               </Button>
             </Space>

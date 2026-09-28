@@ -300,7 +300,7 @@ function App() {
             {
               key: 'curriculum_framework',
               icon: <AuditOutlined />,
-              label: 'Khung Đào Tạo Độc Lập'
+              label: 'Khung Chương trình Đào Tạo'
             }
           ] : (currentUser.role === 'student' ? [
             {

@@ -95,6 +95,7 @@ router.post('/templates/:id/generate', async (req, res) => {
 const examAdminController = require('../controllers/examAdministration.controller');
 
 // 6.1. Quản lý Tổ chức Thi Trực Tuyến & Cấp Quyền Dự Thi (Chuẩn Thông tư 08/2021/TT-BGDĐT)
+router.get('/admin/academic-options', examAdminController.getAcademicOptions);
 router.get('/admin/schedules', examAdminController.getExamSchedules);
 router.post('/admin/schedules', examAdminController.createExamSchedule);
 router.put('/admin/schedules/:id', examAdminController.updateExamSchedule);
