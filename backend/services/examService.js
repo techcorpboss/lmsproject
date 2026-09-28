@@ -123,30 +123,102 @@ class ExamService {
 
   // 5. Kiểm tra quyền vào phòng thi & Lấy đề thi cho thí sinh
   async checkExamAccess(scheduleId, user) {
-    const schedule = await AcademicExamSchedule.findByPk(scheduleId || 1);
+    const { ExamCandidateAuthorization, sequelize } = require('../models');
+    let schedule = null;
+    
+    if (scheduleId) {
+      schedule = await AcademicExamSchedule.findByPk(scheduleId);
+    }
     if (!schedule) {
-      // Mock schedule if none exists
+      schedule = await AcademicExamSchedule.findOne({ order: [['id', 'ASC']] });
+    }
+
+    if (!schedule) {
       return {
-        status: 'OPEN',
-        can_enter: true,
-        message: 'Ca thi đang mở. Chúc bạn làm bài tốt!',
-        schedule: {
-          id: 1,
-          exam_name: 'Thi Trắc nghiệm Trực tuyến — Học kỳ 1 (2026-2027)',
-          start_time: '08:00',
-          end_time: '23:59',
-          duration_minutes: 60
-        },
-        paper: await this.getSampleOrFirstPaper()
+        status: 'CLOSED',
+        can_enter: false,
+        message: 'Không tìm thấy ca thi nào đang mở trên hệ thống.'
       };
     }
 
+    const isPrivileged = user && (user.role === 'superadmin' || user.role === 'admin' || user.role === 'teacher');
+
+    if (!isPrivileged && user) {
+      const studentCode = user.student_code || user.username;
+      const authRecord = await ExamCandidateAuthorization.findOne({
+        where: {
+          schedule_id: schedule.id,
+          [sequelize.Sequelize.Op.or]: [
+            { student_code: studentCode },
+            { student_id: user.id },
+            { student_name: user.full_name }
+          ]
+        }
+      });
+
+      if (!authRecord || authRecord.authorization_status !== 'GRANTED') {
+        const status = authRecord ? authRecord.authorization_status : 'PENDING';
+        const reason = authRecord?.notes || 'Chưa được Admin hoặc SuperAdmin phê duyệt đủ điều kiện dự thi theo quy chế Bộ GD&ĐT (chuyên cần, học phí).';
+
+        return {
+          status: 'UNAUTHORIZED',
+          can_enter: false,
+          authorization_status: status,
+          reason,
+          seat_number: authRecord?.seat_number || 'Chưa xếp SBD',
+          student_info: {
+            name: user.full_name,
+            code: studentCode,
+            class_name: user.class_name || authRecord?.class_name || 'Chưa phân lớp',
+            attendance_pct: authRecord?.attendance_pct || 75,
+            tuition_cleared: authRecord?.tuition_cleared || false
+          },
+          schedule: {
+            id: schedule.id,
+            exam_name: schedule.exam_name,
+            course_name: schedule.course_name,
+            course_code: schedule.course_code,
+            start_time: schedule.start_time,
+            end_time: schedule.end_time,
+            duration_minutes: schedule.duration_minutes
+          },
+          message: `Thí sinh [${user.full_name}] chưa được cấp quyền tham gia ca thi này. Vui lòng liên hệ Hội đồng Khảo thí hoặc Quản trị viên để được phê duyệt điều kiện dự thi.`
+        };
+      }
+
+      // Đã được cấp quyền dự thi chính thức!
+      return {
+        status: 'GRANTED',
+        can_enter: true,
+        authorization_status: 'GRANTED',
+        seat_number: authRecord.seat_number,
+        student_info: {
+          name: user.full_name,
+          code: studentCode,
+          seat_number: authRecord.seat_number,
+          class_name: authRecord.class_name
+        },
+        schedule,
+        paper: await this.getSampleOrFirstPaper(schedule.paper_id),
+        message: `Chào mừng thí sinh ${user.full_name} (${authRecord.seat_number}). Bạn đã được cấp quyền dự thi chính thức!`
+      };
+    }
+
+    // Admin, SuperAdmin, Giảng viên có quyền xem trước (Preview) hoặc giám thị
     return {
-      status: 'OPEN',
+      status: 'ADMIN_PREVIEW',
       can_enter: true,
-      message: 'Ca thi hợp lệ.',
+      authorization_status: 'GRANTED',
+      is_admin_mode: true,
+      seat_number: 'GIÁM THỊ / ADMIN',
+      student_info: {
+        name: user?.full_name || 'Quản trị viên',
+        code: user?.username || 'admin',
+        seat_number: 'ADMIN'
+      },
       schedule,
-      paper: await this.getSampleOrFirstPaper(schedule.paper_id)
+      paper: await this.getSampleOrFirstPaper(schedule.paper_id),
+      message: 'Chế độ xem trước & giám sát đề thi dành cho Quản trị viên / Hội đồng thi.'
     };
   }
 

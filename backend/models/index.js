@@ -191,15 +191,49 @@ const ExamPaperQuestion = sequelize.define('ExamPaperQuestion', {
 // 16. Academic Exam Schedule Model
 const AcademicExamSchedule = sequelize.define('AcademicExamSchedule', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  exam_code: { type: DataTypes.STRING(50), allowNull: true },
   exam_name: { type: DataTypes.STRING(255), allowNull: false },
+  semester: { type: DataTypes.STRING(50), defaultValue: 'Học kỳ 1' },
+  academic_year: { type: DataTypes.STRING(50), defaultValue: '2026-2027' },
   exam_date: { type: DataTypes.DATEONLY, allowNull: false },
   start_time: { type: DataTypes.STRING(10), defaultValue: '07:30' },
   end_time: { type: DataTypes.STRING(10), defaultValue: '09:00' },
+  duration_minutes: { type: DataTypes.INTEGER, defaultValue: 60 },
   course_id: { type: DataTypes.INTEGER, allowNull: true },
+  course_code: { type: DataTypes.STRING(50), allowNull: true },
   course_name: { type: DataTypes.STRING(255), allowNull: true },
+  room_code: { type: DataTypes.STRING(50), defaultValue: 'PHONG-ONLINE-01' },
   paper_id: { type: DataTypes.INTEGER, allowNull: true },
-  status: { type: DataTypes.STRING(50), defaultValue: 'SCHEDULED' }
+  exam_type: { type: DataTypes.STRING(50), defaultValue: 'Trắc nghiệm khách quan trực tuyến' },
+  proctor_1: { type: DataTypes.STRING(150), defaultValue: 'TS. Hoàng Đức Em' },
+  proctor_2: { type: DataTypes.STRING(150), defaultValue: 'ThS. Nguyễn Văn Quản' },
+  security_level: { type: DataTypes.STRING(50), defaultValue: 'AI_PROCTORING_WEBCAM' },
+  status: { type: DataTypes.STRING(50), defaultValue: 'SCHEDULED' },
+  notes: { type: DataTypes.TEXT, allowNull: true }
 }, { tableName: 'academic_exam_schedules', underscored: true, timestamps: true });
+
+// 17. Exam Candidate Authorization Model (Cấp quyền & Thí sinh dự thi theo quy chế Bộ GD&ĐT)
+const ExamCandidateAuthorization = sequelize.define('ExamCandidateAuthorization', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  schedule_id: { type: DataTypes.INTEGER, allowNull: false },
+  student_id: { type: DataTypes.INTEGER, allowNull: true },
+  student_code: { type: DataTypes.STRING(50), allowNull: false },
+  student_name: { type: DataTypes.STRING(150), allowNull: false },
+  class_name: { type: DataTypes.STRING(50), allowNull: true },
+  seat_number: { type: DataTypes.STRING(50), allowNull: true },
+  subject_code: { type: DataTypes.STRING(50), allowNull: true },
+  subject_name: { type: DataTypes.STRING(150), allowNull: true },
+  attendance_pct: { type: DataTypes.INTEGER, defaultValue: 90 },
+  tuition_cleared: { type: DataTypes.BOOLEAN, defaultValue: true },
+  condition_passed: { type: DataTypes.BOOLEAN, defaultValue: true },
+  authorization_status: {
+    type: DataTypes.ENUM('GRANTED', 'PENDING', 'DENIED', 'SUSPENDED', 'SUBMITTED'),
+    defaultValue: 'PENDING'
+  },
+  authorized_by: { type: DataTypes.STRING(150), allowNull: true },
+  authorized_at: { type: DataTypes.DATE, allowNull: true },
+  notes: { type: DataTypes.TEXT, allowNull: true }
+}, { tableName: 'exam_candidate_authorizations', underscored: true, timestamps: true });
 
 // Associations
 Course.hasMany(CourseSection, { foreignKey: 'course_id', as: 'sections' });
@@ -229,6 +263,10 @@ ExamTemplateRule.belongsTo(ExamTemplate, { foreignKey: 'template_id' });
 ExamPaper.belongsToMany(QbankQuestion, { through: ExamPaperQuestion, foreignKey: 'paper_id', otherKey: 'question_id', as: 'questions' });
 QbankQuestion.belongsToMany(ExamPaper, { through: ExamPaperQuestion, foreignKey: 'question_id', otherKey: 'paper_id' });
 
+AcademicExamSchedule.hasMany(ExamCandidateAuthorization, { foreignKey: 'schedule_id', as: 'candidates' });
+ExamCandidateAuthorization.belongsTo(AcademicExamSchedule, { foreignKey: 'schedule_id', as: 'schedule' });
+ExamCandidateAuthorization.belongsTo(User, { foreignKey: 'student_id', as: 'student' });
+
 module.exports = {
   sequelize,
   User,
@@ -246,5 +284,6 @@ module.exports = {
   ExamTemplateRule,
   ExamPaper,
   ExamPaperQuestion,
-  AcademicExamSchedule
+  AcademicExamSchedule,
+  ExamCandidateAuthorization
 };

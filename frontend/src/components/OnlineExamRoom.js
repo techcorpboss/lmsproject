@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Row, Col, Card, Button, Typography, Space, Tag, Modal, Alert,
-  Progress, notification, Divider, Badge, message, Tooltip, Statistic
+  Progress, notification, Divider, Badge, message, Tooltip, Statistic, Descriptions, Spin
 } from 'antd';
 import {
   ClockCircleOutlined, WarningOutlined, CheckCircleOutlined,
   FullscreenOutlined, SafetyCertificateOutlined, SendOutlined,
   ExclamationCircleOutlined, VideoCameraOutlined, SoundOutlined,
   DownloadOutlined, LockOutlined, EyeOutlined, AudioOutlined,
-  ThunderboltOutlined, StopOutlined, ReloadOutlined
+  ThunderboltOutlined, StopOutlined, ReloadOutlined, UserOutlined,
+  BookOutlined, FileProtectOutlined, MailOutlined
 } from '@ant-design/icons';
 import { io } from 'socket.io-client';
 import apiClient from '../services/apiClient';
@@ -43,85 +44,45 @@ export default function OnlineExamRoom({ currentUser }) {
   const aiDetectionIntervalRef = useRef(null);
   const countdownIntervalRef = useRef(null);
 
-  // 1. Tải thông tin phòng thi & Đề thi
-  const loadExamAccess = async () => {
+  // Danh sách các môn thi trong đợt & Trạng thái cấp quyền
+  const [eligibleExams, setEligibleExams] = useState([]);
+  const [selectedScheduleId, setSelectedScheduleId] = useState(null);
+  const [loadingAccess, setLoadingAccess] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
+
+  // 1. Tải thông tin các môn thi và quyền dự thi
+  const loadEligibleExams = async () => {
     try {
-      const res = await apiClient.get('/exam/access');
+      const res = await apiClient.get('/exam/my-eligible-exams');
+      if (res && res.success && res.data && res.data.length > 0) {
+        setEligibleExams(res.data);
+        const firstSchedId = res.data[0].schedule?.id || 1;
+        setSelectedScheduleId(firstSchedId);
+        loadExamAccess(firstSchedId);
+      } else {
+        loadExamAccess(1);
+      }
+    } catch (e) {
+      loadExamAccess(1);
+    }
+  };
+
+  const loadExamAccess = async (schedId = 1) => {
+    setLoadingAccess(true);
+    try {
+      const res = await apiClient.get('/exam/access', { params: { schedule_id: schedId } });
       if (res && res.success && res.data) {
         setExamData(res.data);
       }
     } catch (err) {
-      setExamData({
-        schedule: {
-          id: 1,
-          exam_name: 'Kỳ Thi Khảo Thí Trực Tuyến — Chuẩn Quốc Tế 2026 (TCU & Pearson VUE)',
-          start_time: '08:00',
-          end_time: '23:59',
-          duration_minutes: 60
-        },
-        paper: {
-          id: 101,
-          name: 'Đề Thi Số 1: Khảo Thí Đảm Bảo Chất Lượng & Quản Trị Số Đại Học',
-          total_marks: 10.0,
-          questions: [
-            {
-              id: 1,
-              content: 'Bộ tiêu chuẩn AUN-QA 4.0 cấp Chương trình đào tạo bao gồm bao nhiêu tiêu chuẩn?',
-              answers: [
-                { id: 11, content: '11 tiêu chuẩn' },
-                { id: 12, content: '15 tiêu chuẩn (Chính xác)', is_correct: true },
-                { id: 13, content: '8 tiêu chuẩn' },
-                { id: 14, content: '20 tiêu chuẩn' }
-              ]
-            },
-            {
-              id: 2,
-              content: 'Tiêu chuẩn ISO 21001:2018 áp dụng cấu trúc bậc cao gồm bao nhiêu điều khoản chính?',
-              answers: [
-                { id: 21, content: '10 điều khoản (Điều 4 đến Điều 10 chứa yêu cầu cốt lõi)', is_correct: true },
-                { id: 22, content: '7 điều khoản' },
-                { id: 23, content: '12 điều khoản' },
-                { id: 24, content: '15 điều khoản' }
-              ]
-            },
-            {
-              id: 3,
-              content: 'Chu trình cải tiến liên tục Deming trong quản lý chất lượng giáo dục viết tắt là gì?',
-              answers: [
-                { id: 31, content: 'PDCA (Plan - Do - Check - Act)', is_correct: true },
-                { id: 32, content: 'SWOT' },
-                { id: 33, content: 'SMART' },
-                { id: 34, content: 'OKR' }
-              ]
-            },
-            {
-              id: 4,
-              content: 'Hệ thống LMS tiêu chuẩn quốc tế bắt buộc phải hỗ trợ chuẩn đóng gói học liệu số nào sau đây?',
-              answers: [
-                { id: 41, content: 'SCORM 1.2 / 2004 và xAPI (Tin Can API / cmi5)', is_correct: true },
-                { id: 42, content: 'Chỉ hỗ trợ file MP4 đơn thuần' },
-                { id: 43, content: 'Chỉ hỗ trợ file nén ZIP' },
-                { id: 44, content: 'Flash SWF' }
-              ]
-            },
-            {
-              id: 5,
-              content: 'Chuẩn trao đổi dữ liệu ngân hàng đề thi quốc tế viết tắt là gì?',
-              answers: [
-                { id: 51, content: 'IMS QTI (Question & Test Interoperability) v2.1/v3.0', is_correct: true },
-                { id: 52, content: 'JSON API' },
-                { id: 53, content: 'SQL DUMP' },
-                { id: 54, content: 'CSV Export' }
-              ]
-            }
-          ]
-        }
-      });
+      console.error('Lỗi kiểm tra quyền thi:', err);
+    } finally {
+      setLoadingAccess(false);
     }
   };
 
   useEffect(() => {
-    loadExamAccess();
+    loadEligibleExams();
 
     // Kiểm tra Safe Exam Browser Client
     const userAgent = navigator.userAgent || '';
@@ -463,126 +424,377 @@ export default function OnlineExamRoom({ currentUser }) {
   const activeQuestion = questions[currentQuestionIdx];
 
   // =========================================================================
-  // VIEW 1: EXAM LOBBY (PHÒNG CHỜ & KIỂM TRA THIẾT BỊ)
+  // VIEW 1: EXAM LOBBY (PHÒNG CHỜ & KIỂM TRA THIẾT BỊ / XÁC THỰC CẤP QUYỀN)
   // =========================================================================
   if (examStatus === 'LOBBY') {
+    const candidate = examData?.candidate;
+    const schedule = examData?.schedule;
+    const isGranted = examData?.can_enter === true;
+
     return (
       <div style={{ maxWidth: 950, margin: '0 auto', padding: '32px 16px' }}>
         <Card style={{ borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-          <div style={{ textAlign: 'center', marginBottom: 24 }}>
-            <SafetyCertificateOutlined style={{ fontSize: 64, color: '#1677ff' }} />
-            <Title level={2} style={{ margin: '16px 0 8px', color: '#092b00' }}>
-              {examData?.schedule?.exam_name || 'Phòng Khảo Thí Trực Tuyến Chuẩn Quốc Tế'}
+          {/* HEADER */}
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <SafetyCertificateOutlined style={{ fontSize: 60, color: isGranted ? '#1677ff' : '#faad14' }} />
+            <Title level={2} style={{ margin: '14px 0 6px', color: '#0f172a' }}>
+              {schedule?.exam_name || 'Phòng Khảo Thí Trực Tuyến Chuẩn Quốc Tế'}
             </Title>
-            <Space wrap>
-              <Tag color="green" style={{ fontSize: 13, padding: '3px 12px' }}>
-                ● CA THI ĐANG MỞ
+            <Space wrap size="middle">
+              <Tag color="geekblue" style={{ fontSize: 13, padding: '3px 10px' }}>
+                Học kỳ: {schedule?.semester || 'HK 2'} - Năm học: {schedule?.academic_year || '2025-2026'}
               </Tag>
-              <Tag color="blue">Chuẩn Pearson VUE / Mercer Mettl</Tag>
-              <Tag color="purple">WebRTC Video & AI Proctoring 2.0</Tag>
+              <Tag color="cyan">Mã ca: {schedule?.exam_code || 'EXAM-2026-01'}</Tag>
+              <Tag color="purple">Phòng ảo: {schedule?.room_code || 'ROOM-P01'}</Tag>
+              {examData?.is_admin_mode && (
+                <Tag color="gold" style={{ fontWeight: 'bold' }}>QUYỀN QUẢN TRỊ / GIÁM THỊ</Tag>
+              )}
             </Space>
           </div>
 
-          {/* CHECKLIST ĐIỀU KIỆN DỰ THI */}
-          <Card
-            title={<Space><LockOutlined /><span>Yêu Cầu Kỹ Thuật Khóa Trình Duyệt & Giám Thị AI</span></Space>}
-            style={{ marginBottom: 24, background: '#f8fafc' }}
-          >
-            <Row gutter={[16, 12]}>
-              <Col xs={24} md={12}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 18 }} />
-                  <div>
-                    <Text strong>Webcam & Microphone HD (WebRTC):</Text>
-                    <div style={{ fontSize: 12, color: '#64748b' }}>Truyền luồng video trực tiếp 720p về Hội đồng giám sát.</div>
-                  </div>
-                </div>
-              </Col>
-              <Col xs={24} md={12}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 18 }} />
-                  <div>
-                    <Text strong>AI Proctoring Engine:</Text>
-                    <div style={{ fontSize: 12, color: '#64748b' }}>Nhận diện quay mặt, rời khỏi camera hoặc người thứ 2.</div>
-                  </div>
-                </div>
-              </Col>
-              <Col xs={24} md={12}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 18 }} />
-                  <div>
-                    <Text strong>Kiosk Lockdown Mode (Toàn Màn Hình):</Text>
-                    <div style={{ fontSize: 12, color: '#64748b' }}>Chặn Alt+Tab, F12 DevTools, PrintScreen, Clipboard.</div>
-                  </div>
-                </div>
-              </Col>
-              <Col xs={24} md={12}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 18 }} />
-                  <div>
-                    <Text strong>Hỗ Trợ Safe Exam Browser (SEB):</Text>
-                    <div style={{ fontSize: 12, color: '#64748b' }}>Tương thích khóa triệt để tiến trình chạy ngầm của HĐH.</div>
-                  </div>
-                </div>
-              </Col>
-            </Row>
+          {/* DANH SÁCH MÔN THI / CA THI ĐƯỢC PHÂN BỔ (NẾU CÓ NHIỀU HỌC PHẦN) */}
+          {eligibleExams && eligibleExams.length > 1 && (
+            <Card
+              size="small"
+              title={<Space><BookOutlined /><span>Danh Sách Học Phần / Ca Thi Được Phân Bổ</span></Space>}
+              style={{ marginBottom: 20, background: '#f8fafc', borderRadius: 8 }}
+            >
+              <Row gutter={[12, 12]}>
+                {eligibleExams.map(item => {
+                  const s = item.schedule || {};
+                  const isSelected = selectedScheduleId === s.id;
+                  const isItemGranted = item.authorization_status === 'GRANTED';
+                  return (
+                    <Col xs={24} sm={12} md={8} key={item.id || s.id}>
+                      <div
+                        onClick={() => {
+                          setSelectedScheduleId(s.id);
+                          loadExamAccess(s.id);
+                        }}
+                        style={{
+                          padding: '10px 14px',
+                          borderRadius: 8,
+                          cursor: 'pointer',
+                          border: isSelected ? '2px solid #1677ff' : '1px solid #e2e8f0',
+                          background: isSelected ? '#eff6ff' : '#ffffff',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                          <Text strong style={{ color: isSelected ? '#1677ff' : '#1e293b', fontSize: 13 }}>
+                            {s.exam_code || 'CA THI'}
+                          </Text>
+                          <Tag color={isItemGranted ? 'success' : 'warning'} style={{ fontSize: 11, margin: 0 }}>
+                            {isItemGranted ? 'Được thi' : 'Chưa duyệt'}
+                          </Tag>
+                        </div>
+                        <div style={{ fontSize: 12, color: '#475569', fontWeight: 500 }}>
+                          {s.exam_name || item.subject_name}
+                        </div>
+                        <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
+                          Phòng: {s.room_code || 'P01'} | SBD: {item.seat_number || 'Chưa cấp'}
+                        </div>
+                      </div>
+                    </Col>
+                  );
+                })}
+              </Row>
+            </Card>
+          )}
 
-            <Divider style={{ margin: '14px 0' }} />
+          {loadingAccess ? (
+            <div style={{ textAlign: 'center', padding: '60px 0' }}>
+              <Spin size="large" tip="Đang thẩm định quyền dự thi từ Hội đồng Khảo thí..." />
+            </div>
+          ) : !isGranted ? (
+            /* ========================================================================= */
+            /* TRƯỜNG HỢP: CHƯA ĐƯỢC CẤP QUYỀN DỰ THI THEO QUY CHẾ BỘ GD&ĐT              */
+            /* ========================================================================= */
+            <div>
+              <Alert
+                type="error"
+                showIcon
+                icon={<StopOutlined style={{ fontSize: 24, marginTop: 4 }} />}
+                message={
+                  <span style={{ fontSize: 16, fontWeight: 'bold' }}>
+                    CHƯA ĐƯỢC CẤP QUYỀN THI MÔN HỌC NÀY
+                  </span>
+                }
+                description={
+                  <div style={{ marginTop: 8, fontSize: 13, lineHeight: 1.6 }}>
+                    <div>
+                      {examData?.message || 'Thí sinh chưa được Admin hoặc Hội đồng thi phê duyệt cấp quyền dự thi cho môn học này.'}
+                    </div>
+                    <div style={{ marginTop: 6, color: '#dc2626', fontWeight: 600 }}>
+                      ⚠️ Theo quy định tại Điều 13 Thông tư 08/2021/TT-BGDĐT của Bộ Giáo dục & Đào tạo:
+                      Người học phải hoàn thành điều kiện tiên quyết (chuyên cần $\ge$ 80%, học phí, điều kiện học vụ) và phải được Quản trị viên/Hội đồng thi phê duyệt danh sách chính thức mới được phép truy cập làm bài thi trực tuyến.
+                    </div>
+                  </div>
+                }
+                style={{ marginBottom: 20, borderRadius: 8, border: '1px solid #fca5a5', background: '#fef2f2' }}
+              />
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-              <Space>
-                <Tag color={isSebVerified ? 'green' : 'orange'}>
-                  {isSebVerified ? 'Đã chạy trên Safe Exam Browser (SEB)' : 'Web Kiosk Lockdown (Trình duyệt chuẩn)'}
-                </Tag>
-                <Text type="secondary" style={{ fontSize: 12 }}>Độ trễ mạng: {networkPing}ms (Rất tốt)</Text>
-              </Space>
-              <Button
-                icon={<DownloadOutlined />}
+              {/* THÔNG TIN HỒ SƠ THẨM ĐỊNH ĐIỀU KIỆN */}
+              <Card
+                title={<Space><UserOutlined /><span>Thông Tin Thí Sinh & Kết Quả Thẩm Định Điều Kiện Dự Thi</span></Space>}
                 size="small"
-                onClick={() => window.open('/api/exam/seb/config', '_blank')}
+                style={{ marginBottom: 20, borderRadius: 8, background: '#fafafa' }}
+                extra={
+                  <Tag color={
+                    candidate?.authorization_status === 'DENIED' ? 'error' :
+                    candidate?.authorization_status === 'SUSPENDED' ? 'magenta' : 'warning'
+                  }>
+                    Trạng thái: {
+                      candidate?.authorization_status === 'DENIED' ? 'TỪ CHỐI CẤP QUYỀN' :
+                      candidate?.authorization_status === 'SUSPENDED' ? 'BỊ ĐÌNH CHỈ THI' :
+                      candidate?.authorization_status === 'PENDING' ? 'CHỜ DUYỆT CẤP QUYỀN' : 'CHƯA CÓ TRONG DANH SÁCH'
+                    }
+                  </Tag>
+                }
               >
-                Tải Cấu Hình Safe Exam Browser (.seb)
+                <Descriptions bordered size="small" column={{ xs: 1, sm: 2, md: 3 }}>
+                  <Descriptions.Item label="Họ và tên thí sinh">
+                    <b>{candidate?.student_name || currentUser?.full_name || 'Chưa cập nhật'}</b>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Mã sinh viên (MSSV)">
+                    <b>{candidate?.student_code || currentUser?.username || 'SV-N/A'}</b>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Lớp sinh hoạt">
+                    {candidate?.class_name || 'Lớp chuyên ngành'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Số Báo Danh (SBD)">
+                    <Tag color="blue">{candidate?.seat_number || 'Chưa cấp số báo danh'}</Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Học phần thi">
+                    <b>{candidate?.subject_name || schedule?.exam_name || 'Học phần'}</b> ({candidate?.subject_code || schedule?.exam_code || 'N/A'})
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Phòng thi ảo">
+                    {schedule?.room_code || 'ROOM-P01'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Chuyên cần học phần">
+                    {candidate?.attendance_pct != null ? (
+                      <Space>
+                        <b>{candidate.attendance_pct}%</b>
+                        {candidate.attendance_pct >= 80 ? (
+                          <Tag color="success">Đạt chuẩn ($\ge 80\%$)</Tag>
+                        ) : (
+                          <Tag color="error">Không đạt ($&lt; 80\%$)</Tag>
+                        )}
+                      </Space>
+                    ) : (
+                      <span style={{ color: '#94a3b8' }}>Chưa ghi nhận</span>
+                    )}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Nghĩa vụ học phí">
+                    {candidate?.tuition_cleared ? (
+                      <Tag color="success">Đã hoàn thành</Tag>
+                    ) : (
+                      <Tag color="error">Chưa hoàn thành / Còn nợ</Tag>
+                    )}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Cán bộ coi thi">
+                    {schedule?.proctor_1 ? `${schedule.proctor_1}${schedule?.proctor_2 ? ` & ${schedule.proctor_2}` : ''}` : 'Hội đồng Khảo thí'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Ghi chú từ Hội đồng" span={3}>
+                    <Text type="secondary">
+                      {candidate?.notes || examData?.message || 'Liên hệ Phòng Khảo thí & Đảm bảo chất lượng hoặc Ban Quản trị hệ thống để được hỗ trợ xét duyệt.'}
+                    </Text>
+                  </Descriptions.Item>
+                </Descriptions>
+              </Card>
+
+              {/* HÀNH ĐỘNG KHI BỊ CHẶN */}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 24 }}>
+                <Button
+                  type="primary"
+                  icon={<MailOutlined />}
+                  size="large"
+                  disabled={requestSent}
+                  onClick={() => {
+                    setRequestSent(true);
+                    message.success('Đã gửi đề nghị xét duyệt cấp quyền dự thi đến Admin và Thư ký Hội đồng thi!');
+                  }}
+                  style={{
+                    background: requestSent ? '#94a3b8' : '#1677ff',
+                    height: 48,
+                    padding: '0 28px',
+                    fontWeight: 600,
+                    borderRadius: 8
+                  }}
+                >
+                  {requestSent ? 'Đã Gửi Đề Nghị Phê Duyệt' : '📩 Gửi Đề Nghị Cấp Quyền Dự Thi Lên Hội Đồng'}
+                </Button>
+                <Button
+                  icon={<ReloadOutlined />}
+                  size="large"
+                  onClick={() => loadExamAccess(selectedScheduleId || 1)}
+                  style={{ height: 48, borderRadius: 8, fontWeight: 500 }}
+                >
+                  Kiểm Tra Lại Quyền Thi
+                </Button>
+              </div>
+            </div>
+          ) : (
+            /* ========================================================================= */
+            /* TRƯỜNG HỢP: ĐÃ ĐƯỢC PHÊ DUYỆT CẤP QUYỀN THI (GRANTED / ADMIN)              */
+            /* ========================================================================= */
+            <div>
+              {/* THẺ DỰ THI SỐ (DIGITAL EXAM PASS) */}
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%)',
+                  borderRadius: 12,
+                  padding: '20px 24px',
+                  color: '#ffffff',
+                  marginBottom: 24,
+                  boxShadow: '0 8px 24px rgba(6, 95, 70, 0.25)',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <FileProtectOutlined style={{ fontSize: 24, color: '#34d399' }} />
+                      <span style={{ fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#a7f3d0', fontWeight: 700 }}>
+                        THẺ DỰ THI TRỰC TUYẾN CHÍNH THỨC
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 20, fontWeight: 700, marginTop: 4 }}>
+                      {candidate?.student_name || currentUser?.full_name || 'Thí Sinh'}
+                    </div>
+                    <div style={{ fontSize: 13, color: '#d1fae5', marginTop: 2 }}>
+                      MSSV: <b>{candidate?.student_code || currentUser?.username || 'SV-N/A'}</b> &bull; Lớp: <b>{candidate?.class_name || 'Đại học chính quy'}</b>
+                    </div>
+                  </div>
+
+                  <div style={{ textAlign: 'right', background: 'rgba(255,255,255,0.12)', padding: '10px 18px', borderRadius: 8 }}>
+                    <div style={{ fontSize: 11, color: '#a7f3d0', textTransform: 'uppercase' }}>Số Báo Danh (SBD)</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#fef08a', letterSpacing: '0.05em' }}>
+                      {candidate?.seat_number || 'SBD-001'}
+                    </div>
+                    <Tag color="success" style={{ margin: '4px 0 0', fontWeight: 600 }}>
+                      ✓ ĐÃ CẤP QUYỀN DỰ THI
+                    </Tag>
+                  </div>
+                </div>
+
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.18)', marginTop: 14, paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#d1fae5', flexWrap: 'wrap', gap: 8 }}>
+                  <span>Phòng thi ảo: <b>{schedule?.room_code || 'ROOM-P01'}</b></span>
+                  <span>Cán bộ coi thi: <b>{schedule?.proctor_1 || 'CBCT 1'}{schedule?.proctor_2 ? ` & ${schedule.proctor_2}` : ''}</b></span>
+                  <span>Thời lượng: <b>{schedule?.duration_minutes || 60} Phút</b></span>
+                  <span>Phê duyệt bởi: <b>{candidate?.authorized_by || 'Hội Đồng Thi / Admin'}</b></span>
+                </div>
+              </div>
+
+              {/* CHECKLIST ĐIỀU KIỆN DỰ THI & CÔNG NGHỆ BẢO MẬT */}
+              <Card
+                title={<Space><LockOutlined /><span>Yêu Cầu Kỹ Thuật Khóa Trình Duyệt & Giám Thị AI (Thông tư 08/2021)</span></Space>}
+                style={{ marginBottom: 24, background: '#f8fafc' }}
+              >
+                <Row gutter={[16, 12]}>
+                  <Col xs={24} md={12}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 18 }} />
+                      <div>
+                        <Text strong>Webcam & Microphone HD (WebRTC):</Text>
+                        <div style={{ fontSize: 12, color: '#64748b' }}>Truyền luồng video trực tiếp 720p về Hội đồng giám sát.</div>
+                      </div>
+                    </div>
+                  </Col>
+                  <Col xs={24} md={12}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 18 }} />
+                      <div>
+                        <Text strong>AI Proctoring Engine:</Text>
+                        <div style={{ fontSize: 12, color: '#64748b' }}>Nhận diện quay mặt, rời khỏi camera hoặc người thứ 2.</div>
+                      </div>
+                    </div>
+                  </Col>
+                  <Col xs={24} md={12}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 18 }} />
+                      <div>
+                        <Text strong>Kiosk Lockdown Mode (Toàn Màn Hình):</Text>
+                        <div style={{ fontSize: 12, color: '#64748b' }}>Chặn Alt+Tab, F12 DevTools, PrintScreen, Clipboard.</div>
+                      </div>
+                    </div>
+                  </Col>
+                  <Col xs={24} md={12}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 18 }} />
+                      <div>
+                        <Text strong>Hỗ Trợ Safe Exam Browser (SEB):</Text>
+                        <div style={{ fontSize: 12, color: '#64748b' }}>Tương thích khóa triệt để tiến trình chạy ngầm của HĐH.</div>
+                      </div>
+                    </div>
+                  </Col>
+                </Row>
+
+                <Divider style={{ margin: '14px 0' }} />
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                  <Space>
+                    <Tag color={isSebVerified ? 'green' : 'orange'}>
+                      {isSebVerified ? 'Đã chạy trên Safe Exam Browser (SEB)' : 'Web Kiosk Lockdown (Trình duyệt chuẩn)'}
+                    </Tag>
+                    <Text type="secondary" style={{ fontSize: 12 }}>Độ trễ mạng: {networkPing}ms (Rất tốt)</Text>
+                  </Space>
+                  <Button
+                    icon={<DownloadOutlined />}
+                    size="small"
+                    onClick={() => window.open('/api/exam/seb/config', '_blank')}
+                  >
+                    Tải Cấu Hình Safe Exam Browser (.seb)
+                  </Button>
+                </div>
+              </Card>
+
+              {/* TỔNG QUAN CA THI */}
+              <Row gutter={16} style={{ marginBottom: 24, textAlign: 'center' }}>
+                <Col span={8}>
+                  <Card style={{ background: '#f6ffed', border: '1px solid #b7eb8f' }}>
+                    <Text type="secondary">Thời lượng thi</Text>
+                    <Title level={4} style={{ color: '#52c41a', margin: '4px 0 0' }}>
+                      {schedule?.duration_minutes || 60} Phút
+                    </Title>
+                  </Card>
+                </Col>
+                <Col span={8}>
+                  <Card style={{ background: '#e6f4ff', border: '1px solid #91caff' }}>
+                    <Text type="secondary">Số lượng câu hỏi</Text>
+                    <Title level={4} style={{ color: '#1677ff', margin: '4px 0 0' }}>{questions.length || 5} Câu</Title>
+                  </Card>
+                </Col>
+                <Col span={8}>
+                  <Card style={{ background: '#fff7e6', border: '1px solid #ffd591' }}>
+                    <Text type="secondary">Hình thức khảo thí</Text>
+                    <Title level={4} style={{ color: '#fa8c16', margin: '4px 0 0' }}>
+                      {schedule?.exam_type || 'Trắc Nghiệm Số'}
+                    </Title>
+                  </Card>
+                </Col>
+              </Row>
+
+              {/* NÚT BẮT ĐẦU */}
+              <Button
+                type="primary"
+                size="large"
+                block
+                icon={<FullscreenOutlined />}
+                onClick={handleStartExam}
+                style={{
+                  height: 52,
+                  fontSize: 16,
+                  fontWeight: 700,
+                  background: '#1677ff',
+                  borderRadius: 8
+                }}
+              >
+                Bắt Đầu Làm Bài Thi (Vào Phòng Thi Khóa Kiosk Toàn Màn Hình)
               </Button>
             </div>
-          </Card>
-
-          <Row gutter={16} style={{ marginBottom: 24, textAlign: 'center' }}>
-            <Col span={8}>
-              <Card style={{ background: '#f6ffed', border: '1px solid #b7eb8f' }}>
-                <Text type="secondary">Thời lượng thi</Text>
-                <Title level={4} style={{ color: '#52c41a', margin: '4px 0 0' }}>60 Phút</Title>
-              </Card>
-            </Col>
-            <Col span={8}>
-              <Card style={{ background: '#e6f4ff', border: '1px solid #91caff' }}>
-                <Text type="secondary">Số lượng câu hỏi</Text>
-                <Title level={4} style={{ color: '#1677ff', margin: '4px 0 0' }}>{questions.length || 5} Câu</Title>
-              </Card>
-            </Col>
-            <Col span={8}>
-              <Card style={{ background: '#fff7e6', border: '1px solid #ffd591' }}>
-                <Text type="secondary">Hình thức khảo thí</Text>
-                <Title level={4} style={{ color: '#fa8c16', margin: '4px 0 0' }}>Trắc Nghiệm Số</Title>
-              </Card>
-            </Col>
-          </Row>
-
-          <Button
-            type="primary"
-            size="large"
-            block
-            icon={<FullscreenOutlined />}
-            onClick={handleStartExam}
-            style={{
-              height: 52,
-              fontSize: 16,
-              fontWeight: 700,
-              background: '#1677ff',
-              borderRadius: 8
-            }}
-          >
-            Bắt Đầu Làm Bài Thi (Vào Phòng Thi Khóa Kiosk Toàn Màn Hình)
-          </Button>
+          )}
         </Card>
       </div>
     );

@@ -92,6 +92,24 @@ router.post('/templates/:id/generate', async (req, res) => {
   }
 });
 
+const examAdminController = require('../controllers/examAdministration.controller');
+
+// 6.1. Quản lý Tổ chức Thi Trực Tuyến & Cấp Quyền Dự Thi (Chuẩn Thông tư 08/2021/TT-BGDĐT)
+router.get('/admin/schedules', examAdminController.getExamSchedules);
+router.post('/admin/schedules', examAdminController.createExamSchedule);
+router.put('/admin/schedules/:id', examAdminController.updateExamSchedule);
+router.delete('/admin/schedules/:id', examAdminController.deleteExamSchedule);
+
+router.get('/admin/candidates', examAdminController.getScheduleCandidates);
+router.post('/admin/candidates/authorize', examAdminController.authorizeCandidate);
+router.post('/admin/candidates/bulk-authorize', examAdminController.bulkAuthorizeCandidates);
+router.post('/admin/candidates/add', examAdminController.addCandidate);
+
+router.get('/admin/minutes/:schedule_id', examAdminController.getExamMinutes);
+
+// 6.2. Dành cho Học viên: Danh sách các môn thi trong kỳ và trạng thái cấp quyền
+router.get('/my-eligible-exams', examAdminController.getStudentEligibleExams);
+
 // 7. Phòng thi trực tuyến: Kiểm tra quyền vào phòng thi & tải đề
 router.get('/access', async (req, res) => {
   try {

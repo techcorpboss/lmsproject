@@ -33,6 +33,7 @@ import LecturerDirectoryView from './components/enterprise/LecturerDirectoryView
 import ScormXapiCenterView from './components/enterprise/ScormXapiCenterView';
 import LtiToolsHubView from './components/enterprise/LtiToolsHubView';
 import LessonQaAndAssignmentView from './components/enterprise/LessonQaAndAssignmentView';
+import ExamAdministrationView from './components/enterprise/ExamAdministrationView';
 
 // Admin Views
 import UserManagementView from './components/admin/UserManagementView';
@@ -249,6 +250,11 @@ function App() {
               key: 'audit_logs',
               icon: <HistoryOutlined style={{ color: '#4ade80' }} />,
               label: 'Nhật Ký An Ninh & Audit Logs'
+            },
+            {
+              key: 'exam_administration',
+              icon: <SolutionOutlined style={{ color: '#c084fc' }} />,
+              label: 'Quản Lý Tổ Chức Thi & Cấp Quyền'
             }
           ]
         }
@@ -340,6 +346,13 @@ function App() {
               icon: <SafetyCertificateOutlined style={{ color: '#10b981' }} />,
               label: 'Thẩm Định Đề & Biên Bản'
             },
+            ...(isAdmin ? [
+              {
+                key: 'exam_administration',
+                icon: <SolutionOutlined style={{ color: '#10b981' }} />,
+                label: 'Quản Lý Tổ Chức Thi'
+              }
+            ] : []),
             {
               key: 'question_bank',
               icon: <DatabaseOutlined />,
@@ -620,6 +633,11 @@ function App() {
           {/* Màn hình 4: Thẩm định đề thi & Biên bản số */}
           {activeMenuKey === 'exam_appraisal' && (
             <ExamAppraisalView />
+          )}
+
+          {/* Màn hình Quản trị Tổ chức thi & Cấp quyền dự thi */}
+          {activeMenuKey === 'exam_administration' && (
+            <ExamAdministrationView currentUser={currentUser} />
           )}
 
           {/* Màn hình 5: Sổ điểm & Mẫu in chuẩn Bộ GD&ĐT */}
