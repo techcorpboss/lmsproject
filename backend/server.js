@@ -224,6 +224,115 @@ async function startServer() {
     }
   }
 
+  // 1. Tự động đồng bộ toàn bộ bảng CSDL khi khởi động máy chủ
+  try {
+    await sequelize.sync({ alter: true });
+    console.log('[MySQL] All models & tables synchronized successfully with { alter: true }.');
+  } catch (syncErr) {
+    console.warn('[MySQL Warning] Model synchronization warning:', syncErr.message);
+  }
+
+  // 2. Tự động khởi tạo dữ liệu mẫu Ca thi & QBank nếu bảng còn trống
+  try {
+    const { QbankCategory, AcademicExamSchedule, ExamCandidateAuthorization, User } = require('./models');
+    
+    // Nạp QbankCategory nếu trống
+    const catCount = await QbankCategory.count();
+    if (catCount === 0) {
+      await QbankCategory.bulkCreate([
+        { code: 'CAT-GEN', name: 'Kiến thức Giáo dục Đại cương', course_code: 'GEN101' },
+        { code: 'CAT-IT-BASE', name: 'Cơ sở ngành Công nghệ Thông tin', course_code: 'IT101' },
+        { code: 'CAT-SW-ENG', name: 'Công nghệ Phần mềm & Kiến trúc Hệ thống', course_code: 'SE201' },
+        { code: 'CAT-AI-DS', name: 'Trí tuệ Nhân tạo & Khoa học Dữ liệu', course_code: 'AI301' },
+        { code: 'CAT-QA-MOET', name: 'Khảo thí & Đảm bảo Chất lượng Đào tạo (TT 08/2021)', course_code: 'QA401' }
+      ]);
+      console.log('[Seed] Auto-seeded default QBank categories.');
+    }
+
+    // Nạp ca thi mẫu nếu trống
+    const schedCount = await AcademicExamSchedule.count();
+    if (schedCount === 0) {
+      const s1 = await AcademicExamSchedule.create({
+        exam_code: 'EXAM-2026-01',
+        exam_name: 'Kỳ Thi Khảo Thí Trực Tuyến — Chuẩn Quốc Tế 2026 (TCU & Pearson VUE)',
+        subject_id: 1,
+        exam_date: new Date().toISOString().split('T')[0],
+        start_time: '08:00',
+        end_time: '23:59',
+        room_code: 'ROOM-P01',
+        proctor_1: 'ThS. Hoàng Minh Tuấn',
+        proctor_2: 'TS. Lê Hồng Hạnh',
+        semester: 'HK 2',
+        academic_year: '2025-2026',
+        duration_minutes: 60,
+        exam_type: 'Trắc Nghiệm Số',
+        security_level: 'STRICT',
+        status: 'OPEN',
+        notes: 'Ca thi chính thức chuẩn TT 08/2021/TT-BGDĐT.'
+      });
+
+      const s2 = await AcademicExamSchedule.create({
+        exam_code: 'EXAM-2026-02',
+        exam_name: 'Thi Đánh Giá Chuẩn Đầu Ra Ngoại Ngữ & Tin Học Ứng Dụng',
+        subject_id: 2,
+        exam_date: new Date().toISOString().split('T')[0],
+        start_time: '08:00',
+        end_time: '23:59',
+        room_code: 'ROOM-P02',
+        proctor_1: 'ThS. Trần Văn Nam',
+        proctor_2: 'KS. Phạm Thu Hà',
+        semester: 'HK 2',
+        academic_year: '2025-2026',
+        duration_minutes: 90,
+        exam_type: 'Trắc Nghiệm & Tự Luận Số',
+        security_level: 'STRICT',
+        status: 'OPEN',
+        notes: 'Khảo thí chuẩn đầu ra, yêu cầu thí sinh tuân thủ nghiêm ngặt quy chế.'
+      });
+
+      // Tự động phân quyền thí sinh cho các tài khoản sinh viên
+      const students = await User.findAll({ where: { role: 'student' } });
+      for (const st of students) {
+        await ExamCandidateAuthorization.create({
+          schedule_id: s1.id,
+          student_id: st.id,
+          student_code: st.student_code || st.username,
+          student_name: st.full_name,
+          class_name: st.class_name || 'ĐH CNTT K18',
+          seat_number: `TCU-2026-${String(st.id).padStart(3, '0')}`,
+          subject_code: s1.exam_code,
+          subject_name: s1.exam_name,
+          attendance_pct: 92.5,
+          tuition_cleared: true,
+          condition_passed: true,
+          authorization_status: 'GRANTED',
+          authorized_by: 'Ban Thư Ký Hội Đồng Khảo Thí',
+          authorized_at: new Date(),
+          notes: 'Đã thẩm định hồ sơ: Chuyên cần đạt 92.5%, học phí đã hoàn tất.'
+        });
+
+        await ExamCandidateAuthorization.create({
+          schedule_id: s2.id,
+          student_id: st.id,
+          student_code: st.student_code || st.username,
+          student_name: st.full_name,
+          class_name: st.class_name || 'ĐH CNTT K18',
+          seat_number: `TCU-2026-${String(st.id + 50).padStart(3, '0')}`,
+          subject_code: s2.exam_code,
+          subject_name: s2.exam_name,
+          attendance_pct: 76.0,
+          tuition_cleared: false,
+          condition_passed: false,
+          authorization_status: 'PENDING',
+          notes: 'Chưa được cấp quyền thi: Chuyên cần 76% (< 80% theo quy định Bộ GD&ĐT).'
+        });
+      }
+      console.log('[Seed] Auto-seeded default exam schedules & authorizations.');
+    }
+  } catch (seedErr) {
+    console.warn('[Seed Warning] Exam data auto-seed warning:', seedErr.message);
+  }
+
   try {
     await seedEnterpriseLecturers();
   } catch (e) {
