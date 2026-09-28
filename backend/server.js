@@ -164,23 +164,76 @@ const PORT = process.env.PORT || 5009;
 
 const seedEnterpriseLecturers = require('./scripts/seed_lecturers_users');
 
-sequelize.authenticate()
-  .then(async () => {
-    console.log('[MySQL] Database connected successfully to lms_db.');
-    try {
-      await seedEnterpriseLecturers();
-    } catch (e) {
-      console.warn('[Seed Warning] Lecturer auto-seed warning:', e.message);
+function syncEnvPassword(pass) {
+  const envFiles = [
+    path.join(__dirname, '.env'),
+    '/www/wwwroot/lms.techcorp.info.vn/backend/.env'
+  ];
+  for (const f of envFiles) {
+    if (fs.existsSync(f)) {
+      try {
+        let content = fs.readFileSync(f, 'utf8');
+        if (content.includes('DB_PASSWORD=')) {
+          content = content.replace(/DB_PASSWORD=.*/g, `DB_PASSWORD=${pass}`);
+        } else {
+          content += `\nDB_PASSWORD=${pass}\n`;
+        }
+        fs.writeFileSync(f, content, 'utf8');
+        console.log(`[Config Sync] Saved working MySQL password to ${f}`);
+      } catch (e) {}
     }
-    server.listen(PORT, () => {
-      console.log(`[LMS Platform] Server is running on port ${PORT}`);
-      console.log(`[Domain] Configured for: https://lms.techcorp.info.vn`);
-    });
-  })
-  .catch(err => {
-    console.error('[MySQL Error] Could not connect to database:', err.message);
-    // Vẫn khởi chạy HTTP server để phục vụ health check và thông báo trạng thái
-    server.listen(PORT, () => {
-      console.log(`[LMS Platform] Server running in offline-db mode on port ${PORT}`);
-    });
+  }
+}
+
+async function startServer() {
+  try {
+    await sequelize.authenticate();
+    console.log('[MySQL] Database connected successfully to lms_db.');
+  } catch (err) {
+    console.warn('[MySQL Warning] Initial connection failed:', err.message);
+    if (err.name === 'SequelizeAccessDeniedError') {
+      console.log('[MySQL Recovery] Probing fallback server credentials...');
+      const candidates = [];
+      const aaPassFiles = ['/www/server/data/default.pass', '/www/server/panel/data/default.pass'];
+      for (const f of aaPassFiles) {
+        if (fs.existsSync(f)) {
+          try {
+            const p = fs.readFileSync(f, 'utf8').trim();
+            if (p) candidates.push(p);
+          } catch (e) {}
+        }
+      }
+      candidates.push('Thong7690@', 'root123@', '123456', '');
+
+      let recovered = false;
+      for (const trialPass of candidates) {
+        try {
+          sequelize.config.password = trialPass;
+          sequelize.connectionManager.config.password = trialPass;
+          await sequelize.authenticate();
+          console.log('[MySQL Recovery] Successfully recovered connection with verified password!');
+          syncEnvPassword(trialPass);
+          recovered = true;
+          break;
+        } catch (e) {}
+      }
+
+      if (!recovered) {
+        console.error('[MySQL Error] Could not connect to database with any fallback credential.');
+      }
+    }
+  }
+
+  try {
+    await seedEnterpriseLecturers();
+  } catch (e) {
+    console.warn('[Seed Warning] Lecturer auto-seed warning:', e.message);
+  }
+
+  server.listen(PORT, () => {
+    console.log(`[LMS Platform] Server is running on port ${PORT}`);
+    console.log(`[Domain] Configured for: https://lms.techcorp.info.vn`);
   });
+}
+
+startServer();

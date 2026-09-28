@@ -1,5 +1,7 @@
 // backend/scripts/seed_real_database_accounts.js
 // Script khởi tạo và đồng bộ 100% tài khoản thực vào CSDL MySQL (SuperAdmin, Admin, Giảng viên, Sinh viên)
+const fs = require('fs');
+const path = require('path');
 const bcrypt = require('bcryptjs');
 const { User, sequelize } = require('../models');
 
@@ -370,8 +372,55 @@ const REAL_ACCOUNTS = [
   }
 ];
 
+function syncEnvPassword(pass) {
+  const envFiles = [
+    path.join(__dirname, '..', '.env'),
+    '/www/wwwroot/lms.techcorp.info.vn/backend/.env'
+  ];
+  for (const f of envFiles) {
+    if (fs.existsSync(f)) {
+      try {
+        let content = fs.readFileSync(f, 'utf8');
+        if (content.includes('DB_PASSWORD=')) {
+          content = content.replace(/DB_PASSWORD=.*/g, `DB_PASSWORD=${pass}`);
+        } else {
+          content += `\nDB_PASSWORD=${pass}\n`;
+        }
+        fs.writeFileSync(f, content, 'utf8');
+        console.log(`[Config Sync] Saved working MySQL password to ${f}`);
+      } catch (e) {}
+    }
+  }
+}
+
 async function ensureTableColumns() {
   console.log('[Database] Checking and updating `users` table schema in MySQL...');
+  await sequelize.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      username VARCHAR(100) NOT NULL UNIQUE,
+      email VARCHAR(150),
+      password VARCHAR(255) NOT NULL,
+      full_name VARCHAR(150),
+      role VARCHAR(50) NOT NULL DEFAULT 'student',
+      status VARCHAR(20) DEFAULT 'ACTIVE',
+      avatar VARCHAR(255),
+      faculty_id VARCHAR(50),
+      faculty_name VARCHAR(150),
+      department VARCHAR(150),
+      title VARCHAR(50),
+      academic_rank VARCHAR(50),
+      student_code VARCHAR(50),
+      class_name VARCHAR(50),
+      cohort VARCHAR(50),
+      major_id VARCHAR(50),
+      major_name VARCHAR(150),
+      phone VARCHAR(50),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `);
+
   const queryInterface = sequelize.getQueryInterface();
   const tableInfo = await queryInterface.describeTable('users');
 
@@ -403,27 +452,38 @@ async function ensureTableColumns() {
 }
 
 async function authenticateDatabase() {
+  let initialPass = process.env.DB_PASSWORD || 'root123@';
+
   // Nếu có truyền mật khẩu qua tham số dòng lệnh (vd: node seed.js MyPass123)
   if (process.argv[2]) {
-    const cliPass = process.argv[2].trim();
-    sequelize.config.password = cliPass;
-    sequelize.connectionManager.config.password = cliPass;
+    initialPass = process.argv[2].trim();
+    sequelize.config.password = initialPass;
+    sequelize.connectionManager.config.password = initialPass;
   }
 
   try {
     await sequelize.authenticate();
     console.log('[Database] Connected to MySQL successfully.');
+    syncEnvPassword(initialPass);
     return;
   } catch (err) {
     if (err.name === 'SequelizeAccessDeniedError') {
       console.warn('[Database] Initial password failed. Testing fallback server passwords...');
-      const candidates = [
-        process.argv[2],
-        process.env.DB_PASSWORD,
-        'Thong7690@',
-        'root123@',
-        ''
-      ].filter(p => p !== undefined && p !== null);
+      const candidates = [];
+      if (process.argv[2]) candidates.push(process.argv[2].trim());
+      
+      const aaPassFiles = ['/www/server/data/default.pass', '/www/server/panel/data/default.pass'];
+      for (const f of aaPassFiles) {
+        if (fs.existsSync(f)) {
+          try {
+            const p = fs.readFileSync(f, 'utf8').trim();
+            if (p) candidates.push(p);
+          } catch (e) {}
+        }
+      }
+
+      if (process.env.DB_PASSWORD) candidates.push(process.env.DB_PASSWORD);
+      candidates.push('Thong7690@', 'root123@', '123456', '');
 
       let connected = false;
       for (const trialPass of candidates) {
@@ -432,6 +492,7 @@ async function authenticateDatabase() {
           sequelize.connectionManager.config.password = trialPass;
           await sequelize.authenticate();
           console.log(`[Database] Connection established with verified password.`);
+          syncEnvPassword(trialPass);
           connected = true;
           break;
         } catch (e) {

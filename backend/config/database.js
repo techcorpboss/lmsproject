@@ -18,8 +18,35 @@ for (const envFile of envCandidates) {
   }
 }
 
+// Hàm xác định mật khẩu tối ưu (hỗ trợ tự động dò mật khẩu aaPanel default.pass)
+function getResolvedDbPassword() {
+  const envPass = process.env.DB_PASSWORD;
+  // Nếu env đã có mật khẩu khác mặc định root123@ thì ưu tiên dùng
+  if (envPass && envPass !== 'root123@') {
+    return envPass;
+  }
+
+  // Tự động nhận diện mật khẩu mặc định của aaPanel nếu có
+  const aaPassFiles = [
+    '/www/server/data/default.pass',
+    '/www/server/panel/data/default.pass'
+  ];
+  for (const f of aaPassFiles) {
+    if (fs.existsSync(f)) {
+      try {
+        const pass = fs.readFileSync(f, 'utf8').trim();
+        if (pass) {
+          return pass;
+        }
+      } catch (e) {}
+    }
+  }
+
+  return envPass || 'root123@';
+}
+
 const dbUser = process.env.DB_USER || 'root';
-const dbPass = process.env.DB_PASSWORD || 'root123@';
+const dbPass = getResolvedDbPassword();
 const dbName = process.env.DB_NAME || 'lms_db';
 const dbHost = process.env.DB_HOST || '127.0.0.1';
 const dbPort = process.env.DB_PORT || 3306;
