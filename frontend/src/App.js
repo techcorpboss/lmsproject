@@ -20,6 +20,7 @@ import QuestionBankView from './components/QuestionBankView';
 import ExamGeneratorView from './components/ExamGeneratorView';
 import LiveProctoringView from './components/LiveProctoringView';
 import OnlineExamRoom from './components/OnlineExamRoom';
+import NotificationCenter from './components/NotificationCenter';
 
 // Enterprise Components
 import TeachingAssignmentView from './components/enterprise/TeachingAssignmentView';
@@ -203,48 +204,6 @@ function App() {
   if (!currentUser) {
     return <LoginPage onLoginSuccess={handleLoginSuccess} />;
   }
-
-  // DANH SÁCH THÔNG BÁO VÀ CẢNH BÁO THỜI GIAN THỰC
-  const notificationItems = {
-    items: [
-      {
-        key: 'notif_header',
-        label: <div style={{ fontWeight: 700, padding: '4px 0', color: '#002b66' }}>TRUNG TÂM THÔNG BÁO & CẢNH BÁO (3)</div>,
-        disabled: true
-      },
-      { type: 'divider' },
-      {
-        key: 'notif_1',
-        icon: <CheckCircleOutlined style={{ color: '#16a34a' }} />,
-        label: (
-          <div style={{ maxWidth: 280 }}>
-            <div style={{ fontWeight: 600 }}>Thẩm định Đề thi IT101 hoàn tất</div>
-            <div style={{ fontSize: 11, color: '#64748b' }}>Chủ tịch Hội đồng đã ký số phê duyệt đề thi HK1</div>
-          </div>
-        )
-      },
-      {
-        key: 'notif_2',
-        icon: <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />,
-        label: (
-          <div style={{ maxWidth: 280 }}>
-            <div style={{ fontWeight: 600, color: '#dc2626' }}>Cảnh báo học vụ (TT 08/2021)</div>
-            <div style={{ fontSize: 11, color: '#64748b' }}>Học viên Vũ Hải Đăng có tiến độ LMS dưới 50%</div>
-          </div>
-        )
-      },
-      {
-        key: 'notif_3',
-        icon: <CloudSyncOutlined style={{ color: '#0284c7' }} />,
-        label: (
-          <div style={{ maxWidth: 280 }}>
-            <div style={{ fontWeight: 600 }}>Liên thông ERP đồng bộ</div>
-            <div style={{ fontSize: 11, color: '#64748b' }}>348 hồ sơ sinh viên đã cập nhật từ qldt.techcorp.info.vn</div>
-          </div>
-        )
-      }
-    ]
-  };
 
   // MENU PROFILE
   const userMenu = {
@@ -598,17 +557,11 @@ function App() {
 
           {/* CHUÔNG THÔNG BÁO & USER AVATAR */}
           <Space size="middle" align="middle">
-            {/* Notification Center */}
-            <Dropdown menu={notificationItems} placement="bottomRight" arrow>
-              <Badge count={3} offset={[-4, 4]}>
-                <Button
-                  type="text"
-                  shape="circle"
-                  icon={<BellOutlined style={{ fontSize: 18, color: '#475569' }} />}
-                  style={{ width: 40, height: 40 }}
-                />
-              </Badge>
-            </Dropdown>
+            {/* Realtime Academic Notification & Alert Center */}
+            <NotificationCenter
+              currentUser={currentUser}
+              onNavigate={(menuKey) => setActiveMenuKey(menuKey)}
+            />
 
             <Divider type="vertical" />
 
