@@ -254,12 +254,12 @@ exports.getNotifications = async (req, res) => {
 
     // Lọc theo đối tượng nhận
     let filtered = notifications.filter(item => {
-      // Vai trò: 'ALL' hoặc khớp với vai trò người dùng
-      if (item.target_role && item.target_role !== 'ALL' && role && item.target_role !== role) {
+      // Vai trò: 'ALL' hoặc khớp với vai trò người dùng (SuperAdmin xem được toàn bộ)
+      if (role !== 'superadmin' && item.target_role && item.target_role !== 'ALL' && role && item.target_role !== role) {
         return false;
       }
-      // Khoa: 'ALL' hoặc khớp với khoa của người dùng (trừ admin xem được hết)
-      if (role !== 'admin' && item.target_faculty && item.target_faculty !== 'ALL' && faculty_id && item.target_faculty !== faculty_id) {
+      // Khoa: 'ALL' hoặc khớp với khoa của người dùng (trừ admin & superadmin xem được hết)
+      if (role !== 'admin' && role !== 'superadmin' && item.target_faculty && item.target_faculty !== 'ALL' && faculty_id && item.target_faculty !== faculty_id) {
         return false;
       }
       // Danh mục
@@ -270,7 +270,8 @@ exports.getNotifications = async (req, res) => {
       const isRead = Array.isArray(item.read_by) && (
         item.read_by.includes(userKey) ||
         (user_id && item.read_by.includes(String(user_id))) ||
-        (username && item.read_by.includes(username))
+        (username && item.read_by.includes(username)) ||
+        (role && item.read_by.includes(`user_${role}`))
       );
       if (unread_only === 'true' && isRead) {
         return false;
@@ -295,7 +296,8 @@ exports.getNotifications = async (req, res) => {
       const isRead = Array.isArray(item.read_by) && (
         item.read_by.includes(userKey) ||
         (user_id && item.read_by.includes(String(user_id))) ||
-        (username && item.read_by.includes(username))
+        (username && item.read_by.includes(username)) ||
+        (role && item.read_by.includes(`user_${role}`))
       );
       return !isRead;
     });
@@ -316,7 +318,8 @@ exports.getNotifications = async (req, res) => {
       is_read: Array.isArray(item.read_by) && (
         item.read_by.includes(userKey) ||
         (user_id && item.read_by.includes(String(user_id))) ||
-        (username && item.read_by.includes(username))
+        (username && item.read_by.includes(username)) ||
+        (role && item.read_by.includes(`user_${role}`))
       )
     }));
 
@@ -349,8 +352,20 @@ exports.markAsRead = async (req, res) => {
       target.read_by = [];
     }
 
-    if (!target.read_by.includes(userKey)) {
-      target.read_by.push(userKey);
+    const keysToAdd = [userKey];
+    if (username) keysToAdd.push(username);
+    if (user_id) keysToAdd.push(String(user_id));
+    if (role) keysToAdd.push(`user_${role}`);
+
+    let hasChange = false;
+    keysToAdd.forEach(k => {
+      if (k && !target.read_by.includes(k)) {
+        target.read_by.push(k);
+        hasChange = true;
+      }
+    });
+
+    if (hasChange) {
       writeNotifications(notifications);
     }
 
@@ -374,19 +389,30 @@ exports.markAllAsRead = async (req, res) => {
     const notifications = readNotifications();
     let updatedCount = 0;
 
+    const keysToAdd = [userKey];
+    if (username) keysToAdd.push(username);
+    if (user_id) keysToAdd.push(String(user_id));
+    if (role) keysToAdd.push(`user_${role}`);
+
+    const isSuper = role === 'superadmin' || username === 'superadmin' || username === 'boss.techcorp';
+
     notifications.forEach(item => {
-      // Kiểm tra xem item này có gửi đến người dùng này không
-      const matchesRole = !item.target_role || item.target_role === 'ALL' || item.target_role === role;
-      const matchesFaculty = role === 'admin' || !item.target_faculty || item.target_faculty === 'ALL' || item.target_faculty === faculty_id;
+      // SuperAdmin có quyền đánh dấu tất cả thông báo trong toàn hệ thống
+      const matchesRole = isSuper || !item.target_role || item.target_role === 'ALL' || item.target_role === role;
+      const matchesFaculty = isSuper || role === 'admin' || !item.target_faculty || item.target_faculty === 'ALL' || item.target_faculty === faculty_id;
 
       if (matchesRole && matchesFaculty) {
         if (!Array.isArray(item.read_by)) {
           item.read_by = [];
         }
-        if (!item.read_by.includes(userKey)) {
-          item.read_by.push(userKey);
-          updatedCount++;
-        }
+        let added = false;
+        keysToAdd.forEach(k => {
+          if (k && !item.read_by.includes(k)) {
+            item.read_by.push(k);
+            added = true;
+          }
+        });
+        if (added) updatedCount++;
       }
     });
 

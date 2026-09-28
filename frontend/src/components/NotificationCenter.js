@@ -126,16 +126,18 @@ export default function NotificationCenter({ currentUser, onNavigate }) {
 
   // Đánh dấu 1 thông báo là đã đọc
   const handleMarkAsRead = async (item) => {
-    if (item.is_read) return;
+    if (!item) return;
+    // Cập nhật state cục bộ ngay lập tức (optimistic)
+    if (!item.is_read) {
+      setNotifications(prev => prev.map(n => n.id === item.id ? { ...n, is_read: true } : n));
+      setStats(prev => ({ ...prev, unread: Math.max(0, prev.unread - 1) }));
+    }
     try {
       await notificationApi.markAsRead(item.id, {
         user_id: currentUser?.id,
         username: currentUser?.username,
-        role: currentUser?.role
+        role: currentUser?.role || 'superadmin'
       });
-      // Cập nhật state cục bộ
-      setNotifications(prev => prev.map(n => n.id === item.id ? { ...n, is_read: true } : n));
-      setStats(prev => ({ ...prev, unread: Math.max(0, prev.unread - 1) }));
     } catch (err) {
       console.error('Lỗi đánh dấu đã đọc:', err);
     }
@@ -143,18 +145,20 @@ export default function NotificationCenter({ currentUser, onNavigate }) {
 
   // Đánh dấu TẤT CẢ thông báo là đã đọc
   const handleMarkAllAsRead = async () => {
+    // Cập nhật state cục bộ ngay lập tức
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    setStats(prev => ({ ...prev, unread: 0 }));
+    message.success('Đã đánh dấu tất cả thông báo là đã đọc');
+
     try {
       await notificationApi.markAllAsRead({
         user_id: currentUser?.id,
         username: currentUser?.username,
-        role: currentUser?.role,
+        role: currentUser?.role || 'superadmin',
         faculty_id: currentUser?.faculty_id
       });
-      message.success('Đã đánh dấu tất cả thông báo là đã đọc');
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-      setStats(prev => ({ ...prev, unread: 0 }));
     } catch (err) {
-      message.error('Không thể đánh dấu tất cả: ' + (err.message || 'Lỗi server'));
+      console.error('Lỗi khi lưu trạng thái đã đọc tất cả:', err);
     }
   };
 
@@ -364,6 +368,39 @@ export default function NotificationCenter({ currentUser, onNavigate }) {
           </Tooltip>
         </Space>
       </div>
+
+      {/* THANH THAO TÁC 1-CHẠM: ĐÁNH DẤU TẤT CẢ ĐÃ ĐỌC */}
+      {stats.unread > 0 && (
+        <div style={{
+          padding: '8px 14px',
+          background: '#f0fdf4',
+          borderBottom: '1px solid #bbf7d0',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8
+        }}>
+          <span style={{ fontSize: 12, color: '#166534', fontWeight: 600 }}>
+            🔔 Có {stats.unread} thông báo mới chưa xem
+          </span>
+          <Button
+            type="primary"
+            size="small"
+            icon={<CheckOutlined />}
+            style={{
+              backgroundColor: '#16a34a',
+              borderColor: '#16a34a',
+              fontSize: 11,
+              height: 24,
+              borderRadius: 4,
+              fontWeight: 600
+            }}
+            onClick={handleMarkAllAsRead}
+          >
+            Đã đọc tất cả
+          </Button>
+        </div>
+      )}
 
       {/* CẢNH BÁO KHẨN CẤP NHỎ GỌN (BANNER NẾU CÓ) */}
       {criticalWarning && (
@@ -718,7 +755,23 @@ export default function NotificationCenter({ currentUser, onNavigate }) {
               ) : <div />}
 
               <Space>
-                <Button size="small" onClick={() => setDetailModalVisible(false)}>
+                {!selectedNotif.is_read && (
+                  <Button
+                    size="small"
+                    icon={<CheckOutlined />}
+                    style={{ color: '#16a34a', borderColor: '#86efac' }}
+                    onClick={() => {
+                      handleMarkAsRead(selectedNotif);
+                      message.success('Đã đánh dấu thông báo là đã đọc');
+                    }}
+                  >
+                    Đánh dấu đã đọc
+                  </Button>
+                )}
+                <Button size="small" onClick={() => {
+                  handleMarkAsRead(selectedNotif);
+                  setDetailModalVisible(false);
+                }}>
                   Đóng
                 </Button>
                 {selectedNotif.action_menu_key && (
@@ -726,7 +779,10 @@ export default function NotificationCenter({ currentUser, onNavigate }) {
                     type="primary"
                     size="small"
                     icon={<ArrowRightOutlined />}
-                    onClick={() => handleActionClick(selectedNotif)}
+                    onClick={() => {
+                      handleMarkAsRead(selectedNotif);
+                      handleActionClick(selectedNotif);
+                    }}
                     style={{ backgroundColor: '#1677ff' }}
                   >
                     {selectedNotif.action_label || 'Đến trang liên quan'}

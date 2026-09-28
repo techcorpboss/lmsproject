@@ -53,6 +53,28 @@ function App() {
   const [collapsed, setCollapsed] = useState(false);
   const [activeMenuKey, setActiveMenuKey] = useState('lms_workspace');
   const [selectedSectionId, setSelectedSectionId] = useState(1);
+  const [openKeys, setOpenKeys] = useState([
+    'sub_superadmin',
+    'sub_academic',
+    'sub_catalogs',
+    'sub_ai_testing',
+    'sub_admin_sys'
+  ]);
+
+  const normalizeUserData = (user) => {
+    if (!user) return null;
+    let role = (user.role || '').toLowerCase();
+    const isSuperAdminAccount =
+      user.username === 'superadmin' ||
+      user.username === 'boss.techcorp' ||
+      user.full_name?.toLowerCase().includes('superadmin') ||
+      user.email?.toLowerCase().includes('superadmin');
+
+    if (isSuperAdminAccount) {
+      role = 'superadmin';
+    }
+    return { ...user, role };
+  };
 
   // Khôi phục phiên đăng nhập hoặc nhận SSO từ URL
   useEffect(() => {
@@ -62,12 +84,12 @@ function App() {
 
     if (ssoToken) {
       localStorage.setItem('lms_token', ssoToken);
-      const ssoUser = {
+      const ssoUser = normalizeUserData({
         id: 3,
         username: 'sso_student',
         full_name: 'Học viên ĐH (SSO TCU COMPASS)',
         role: roleParam || 'student'
-      };
+      });
       setCurrentUser(ssoUser);
       localStorage.setItem('lms_user', JSON.stringify(ssoUser));
       message.success('Đăng nhập thành công qua liên thông TCU COMPASS ERP (SSO)!');
@@ -75,7 +97,10 @@ function App() {
       const savedUser = localStorage.getItem('lms_user');
       if (savedUser) {
         try {
-          setCurrentUser(JSON.parse(savedUser));
+          const parsed = JSON.parse(savedUser);
+          const normalized = normalizeUserData(parsed);
+          setCurrentUser(normalized);
+          localStorage.setItem('lms_user', JSON.stringify(normalized));
         } catch (e) {
           localStorage.removeItem('lms_user');
         }
@@ -84,8 +109,9 @@ function App() {
   }, []);
 
   const handleLoginSuccess = (user) => {
-    setCurrentUser(user);
-    localStorage.setItem('lms_user', JSON.stringify(user));
+    const normalized = normalizeUserData(user);
+    setCurrentUser(normalized);
+    localStorage.setItem('lms_user', JSON.stringify(normalized));
   };
 
   const handleLogout = () => {
@@ -103,11 +129,12 @@ function App() {
         password: 'root123@'
       });
       if (res && res.success && res.user) {
+        const normalized = normalizeUserData(res.user);
         localStorage.setItem('lms_token', res.token);
-        localStorage.setItem('lms_user', JSON.stringify(res.user));
-        setCurrentUser(res.user);
+        localStorage.setItem('lms_user', JSON.stringify(normalized));
+        setCurrentUser(normalized);
         setActiveMenuKey('lms_workspace');
-        message.success(`Đã chuyển sang tài khoản CSDL: ${res.user.full_name} (${res.user.role.toUpperCase()})`);
+        message.success(`Đã chuyển sang tài khoản CSDL: ${normalized.full_name} (${normalized.role.toUpperCase()})`);
       }
     } catch (err) {
       message.error('Không thể chuyển đổi tài khoản: ' + (err.message || 'Lỗi'));
@@ -176,19 +203,56 @@ function App() {
   };
 
   const getRoleTag = (role) => {
-    if (role === 'superadmin') return <Tag color="purple" style={{ borderRadius: 12, padding: '2px 10px', fontWeight: 700, border: '1px solid #7c3aed' }}>👑 CHỦ DỰ ÁN (SUPERADMIN)</Tag>;
-    if (role === 'student') return <Tag color="blue" style={{ borderRadius: 12, padding: '2px 10px', fontWeight: 600 }}>🎓 SINH VIÊN</Tag>;
-    if (role === 'teacher') return <Tag color="green" style={{ borderRadius: 12, padding: '2px 10px', fontWeight: 600 }}>👨‍🏫 GIẢNG VIÊN</Tag>;
+    const r = (role || '').toLowerCase();
+    const isSuper = r === 'superadmin' || currentUser?.username === 'superadmin' || currentUser?.username === 'boss.techcorp';
+    if (isSuper) return <Tag color="purple" style={{ borderRadius: 12, padding: '2px 10px', fontWeight: 700, border: '1px solid #7c3aed' }}>👑 CHỦ DỰ ÁN (SUPERADMIN)</Tag>;
+    if (r === 'student') return <Tag color="blue" style={{ borderRadius: 12, padding: '2px 10px', fontWeight: 600 }}>🎓 SINH VIÊN</Tag>;
+    if (r === 'teacher') return <Tag color="green" style={{ borderRadius: 12, padding: '2px 10px', fontWeight: 600 }}>👨‍🏫 GIẢNG VIÊN</Tag>;
     return <Tag color="gold" style={{ borderRadius: 12, padding: '2px 10px', fontWeight: 600 }}>⚡ QUẢN TRỊ VIÊN</Tag>;
   };
 
   // CẤU TRÚC MENU SIDEBAR ĐA TẦNG CHO TỪNG VAI TRÒ
   const getSidebarMenuItems = () => {
-    const isSuperAdmin = currentUser.role === 'superadmin';
-    const isAdmin = currentUser.role === 'admin' || isSuperAdmin;
-    const isTeacherOrAdmin = currentUser.role === 'teacher' || isAdmin;
+    const userRole = ((currentUser?.username === 'superadmin' || currentUser?.username === 'boss.techcorp' || currentUser?.email?.toLowerCase().includes('superadmin') || currentUser?.full_name?.toLowerCase().includes('superadmin')) ? 'superadmin' : (currentUser?.role || '')).toLowerCase();
+    const isSuperAdmin = userRole === 'superadmin';
+    const isAdmin = userRole === 'admin' || isSuperAdmin;
+    const isTeacherOrAdmin = userRole === 'teacher' || isAdmin;
 
     const items = [
+      ...(isSuperAdmin ? [
+        {
+          key: 'sub_superadmin',
+          icon: <CrownOutlined style={{ color: '#c084fc', fontSize: 16 }} />,
+          label: <span style={{ fontWeight: 700, color: '#e9d5ff' }}>👑 Đặc Quyền Chủ Dự Án</span>,
+          children: [
+            {
+              key: 'user_management',
+              icon: <UserOutlined style={{ color: '#c084fc' }} />,
+              label: 'Toàn Quyền Quản Trị User'
+            },
+            {
+              key: 'erp_sync',
+              icon: <CloudSyncOutlined style={{ color: '#38bdf8' }} />,
+              label: 'Liên Thông Cổng HEMIS & ERP'
+            },
+            {
+              key: 'system_monitor',
+              icon: <DashboardOutlined style={{ color: '#facc15' }} />,
+              label: 'Giám Sát Server & Máy Chủ Live'
+            },
+            {
+              key: 'backup_restore',
+              icon: <DatabaseOutlined style={{ color: '#f43f5e' }} />,
+              label: 'Sao Lưu & Phục Hồi CSDL'
+            },
+            {
+              key: 'audit_logs',
+              icon: <HistoryOutlined style={{ color: '#4ade80' }} />,
+              label: 'Nhật Ký An Ninh & Audit Logs'
+            }
+          ]
+        }
+      ] : []),
       {
         key: 'sub_academic',
         icon: <BookOutlined style={{ color: '#1677ff' }} />,
@@ -415,7 +479,8 @@ function App() {
         <Menu
           theme="dark"
           mode="inline"
-          defaultOpenKeys={['sub_academic', 'sub_catalogs']}
+          openKeys={openKeys}
+          onOpenChange={(keys) => setOpenKeys(keys)}
           selectedKeys={[activeMenuKey]}
           onClick={({ key }) => setActiveMenuKey(key)}
           style={{ background: 'transparent', borderRight: 0, marginTop: 12 }}
