@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card, Row, Col, Typography, Input, Button, Select, Radio,
   Space, Tag, Spin, message, Alert, Tabs,
-  Upload, Modal
+  Upload, Modal, Slider, Switch, Tooltip
 } from 'antd';
 import {
   RobotOutlined, FileWordOutlined, PlaySquareOutlined, VideoCameraOutlined,
   ThunderboltOutlined, CopyOutlined, CheckCircleOutlined,
   BookOutlined, BulbOutlined, InboxOutlined,
   SafetyCertificateOutlined, AuditOutlined, PrinterOutlined, CloudUploadOutlined,
-  FileProtectOutlined
+  FileProtectOutlined, EditOutlined, EyeOutlined, DownloadOutlined,
+  CaretRightOutlined, PauseOutlined, SettingOutlined, QuestionCircleOutlined
 } from '@ant-design/icons';
 import apiClient from '../../services/apiClient';
 
@@ -26,25 +27,125 @@ const COURSES_OPTIONS = [
   { code: 'BA101', name: 'Quản trị Học đại cương', credits: 3, faculty: 'Khoa Kinh Tế' }
 ];
 
+// Bản đồ chuyên đề 15 tuần học chuẩn đại học theo đề cương Bộ GD&ĐT
+const COURSE_WEEK_TOPICS = {
+  IT201: {
+    1: 'Tổng quan Hệ Cơ Sở Dữ Liệu & Kiến Trúc 3 Tầng ANSI-SPARC',
+    2: 'Mô Hình Thực Thể - Liên Kết (ERD) & Kỹ Thuật Chuyển Đổi Sang Lược Đồ Quan Hệ',
+    3: 'Lý Thuyết Chuẩn Hóa Cơ Sở Dữ Liệu (1NF, 2NF, 3NF, BCNF) & Khử Dư Thừa Dữ Liệu',
+    4: 'Ngôn Ngữ Định Nghĩa Dữ Liệu SQL DDL & Các Ràng Buộc Toàn Vẹn Nâng Cao',
+    5: 'Ngôn Ngữ Thao Tác Dữ Liệu SQL DML & Quản Lý Dữ Liệu Giao Dịch',
+    6: 'Truy Vấn Dữ Liệu Gom Nhóm (GROUP BY, HAVING) & Hàm Tổng Hợp (Aggregates)',
+    7: 'Kỹ Thuật Ghép Bảng Nâng Cao: INNER JOIN, OUTER JOIN, CROSS & SELF JOIN',
+    8: 'Truy Vấn Con (Subqueries), Mệnh Đề EXISTS, IN & Biểu Thức Bảng Thường (CTE)',
+    9: 'Khung Nhìn (Views), Bảng Ảo & Bảo Mật Dữ Liệu Tầng Khung Nhìn',
+    10: 'Lập Trình Cơ Sở Dữ Liệu T-SQL/PL-SQL: Biến, Rẽ Nhánh & Con Trỏ (Cursors)',
+    11: 'Thủ Tục Lưu Trữ (Stored Procedures) & Hàm Người Dùng Định Nghĩa (UDF)',
+    12: 'Bộ Kích Hoạt Tự Động (Triggers) & Kiểm Toán Nhật Ký Dữ Liệu (Audit Logging)',
+    13: 'Cấu Trúc Chỉ Mục (Indexes: B-Tree, Hash) & Tối Ưu Hóa Truy Vấn (Execution Plan)',
+    14: 'Quản Lý Giao Dịch (Transactions), 4 Tính Chất ACID & Mức Độ Cô Lập (Isolation)',
+    15: 'Khóa Đồng Thời (Concurrency Locking), Deadlock & Sao Lưu/Phục Hồi CSDL'
+  },
+  IT101: {
+    1: 'Cấu Trúc Chương Trình C/C++, Kiểu Dữ Liệu, Biến & Nhập Xuất Chuẩn',
+    2: 'Toán Tử, Biểu Thức Logic & Cấu Trúc Điều Khiển Rẽ Nhánh (if-else, switch-case)',
+    3: 'Cấu Trúc Vòng Lặp (for, while, do-while) & Kỹ Thuật Kiểm Soát Lặp',
+    4: 'Hàm (Functions), Phạm Vi Biến, Cơ Chế Truyền Tham Trị vs Tham Chiếu',
+    5: 'Kỹ Thuật Đệ Quy (Recursion) & Phân Tích Cây Đệ Quy',
+    6: 'Mảng Một Chiều (1D Array) & Thuật Toán Tìm Kiếm Cơ Bản (Linear/Binary Search)',
+    7: 'Thuật Toán Sắp Xếp Cơ Bản: Bubble Sort, Selection Sort, Insertion Sort',
+    8: 'Chuỗi Ký Tự (C-String & std::string) & Kỹ Thuật Xử Lý Văn Bản',
+    9: 'Con Trỏ (Pointers) và Cấp Phát Bộ Nhớ Động Trên Heap (new / delete)',
+    10: 'Mảng Hai Chiều (2D Array), Ma Trận & Con Trỏ Đa Cấp',
+    11: 'Kiểu Dữ Liệu Cấu Trúc (struct) & Tổ Chức Dữ Liệu Bản Ghi',
+    12: 'Quản Lý Tệp Tin (File I/O): Đọc/Ghi Tệp Văn Bản và Tệp Nhị Phân',
+    13: 'Thư Viện Chuẩn C++ (STL): Vector, Pair & Algorithm',
+    14: 'Giới Thiệu Lập Trình Hướng Đối Tượng (OOP): Lớp (Class), Đóng Gói & Phương Thức',
+    15: 'Đóng Gói Dự Án Cuối Kỳ: Clean Code, Debugging & Kiểm Thử Phòng Rò Rỉ RAM'
+  },
+  IT301: {
+    1: 'Đánh Giá Độ Phức Tạp Giải Thuật: Ký Hiệu Big-O, Big-Omega, Big-Theta',
+    2: 'Danh Sách Đặc (Array-based List) & Danh Sách Liên Kết Đơn (Singly Linked List)',
+    3: 'Danh Sách Liên Kết Đôi (Doubly Linked List) & Danh Sách Vòng (Circular List)',
+    4: 'Ngăn Xếp (Stack): Cài Đặt, Nguyên Lý LIFO & Ứng Dụng Đổi Dấu Ngoặc / Ba Lan',
+    5: 'Hàng Đợi (Queue) & Hàng Đợi Hai Đầu (Deque): Nguyên Lý FIFO & Bộ Đệm Dữ Liệu',
+    6: 'Thuật Toán Sắp Xếp Nâng Cao: Merge Sort, Quick Sort & Phân Tích Chia Để Trị',
+    7: 'Cây Nhị Phân (Binary Tree) & Các Phép Duyệt Cây (Preorder, Inorder, Postorder)',
+    8: 'Cây Tìm Kiếm Nhị Phân (Binary Search Tree - BST): Thêm, Xóa, Tìm Kiếm O(log N)',
+    9: 'Cây Tự Cân Bằng: Cây AVL (Phép Quay Đơn, Quay Kép) & Cây Đỏ - Đen (Red-Black)',
+    10: 'Hàng Đợi Ưu Tiên (Priority Queue) & Cấu Trúc Heap (Min-Heap, Max-Heap, HeapSort)',
+    11: 'Bảng Băm (Hash Table), Hàm Băm & Kỹ Thuật Xử Lý Đụng Độ (Collision Resolution)',
+    12: 'Biểu Diễn Đồ Thị (Ma Trận Kề, Danh Sách Kề) & Thuật Toán Duyệt (BFS, DFS)',
+    13: 'Đường Đi Ngắn Nhất Trên Đồ Thị: Thuật Toán Dijkstra & Bellman-Ford',
+    14: 'Cây Khung Nhỏ Nhất (Minimum Spanning Tree): Thuật Toán Kruskal & Prim',
+    15: 'Quy Hoạch Động (Dynamic Programming) & Bài Toán Tối Ưu Tổ Hợp (Knapsack, LCS)'
+  },
+  IT401: {
+    1: 'Tổng Quan Kỹ Nghệ Phần Mềm, Vòng Đời Phần Mềm (SDLC) & Mô Hình Waterfall vs Agile',
+    2: 'Khung Làm Việc Scrum: Vai Trò, Sự Kiện & Các Tạo Tác (Scrum Framework)',
+    3: 'Thu Thập & Quản Lý Yêu Cầu Phần Mềm: User Story & Acceptance Criteria',
+    4: 'Phân Tích Yêu Cầu: Biểu Đồ Use Case & Đặc Tả Kịch Bản Chuẩn Cockburn',
+    5: 'Thiết Kế Kiến Trúc Phần Mềm: Kiến Trúc N-Tier, Microservices & Event-Driven',
+    6: 'Thiết Kế Hướng Đối Tượng Với UML: Biểu Đồ Lớp (Class) & Biểu Đồ Tuần Tự (Sequence)',
+    7: 'Nguyên Lý Thiết Kế Phần Mềm Hướng Đối Tượng SOLID & GRASP',
+    8: 'Các Mẫu Thiết Kế Hướng Đối Tượng (Design Patterns): Creational & Structural',
+    9: 'Các Mẫu Thiết Kế Hành Vi (Behavioral Patterns): Observer, Strategy & State',
+    10: 'Chiến Lược Kiểm Thử Phần Mềm: Unit Test, Integration Test & Kiểm Thử Hộp Đen/Hộp Trắng',
+    11: 'Phát Triển Phần Mềm Hướng Kiểm Thử (Test-Driven Development - TDD)',
+    12: 'Quản Lý Phiên Bản Mã Nguồn (Git Flow) & Tích Hợp / Triển Khai Liên Tục (CI/CD)',
+    13: 'Đảm Bảo Chất Lượng Phần Mềm (QA), Đánh Giá Mã Nguồn (Code Review) & Nợ Kỹ Thuật',
+    14: 'Quản Lý Rủi Ro Dự Án, Ước Lượng Chi Phí (Planning Poker) & Bảo Mật Phần Mềm (DevSecOps)',
+    15: 'Bảo Trì Phần Mềm, Tái Cấu Trúc (Refactoring) & Hồ Sơ Nghiệm Thu Chuẩn AUN-QA'
+  },
+  BA101: {
+    1: 'Bản Chất Của Quản Trị, Vai Trò & Kỹ Năng Của Nhà Quản Trị Hiện Đại',
+    2: 'Sự Tiến Hóa Của Các Tư Tưởng Quản Trị: Cổ Điển, Tâm Lý Xã Hội & Hiện Đại',
+    3: 'Môi Trường Quản Trị Doanh Nghiệp: Môi Trường Vĩ Mô & Mô Hình 5 Lực Lượng Porter',
+    4: 'Đạo Đức Kinh Doanh & Trách Nhiệm Xã Hội Của Doanh Nghiệp (CSR / ESG)',
+    5: 'Chức Năng Hoạch Định: Tầm Nhìn, Sứ Mệnh, Mục Tiêu SMART & Phân Tích SWOT',
+    6: 'Ra Quyết Định Quản Trị: Quy Trình 8 Bước & Các Bẫy Tâm Lý Trong Ra Quyết Định',
+    7: 'Chức Năng Tổ Chức: Cơ Cấu Tổ Chức, Tầm Hạn Quản Trị & Phân Quyền',
+    8: 'Quản Trị Nguồn Nhân Lực: Tuyển Dụng, Đào Tạo & Đánh Giá Hiệu Quả (KPI / OKR)',
+    9: 'Chức Năng Lãnh Đạo: Các Phong Cách Lãnh Đạo & Trí Tuệ Cảm Xúc (EQ)',
+    10: 'Tạo Động Lực Làm Việc: Thuyết Nhu Cầu Maslow, Thuyết Hai Yếu Tố Herzberg & Thuyết Kỳ Vọng',
+    11: 'Truyền Thông Hiệu Quả & Quản Lý Xung Đột Trong Tổ Chức Doanh Nghiệp',
+    12: 'Chức Năng Kiểm Soát: Quy Trình Kiểm Soát 4 Bước & Bảng Điểm Cân Bằng (BSC)',
+    13: 'Quản Trị Sự Thay Đổi & Đổi Mới Sáng Tạo Trong Tổ Chức Doanh Nghiệp Số',
+    14: 'Quản Trị Vận Hành Doanh Nghiệp & Quản Lý Chất Lượng Toàn Diện (TQM / Six Sigma)',
+    15: 'Toàn Cầu Hóa & Quản Trị Doanh Nghiệp Đa Quốc Gia (MNCs)'
+  }
+};
+
 export default function AiAuthoringStudio() {
   const [studioMode, setStudioMode] = useState('AUTHORING_4_FORMATS'); // 'AUTHORING_4_FORMATS' | 'EXAM_GENERATOR_3'
 
   // --- State for Authoring 4 Formats ---
-  const [selectedCourseCode, setSelectedCourseCode] = useState('IT101');
-  const [weekNumber, setWeekNumber] = useState(9);
-  const [topic, setTopic] = useState('Con trỏ (Pointers) và Cấp phát Bộ nhớ Động trên Heap');
-  const [uploadedFileName, setUploadedFileName] = useState('De_cuong_chi_tiet_IT101_K66.docx');
-  const [uploadedFileSize, setUploadedFileSize] = useState('142 KB');
+  const [selectedCourseCode, setSelectedCourseCode] = useState('IT201');
+  const [weekNumber, setWeekNumber] = useState(1);
+  const [topic, setTopic] = useState('Tổng quan Hệ Cơ Sở Dữ Liệu & Kiến Trúc 3 Tầng ANSI-SPARC');
+  const [pedagogyModel, setPedagogyModel] = useState('MOET_STANDARD'); // 'MOET_STANDARD' | '5E' | 'GAGNE_9'
+  const [depthLevel, setDepthLevel] = useState('ADVANCED'); // 'STANDARD' | 'ADVANCED' | 'ENTERPRISE'
+  const [uploadedFileName, setUploadedFileName] = useState('');
+  const [uploadedFileSize, setUploadedFileSize] = useState('');
   const [syllabusInputMode, setSyllabusInputMode] = useState('FILE_UPLOAD'); // 'FILE_UPLOAD' | 'TEXT_PASTE'
   const [customSyllabusText, setCustomSyllabusText] = useState(
-    'Mục tiêu học phần: Cung cấp kiến thức về con trỏ, toán tử dereference, cấp phát mảng động new/delete, quản lý tài nguyên Heap và kiểm thử phòng chống rò rỉ bộ nhớ (Memory Leak).'
+    'Mục tiêu học phần: Cung cấp kiến thức nền tảng về hệ CSDL, kiến trúc 3 tầng ANSI-SPARC, mô hình quan hệ, các ràng buộc toàn vẹn thực thể và tham chiếu theo chuẩn đào tạo tín chỉ đại học.'
   );
-  const [targetLmsSection, setTargetLmsSection] = useState('1'); // ID 1 = IT101_66.CNTT-1_HK1
+  const [targetLmsSection, setTargetLmsSection] = useState('3'); // 3 = IT201_66.CNPM-1_HK1
   const [authoringFormatTab, setAuthoringFormatTab] = useState('WORD');
   const [authoringLoading, setAuthoringLoading] = useState(false);
   const [authoringResult, setAuthoringResult] = useState(null);
   const [isSavedToLms, setIsSavedToLms] = useState(false);
   const [savingToLms, setSavingToLms] = useState(false);
+
+  // Lesson Plan View & Edit State
+  const [lessonPlanEditMode, setLessonPlanEditMode] = useState('PREVIEW'); // 'PREVIEW' | 'EDIT'
+  const [editableLessonPlanText, setEditableLessonPlanText] = useState('');
+
+  // Teleprompter Modal State
+  const [showTeleprompterModal, setShowTeleprompterModal] = useState(false);
+  const [teleprompterSpeed, setTeleprompterSpeed] = useState(2);
+  const [teleprompterPlaying, setTeleprompterPlaying] = useState(false);
 
   // --- State for 3 Exam Papers ---
   const [examType, setExamType] = useState('Thi Kết Thúc Học Phần (Final Exam)');
@@ -56,19 +157,26 @@ export default function AiAuthoringStudio() {
 
   const currentCourse = COURSES_OPTIONS.find(c => c.code === selectedCourseCode) || COURSES_OPTIONS[0];
 
+  // Tự động cập nhật chủ đề bài học khi đổi Môn học hoặc Tuần học
+  useEffect(() => {
+    const defaultTopic = COURSE_WEEK_TOPICS[selectedCourseCode]?.[weekNumber];
+    if (defaultTopic) {
+      setTopic(defaultTopic);
+    }
+  }, [selectedCourseCode, weekNumber]);
+
   // Xử lý tải file đề cương lên
   const handleFileUpload = (info) => {
     const file = info.file;
     if (file) {
       setUploadedFileName(file.name);
       setUploadedFileSize(`${(file.size / 1024).toFixed(1)} KB`);
-      message.success(`Đã tải lên tệp đề cương: ${file.name}`);
-      // Trích xuất thử từ text file nếu có
+      message.success(`Đã nhận diện tệp đề cương chi tiết: ${file.name}`);
       if (file.originFileObj) {
         const reader = new FileReader();
         reader.onload = (e) => {
           if (e.target.result && typeof e.target.result === 'string') {
-            setCustomSyllabusText(e.target.result.substring(0, 1000));
+            setCustomSyllabusText(e.target.result.substring(0, 1500));
           }
         };
         reader.readAsText(file.originFileObj);
@@ -86,63 +194,19 @@ export default function AiAuthoringStudio() {
         course_name: currentCourse.name,
         course_code: currentCourse.code,
         week_number: weekNumber,
+        topic: topic,
+        pedagogy_model: pedagogyModel,
+        depth_level: depthLevel,
         syllabus_text: customSyllabusText,
         content_type: 'ALL_4_FORMATS'
       });
-      if (res && res.success) {
+      if (res && res.success && res.data) {
         setAuthoringResult(res.data);
-        message.success('AI đã trích xuất đề cương và tạo xong 4 định dạng bài giảng số hóa!');
+        setEditableLessonPlanText(res.data.word_document?.outline || '');
+        message.success('AI đã trích xuất đề cương và hoàn thành 4 định dạng bài giảng số hóa chuẩn Bộ GD&ĐT!');
       }
     } catch (e) {
-      // Fallback sư phạm nếu backend bận
-      setAuthoringResult({
-        course_code: currentCourse.code,
-        course_name: currentCourse.name,
-        week_number: weekNumber,
-        word_document: {
-          title: `GIÁO TRÌNH BÀI GIẢNG TUẦN ${weekNumber}: ${currentCourse.name}`,
-          outline: `# BÀI GIẢNG TUẦN ${weekNumber}: ${currentCourse.name} (${currentCourse.code})
-**Chủ đề:** ${topic}
-**Thời lượng chuẩn:** 150 phút (3 tiết tín chỉ)
-
-### 1. Chuẩn Đầu Ra Cần Đạt (CLO Matrix & Bloom C1-C4)
-- **CLO1 (Nhận thức C1-C2):** Giải thích địa chỉ ô nhớ hexa, phân biệt con trỏ trỏ tới vùng nhớ Stack và vùng nhớ Heap.
-- **CLO2 (Vận dụng C3-C4):** Thành thạo toán tử new / delete / delete[], phòng tránh lỗi treo con trỏ (Dangling Pointer) và rò rỉ RAM (Memory Leak).
-- **CLO3 (Sáng tạo C5):** Tối ưu hóa thuật toán hoán vị mảng và truyền tham chiếu con trỏ trong các bài toán quy mô lớn.
-
-### 2. Kế Hoạch 150 Phút Giảng Dạy Trên Lớp
-- **00 - 30 phút:** Nhắc lại cấu trúc RAM, giải thích toán tử & (address-of) và * (dereference).
-- **30 - 75 phút:** Thực hành cấp phát mảng động 1D và 2D trên IDE VSCode.
-- **75 - 120 phút:** Thảo luận các lỗi thường gặp: Null Pointer Exception, Double Free Error.
-- **120 - 150 phút:** Hướng dẫn làm bài tập Quiz tuần và giao đề tài thực hành mở rộng.`
-        },
-        slide_deck: [
-          { slide: 1, title: `Tuần ${weekNumber}: ${topic}`, subtitle: 'Bài giảng số hóa tương tác LMS TechCorp', notes: 'Slide tiêu đề, giới thiệu mục tiêu bài giảng số hóa và thời hạn nộp bài tập.' },
-          { slide: 2, title: 'Kiến Trúc Bộ Nhớ Stack vs Heap Trong C++', subtitle: 'Sơ đồ phân bổ RAM và cơ chế lưu trữ biến cục bộ', notes: 'Nhấn mạnh Stack cấp phát tự động, Heap cấp phát theo yêu cầu lập trình viên.' },
-          { slide: 3, title: 'Cú Pháp Cấp Phát & Thu Hồi new / delete', subtitle: 'So sánh malloc/free và new/delete trong C++ hiện đại', notes: 'Cảnh báo bắt buộc dùng delete[] đối với mảng để tránh rò rỉ.' },
-          { slide: 4, title: 'Các Bẫy Lỗi Nguy Hiểm Cần Tránh', subtitle: 'Dangling pointers, memory leaks, null dereferencing', notes: 'Minh họa hiện tượng con trỏ lơ lửng bằng đồ thị ô nhớ.' },
-          { slide: 5, title: 'Thực Hành Trực Tiếp & Thử Nghiệm Ca Biên', subtitle: 'Chiếu code snippet demo trên IDE và kiểm thử valgrind', notes: 'Mời sinh viên thực hành trên máy trạm.' },
-          { slide: 6, title: 'Tổng Kết & Câu Hỏi Củng Cố Kiến Thức', subtitle: 'Làm bài trắc nghiệm 5 phút trên ứng dụng LMS', notes: 'Nhắc nhở hoàn thành Quiz trước 23:59 Chủ nhật.' }
-        ],
-        video_script: {
-          title: `Kịch bản Video Studio Bài Giảng: ${topic}`,
-          duration_minutes: 15,
-          scenes: [
-            { time: '00:00 - 02:00', visual: 'Giảng viên đứng trước màn hình Studio tương tác số', audio: `Chào các bạn sinh viên, trong bài học Tuần ${weekNumber} chúng ta sẽ chinh phục nội dung trọng tâm: ${topic}...` },
-            { time: '02:00 - 07:00', visual: 'Quay màn hình IDE chạy mã nguồn mẫu con trỏ và mảng động', audio: 'Nhìn vào màn hình, khi ta gõ int* ptr = new int[100]; hệ điều hành sẽ cấp phát một mảng 100 số nguyên trên Heap...' },
-            { time: '07:00 - 07:30', visual: 'Điểm dừng tương tác: Pop-up dừng video yêu cầu trả lời câu hỏi', audio: 'Hệ thống tự động dừng video hiển thị câu hỏi trắc nghiệm kiểm tra khả năng tiếp thu...' },
-            { time: '07:30 - 13:30', visual: 'Biểu đồ giải phóng vùng nhớ và thu hồi tài nguyên RAM', audio: 'Nếu không dùng delete[], vùng nhớ sẽ bị cô lập và gây lỗi rò rỉ RAM (Memory Leak)...' },
-            { time: '13:30 - 15:00', visual: 'Slide dặn dò bài tập tuần và đường link tài liệu LMS', audio: `Các bạn hãy truy cập mục Quiz Tuần ${weekNumber} trên TechCorp LMS để ghi nhận điểm quá trình nhé!` }
-          ]
-        },
-        quiz_questions: [
-          { id: 1, bloom: 'Nhận biết (Remember)', question: 'Toán tử nào trong ngôn ngữ C++ dùng để lấy địa chỉ vùng nhớ của một biến?', options: [{ key: 'A', text: '*', is_correct: false }, { key: 'B', text: '&', is_correct: true }, { key: 'C', text: '->', is_correct: false }, { key: 'D', text: '%', is_correct: false }], explanation: 'Toán tử & (address-of) trả về địa chỉ vật lý của biến trong bộ nhớ RAM.' },
-          { id: 2, bloom: 'Thông hiểu (Understand)', question: 'Hiện tượng Rò rỉ bộ nhớ (Memory Leak) xảy ra khi nào trong chương trình C++?', options: [{ key: 'A', text: 'Cấp phát bộ nhớ động bằng new nhưng không giải phóng bằng delete trước khi con trỏ mất phạm vi', is_correct: true }, { key: 'B', text: 'Khai báo quá nhiều biến cục bộ trong hàm', is_correct: false }, { key: 'C', text: 'Giải phóng vùng nhớ 2 lần', is_correct: false }, { key: 'D', text: 'Gán giá trị NULL cho con trỏ', is_correct: false }], explanation: 'Memory leak phát sinh khi con trỏ trỏ đến vùng nhớ Heap bị hủy nhưng bộ nhớ Heap chưa được giải phóng.' },
-          { id: 3, bloom: 'Vận dụng (Apply)', question: 'Cú pháp chuẩn để giải phóng bộ nhớ của một mảng động được cấp phát qua `int* arr = new int[50];` là gì?', options: [{ key: 'A', text: 'free(arr);', is_correct: false }, { key: 'B', text: 'delete arr;', is_correct: false }, { key: 'C', text: 'delete[] arr;', is_correct: true }, { key: 'D', text: 'remove(arr);', is_correct: false }], explanation: 'Cấp phát mảng động `new[]` bắt buộc phải thu hồi bằng `delete[]` để gọi hàm hủy đầy đủ.' },
-          { id: 4, bloom: 'Vận dụng cao (Analyze)', question: 'Hậu quả nghiêm trọng nhất của lỗi Con trỏ lơ lửng (Dangling Pointer) là gì?', options: [{ key: 'A', text: 'Chương trình chạy chậm hơn 10%', is_correct: false }, { key: 'B', text: 'Trình biên dịch từ chối build mã nguồn', is_correct: false }, { key: 'C', text: 'Mã nguồn tự động bị xóa', is_correct: false }, { key: 'D', text: 'Truy cập vùng nhớ không hợp lệ dẫn đến crash (Segmentation Fault) hoặc tạo lỗ hổng bảo mật', is_correct: true }], explanation: 'Dangling pointer trỏ vào vùng nhớ đã bị thu hồi, nếu ghi dữ liệu đè lên có thể làm hỏng dữ liệu khác hoặc bị tấn công khai thác lỗi bộ nhớ.' }
-        ]
-      });
-      message.success('AI Studio đã hoàn thành phân tích đề cương và tạo 4 định dạng bài giảng!');
+      message.error('Lỗi khi biên soạn bài giảng AI: ' + (e.message || 'Hệ thống bận'));
     } finally {
       setAuthoringLoading(false);
     }
@@ -156,25 +220,28 @@ export default function AiAuthoringStudio() {
       // 1. Lưu tài liệu Word & Slide vào module tuần
       await apiClient.post('/academic/lms/materials', {
         module_id: 100 + weekNumber,
-        title: `Slide & Đề Cương Tuần ${weekNumber}: ${topic}`,
+        title: `Kế Hoạch Bài Dạy & Slide Tuần ${weekNumber}: ${topic}`,
         material_type: 'SLIDE',
         file_url: `https://lms.techcorp.info.vn/materials/week_${weekNumber}.pdf`,
-        suggested_time_minutes: 45
+        suggested_time_minutes: 150
       });
 
       // 2. Lưu Quiz vào module tuần
-      await apiClient.post('/academic/lms/quizzes', {
-        module_id: 100 + weekNumber,
-        title: `Quiz Đánh Giá Quá Trình Tuần ${weekNumber}: ${topic}`,
-        time_limit_minutes: 15,
-        max_attempts: 3,
-        weight: 10,
-        passing_score: 5.0,
-        questions: authoringResult.quiz_questions.map(q => ({
-          content: q.question,
-          answers: q.options.map((opt, i) => ({ id: i + 1, content: opt.text, is_correct: opt.is_correct }))
-        }))
-      });
+      if (authoringResult.quiz_questions && authoringResult.quiz_questions.length > 0) {
+        await apiClient.post('/academic/lms/quizzes', {
+          module_id: 100 + weekNumber,
+          title: `Quiz Đánh Giá Quá Trình Tuần ${weekNumber} (Thang Bloom C1-C4): ${topic}`,
+          time_limit_minutes: 15,
+          max_attempts: 3,
+          weight: 10,
+          passing_score: 5.0,
+          questions: authoringResult.quiz_questions.map(q => ({
+            content: q.question,
+            bloom: q.bloom,
+            answers: (q.options || []).map((opt, i) => ({ id: i + 1, content: opt.text, is_correct: opt.is_correct }))
+          }))
+        });
+      }
 
       setIsSavedToLms(true);
       message.success(`Đã lưu thành công bài giảng & bộ Quiz vào Tuần ${weekNumber} của Lớp học phần LMS!`);
@@ -186,7 +253,113 @@ export default function AiAuthoringStudio() {
     }
   };
 
-  // 3. GỌI AI SINH TỰ ĐỘNG BỘ 3 ĐỀ THI
+  // 3. IN KẾ HOẠCH BÀI DẠY (BẢN IN CHUẨN VĂN BẢN HÀNH CHÍNH)
+  const handlePrintLessonPlan = () => {
+    const content = editableLessonPlanText || authoringResult?.word_document?.outline || '';
+    if (!content) {
+      message.warning('Chưa có nội dung kế hoạch bài dạy để in!');
+      return;
+    }
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      message.error('Vui lòng cho phép mở cửa sổ pop-up để thực hiện in!');
+      return;
+    }
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Kế Hoạch Bài Dạy - Tuần ${weekNumber} - ${currentCourse.name}</title>
+          <style>
+            body { font-family: 'Times New Roman', Times, serif; font-size: 13pt; line-height: 1.5; padding: 40px; color: #000; }
+            h1, h2, h3, h4 { margin-top: 18px; margin-bottom: 8px; color: #111; }
+            h1 { font-size: 16pt; text-align: center; text-transform: uppercase; font-weight: bold; }
+            h2 { font-size: 14pt; font-weight: bold; }
+            h3 { font-size: 13pt; font-weight: bold; }
+            table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 11pt; }
+            th, td { border: 1px solid #333; padding: 8px 10px; text-align: left; }
+            th { background: #f2f2f2; text-align: center; font-weight: bold; }
+            pre, code { font-family: 'Courier New', Courier, monospace; background: #f8f8f8; padding: 6px; border: 1px solid #ccc; font-size: 10.5pt; display: block; white-space: pre-wrap; }
+            blockquote { border-left: 4px solid #4f46e5; margin: 12px 0; padding: 8px 15px; background: #f5f3ff; font-style: italic; }
+            @media print {
+              body { padding: 15mm; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div style="white-space: pre-wrap;">${content}</div>
+          <script>
+            window.onload = function() { window.print(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
+  // 4. TẢI FILE WORD (.DOC)
+  const handleDownloadWord = () => {
+    const content = editableLessonPlanText || authoringResult?.word_document?.outline || '';
+    if (!content) return;
+    const htmlContent = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+          <meta charset='utf-8'>
+          <title>Ke_Hoach_Bai_Day_Tuan_${weekNumber}_${currentCourse.code}</title>
+          <style>
+            body { font-family: 'Times New Roman', serif; font-size: 13pt; line-height: 1.5; color: #000; }
+            h1 { font-size: 16pt; font-weight: bold; text-align: center; }
+            h2, h3 { font-size: 13pt; font-weight: bold; }
+            table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+            th, td { border: 1px solid #000; padding: 6px 10px; }
+            th { background-color: #f2f2f2; font-weight: bold; }
+            pre { background-color: #f8f8f8; border: 1px solid #ccc; padding: 8px; font-family: 'Consolas', monospace; font-size: 10pt; white-space: pre-wrap; }
+          </style>
+        </head>
+        <body>
+          <div style="white-space: pre-wrap;">${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+        </body>
+      </html>
+    `;
+    const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Ke_Hoach_Bai_Day_Tuan_${weekNumber}_${currentCourse.code}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    message.success('Đã tải xuống tệp Kế hoạch bài dạy chuẩn Microsoft Word (.doc)!');
+  };
+
+  // 5. TẢI FILE AIKEN QUIZ
+  const handleDownloadAikenQuiz = () => {
+    if (!authoringResult?.quiz_questions) return;
+    let aiken = '';
+    authoringResult.quiz_questions.forEach(q => {
+      aiken += `${q.question}\n`;
+      let correctKey = 'A';
+      (q.options || []).forEach(opt => {
+        aiken += `${opt.key}. ${opt.text}\n`;
+        if (opt.is_correct) correctKey = opt.key;
+      });
+      aiken += `ANSWER: ${correctKey}\n\n`;
+    });
+    const blob = new Blob([aiken], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Quiz_Tuan_${weekNumber}_${currentCourse.code}_Aiken.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    message.success('Đã xuất file câu hỏi định dạng Aiken chuẩn Moodle/LMS!');
+  };
+
+  // 6. GỌI AI SINH TỰ ĐỘNG BỘ 3 ĐỀ THI
   const handleGenerate3Exams = async () => {
     setExamLoading(true);
     setExamResult(null);
@@ -197,93 +370,81 @@ export default function AiAuthoringStudio() {
         exam_type: examType,
         duration_minutes: examDuration
       });
-      if (res && res.success) {
+      if (res && res.success && res.data) {
         setExamResult(res.data);
         message.success(`Đã tạo thành công bộ 3 đề thi và lập hồ sơ thẩm định cho môn ${currentCourse.name}!`);
       }
     } catch (e) {
-      // Fallback sư phạm nếu proxy bận
-      setExamResult({
-        papers: [
-          {
-            paper_id: 1,
-            paper_code: `DE-${currentCourse.code}-101`,
-            paper_name: `Đề Thi Số 1 (Mã 101 - Chính Thức) — ${currentCourse.name}`,
-            exam_type: examType,
-            duration_minutes: examDuration,
-            security_level: 'TUYỆT MẬT',
-            matrix_clo: { remember_pct: 25, understand_pct: 35, apply_pct: 25, analyze_pct: 15 },
-            total_score: 10.0,
-            questions: [
-              { q_num: 1, level: 'Nhận biết (2.5đ)', content: 'Nêu cú pháp khai báo và phạm vi hoạt động của biến cục bộ trong ngôn ngữ lập trình. Cho ví dụ minh họa.', score: 2.5, answer_key: 'Định nghĩa đúng (1.0đ), nêu phạm vi hàm (1.0đ), code mẫu chuẩn (0.5đ).' },
-              { q_num: 2, level: 'Thông hiểu (3.5đ)', content: 'Phân tích sự khác biệt cơ bản giữa truyền tham số theo giá trị (pass-by-value) và truyền tham số theo tham chiếu (pass-by-reference). Khi nào bắt buộc phải dùng tham chiếu?', score: 3.5, answer_key: 'So sánh cơ chế sao chép ô nhớ (1.5đ), vẽ sơ đồ ô nhớ (1.0đ), nêu ca bắt buộc dùng tham chiếu (1.0đ).' },
-              { q_num: 3, level: 'Vận dụng (2.5đ)', content: 'Viết hàm thực hiện tìm kiếm phần tử lớn thứ hai trong một mảng một chiều gồm n số nguyên. Độ phức tạp không vượt quá O(n).', score: 2.5, answer_key: 'Thuật toán duyệt 1 lượt (1.5đ), xử lý ca mảng trùng giá trị (0.5đ), code hoàn chỉnh không lỗi cú pháp (0.5đ).' },
-              { q_num: 4, level: 'Vận dụng cao (1.5đ)', content: 'Thiết kế cấu trúc dữ liệu và giải thuật quản lý danh sách hồ sơ sinh viên bằng mảng động, tự động tăng gấp đôi kích thước khi mảng đầy.', score: 1.5, answer_key: 'Cấp phát động new[] (0.5đ), cơ chế sao chép và delete[] mảng cũ (0.5đ), phòng chống rò rỉ RAM (0.5đ).' }
-            ]
-          },
-          {
-            paper_id: 2,
-            paper_code: `DE-${currentCourse.code}-202`,
-            paper_name: `Đề Thi Số 2 (Mã 202 - Chính Thức Hoán Vị) — ${currentCourse.name}`,
-            exam_type: examType,
-            duration_minutes: examDuration,
-            security_level: 'TUYỆT MẬT',
-            matrix_clo: { remember_pct: 25, understand_pct: 35, apply_pct: 25, analyze_pct: 15 },
-            total_score: 10.0,
-            questions: [
-              { q_num: 1, level: 'Nhận biết (2.5đ)', content: 'Trình bày khái niệm mảng hai chiều và cách truy xuất phần tử trên dòng i, cột j trong bộ nhớ máy tính.', score: 2.5, answer_key: 'Khái niệm ma trận (1.0đ), công thức tính địa chỉ ô nhớ Row-Major (1.0đ), ví dụ code (0.5đ).' },
-              { q_num: 2, level: 'Thông hiểu (3.5đ)', content: 'Giải thích nguyên lý hoạt động của cấu trúc rẽ nhánh switch-case và so sánh ưu thế về tốc độ với chuỗi if-else if lồng nhau.', score: 3.5, answer_key: 'Bảng nhảy Jump Table của switch-case (1.5đ), điều kiện áp dụng kiểu dữ liệu rời rạc (1.0đ), ví dụ minh họa (1.0đ).' },
-              { q_num: 3, level: 'Vận dụng (2.5đ)', content: 'Viết chương trình chuẩn hóa chuỗi ký tự họ tên: loại bỏ khoảng trắng thừa đầu, cuối, giữa các từ và viết hoa chữ cái đầu mỗi từ.', score: 2.5, answer_key: 'Thuật toán duyệt chuỗi (1.5đ), tách từ và chuẩn hóa in hoa (0.5đ), xuất chuỗi kết quả (0.5đ).' },
-              { q_num: 4, level: 'Vận dụng cao (1.5đ)', content: 'Cài đặt thuật toán sắp xếp mảng cấu trúc học sinh giảm dần theo điểm trung bình GPA bằng thuật toán QuickSort hoặc MergeSort.', score: 1.5, answer_key: 'Định nghĩa struct đúng (0.5đ), cài đặt hàm chia mảng/trộn mảng (0.5đ), thuật toán O(n log n) (0.5đ).' }
-            ]
-          },
-          {
-            paper_id: 3,
-            paper_code: `DE-${currentCourse.code}-303`,
-            paper_name: `Đề Thi Số 3 (Mã 303 - Đề Dự Bị Niêm Phong) — ${currentCourse.name}`,
-            exam_type: examType,
-            duration_minutes: examDuration,
-            security_level: 'TUYỆT MẬT',
-            matrix_clo: { remember_pct: 25, understand_pct: 35, apply_pct: 25, analyze_pct: 15 },
-            total_score: 10.0,
-            questions: [
-              { q_num: 1, level: 'Nhận biết (2.5đ)', content: 'Định nghĩa con trỏ (pointer) trong C++. Giải thích sự khác biệt giữa toán tử & và toán tử *.', score: 2.5, answer_key: 'Định nghĩa ô nhớ (1.0đ), toán tử & lấy địa chỉ (0.75đ), toán tử * giải tham chiếu (0.75đ).' },
-              { q_num: 2, level: 'Thông hiểu (3.5đ)', content: 'Trình bày cơ chế đọc và ghi tệp tin nhị phân bằng ifstream và ofstream. Tại sao tệp nhị phân có tốc độ truy xuất nhanh hơn tệp văn bản?', score: 3.5, answer_key: 'Cú pháp open/read/write (1.5đ), giải thích cơ chế binary không cần ép kiểu ASCII (1.0đ), đóng tệp an toàn (1.0đ).' },
-              { q_num: 3, level: 'Vận dụng (2.5đ)', content: 'Viết hàm đệ quy tính số Fibonacci thứ n và phân tích tại sao kỹ thuật đệ quy có nhớ (Memoization) giúp giảm độ phức tạp từ O(2^n) về O(n).', score: 2.5, answer_key: 'Viết đúng đệ quy cơ sở (1.0đ), phân tích cây đệ quy (1.0đ), cài đặt mảng nhớ (0.5đ).' },
-              { q_num: 4, level: 'Vận dụng cao (1.5đ)', content: 'Xây dựng module quản lý giỏ hàng gồm cấu trúc SanPham, tính tổng giá trị đơn hàng và áp dụng mã giảm giá theo ngưỡng chi tiêu.', score: 1.5, answer_key: 'Cấu trúc SanPham và mảng động (0.5đ), logic tính chiết khấu chính xác (0.5đ), định dạng hóa đơn đẹp (0.5đ).' }
-            ]
-          }
-        ],
-        appraisal_record: {
-          appraisal_code: `BB-TD-2026-${currentCourse.code}-778`,
-          course_code: currentCourse.code,
-          course_name: currentCourse.name,
-          exam_paper_code: `BỘ 3 ĐỀ THI (DE-${currentCourse.code}-101, DE-${currentCourse.code}-202, DE-${currentCourse.code}-303)`,
-          author_lecturer: 'TS. Hoàng Đức Em',
-          reviewer_dept: 'TS. Nguyễn Văn An (Trưởng Bộ Môn CNPM)',
-          council_president: 'PGS. TS. Trần Mạnh Tuấn (Trưởng Khoa CNTT)',
-          status: 'APPROVED',
-          created_at: new Date().toISOString(),
-          criteria: {
-            matrix_coverage_score: 9.8,
-            bloom_distribution_score: 9.5,
-            clarity_score: 9.6,
-            security_classification: 'TUYET_MAT_CAP_TRUONG',
-            exam_duration_fit: `PHÙ HỢP ${examDuration} PHÚT`,
-            notes: `Bộ 3 đề thi đã được Hội đồng Thẩm định nghiệm thu đạt 100% chuẩn đầu ra và ma trận Bloom C1-C4.`
-          },
-          digital_signatures: {
-            author_signed: true,
-            reviewer_signed: true,
-            president_signed: true,
-            digital_cert_id: `CERT-TCU-SHA256-${Date.now()}`
-          }
-        }
-      });
-      message.success(`Đã tạo thành công bộ 3 đề thi và lập hồ sơ thẩm định cho môn ${currentCourse.name}!`);
+      message.error('Lỗi khi tạo bộ đề thi: ' + (e.message || 'Lỗi kết nối'));
     } finally {
       setExamLoading(false);
     }
+  };
+
+  // 7. IN BỘ 3 ĐỀ THI KÈM BAREME ĐIỂM
+  const handlePrint3Exams = () => {
+    if (!examResult?.papers) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      message.error('Vui lòng cho phép mở pop-up để in đề thi!');
+      return;
+    }
+    let papersHtml = '';
+    examResult.papers.forEach((p) => {
+      papersHtml += `
+        <div style="page-break-after: always; margin-bottom: 40px;">
+          <table style="width: 100%; border: none; margin-bottom: 20px;">
+            <tr>
+              <td style="width: 50%; text-align: center; border: none;">
+                <b>BỘ GIÁO DỤC VÀ ĐÀO TẠO</b><br/>
+                <b>TRƯỜNG ĐH CÔNG NGHỆ TECHCORP</b>
+              </td>
+              <td style="width: 50%; text-align: center; border: none;">
+                <b>KỲ THI: ${p.exam_type?.toUpperCase()}</b><br/>
+                <b>HỌC KỲ I - NĂM HỌC 2026 - 2027</b>
+              </td>
+            </tr>
+          </table>
+          <h2 style="text-align: center; text-transform: uppercase; margin-bottom: 6px;">${p.paper_name}</h2>
+          <div style="text-align: center; margin-bottom: 16px; font-size: 11pt;">
+            <b>Mã đề thi: ${p.paper_code}</b> | <b>Thời gian: ${p.duration_minutes} phút</b> | <b>Bảo mật: ${p.security_level}</b>
+          </div>
+          <hr/>
+          <div style="margin-top: 20px;">
+            ${(p.questions || []).map(q => `
+              <div style="margin-bottom: 16px;">
+                <b>Câu ${q.q_num} (${q.score} điểm) [${q.level}]:</b>
+                <p style="margin: 6px 0 10px 0;">${q.content}</p>
+                <div style="background: #f0fdf4; padding: 8px 12px; border-left: 3px solid #16a34a; font-size: 11pt;">
+                  <b style="color: #166534;">Đáp án & Hướng dẫn chấm (Bareme chi tiết):</b> ${q.answer_key}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    });
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Bộ 3 Đề Thi - ${currentCourse.name}</title>
+          <style>
+            body { font-family: 'Times New Roman', Times, serif; font-size: 13pt; line-height: 1.5; padding: 30px; }
+            table { width: 100%; border-collapse: collapse; }
+            @media print { body { padding: 12mm; } }
+          </style>
+        </head>
+        <body>
+          ${papersHtml}
+          <script>
+            window.onload = function() { window.print(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   const handleCopyText = (content) => {
@@ -306,7 +467,7 @@ export default function AiAuthoringStudio() {
               </Title>
             </Space>
             <Paragraph style={{ color: 'rgba(255,255,255,0.9)', margin: 0, fontSize: 13 }}>
-              Trích xuất tự động từ Đề cương chi tiết (Word / PDF) thành 4 định dạng bài giảng số hóa và sinh đồng thời Bộ 3 đề thi chuẩn ma trận Bloom C1 - C4 (TT 08/2021/TT-BGDĐT).
+              Trích xuất tự động từ Đề cương chi tiết (Word / PDF) thành 4 định dạng bài giảng số hóa và sinh đồng thời Bộ 3 đề thi chuẩn ma trận Bloom C1 - C6 theo Thông tư 08/2021/TT-BGDĐT & Tiêu chuẩn AUN-QA.
             </Paragraph>
           </Col>
           <Col xs={24} md={8} style={{ textAlign: 'right', marginTop: 10 }}>
@@ -335,7 +496,7 @@ export default function AiAuthoringStudio() {
           {/* CỘT TRÁI: TẢI ĐỀ CƯƠNG VÀ CẤU HÌNH SOẠN BÀI */}
           <Col xs={24} lg={9}>
             <Card
-              title={<Space><BulbOutlined style={{ color: '#7c3aed' }} /><span style={{ fontWeight: 700 }}>1. Tải Đề Cương & Thiết Lập Soạn Giảng</span></Space>}
+              title={<Space><BulbOutlined style={{ color: '#7c3aed' }} /><span style={{ fontWeight: 700 }}>1. Thiết Lập Khung Sư Phạm & Đề Cương</span></Space>}
               style={{ borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
             >
               <div style={{ marginBottom: 14 }}>
@@ -367,16 +528,48 @@ export default function AiAuthoringStudio() {
                   </Select>
                 </Col>
                 <Col span={12}>
-                  <Text strong>Chuẩn đầu ra áp dụng:</Text>
-                  <Tag color="purple" style={{ marginTop: 8, display: 'block', textAlign: 'center', padding: '4px 0', fontWeight: 600 }}>
-                    Bloom C1 - C4 (TT 08)
-                  </Tag>
+                  <Text strong>Độ sâu nhận thức:</Text>
+                  <Select
+                    value={depthLevel}
+                    onChange={setDepthLevel}
+                    style={{ width: '100%', marginTop: 6 }}
+                  >
+                    <Option value="STANDARD">Đại cương (Bloom C1-C3)</Option>
+                    <Option value="ADVANCED">Chuyên sâu (Bloom C1-C5)</Option>
+                    <Option value="ENTERPRISE">Doanh nghiệp (Bloom C1-C6)</Option>
+                  </Select>
                 </Col>
               </Row>
 
               <div style={{ marginBottom: 14 }}>
+                <Text strong>Mô hình sư phạm triển khai:</Text>
+                <Select
+                  value={pedagogyModel}
+                  onChange={setPedagogyModel}
+                  style={{ width: '100%', marginTop: 6 }}
+                >
+                  <Option value="MOET_STANDARD">Chuẩn Bộ GD&ĐT (TT 08/2021) & Chu trình 5E</Option>
+                  <Option value="5E">Mô hình 5E (Engage - Explore - Explain - Elaborate - Evaluate)</Option>
+                  <Option value="GAGNE_9">Mô hình 9 Biến cố học tập Robert Gagné</Option>
+                </Select>
+              </div>
+
+              <div style={{ marginBottom: 14 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <Text strong>Tải Đề Cương Chi Tiết (Word / PDF):</Text>
+                  <Text strong>Chủ đề trọng tâm bài học:</Text>
+                  <Tag color="purple" style={{ margin: 0, fontSize: 11 }}>Tuần {weekNumber} Chuẩn</Tag>
+                </div>
+                <Input
+                  value={topic}
+                  onChange={e => setTopic(e.target.value)}
+                  style={{ fontWeight: 500 }}
+                  placeholder="Nhập hoặc chỉnh sửa chủ đề bài học..."
+                />
+              </div>
+
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <Text strong>Đề cương chi tiết (Syllabus):</Text>
                   <Radio.Group
                     size="small"
                     value={syllabusInputMode}
@@ -395,16 +588,16 @@ export default function AiAuthoringStudio() {
                     customRequest={({ onSuccess }) => setTimeout(() => onSuccess("ok"), 0)}
                     onChange={handleFileUpload}
                     showUploadList={false}
-                    style={{ padding: '16px 8px', background: '#f8fafc', borderRadius: 8, borderColor: '#cbd5e1' }}
+                    style={{ padding: '14px 8px', background: '#f8fafc', borderRadius: 8, borderColor: '#cbd5e1' }}
                   >
-                    <p className="ant-upload-drag-icon" style={{ marginBottom: 8 }}>
-                      <InboxOutlined style={{ color: '#7c3aed', fontSize: 36 }} />
+                    <p className="ant-upload-drag-icon" style={{ marginBottom: 6 }}>
+                      <InboxOutlined style={{ color: '#7c3aed', fontSize: 32 }} />
                     </p>
-                    <p style={{ margin: 0, fontWeight: 600, color: '#334155' }}>
+                    <p style={{ margin: 0, fontWeight: 600, color: '#334155', fontSize: 13 }}>
                       Kéo thả hoặc Nhấp để chọn file Đề cương (.docx, .pdf)
                     </p>
                     <p style={{ margin: '4px 0 0', fontSize: 11, color: '#64748b' }}>
-                      AI sẽ tự động đọc cấu trúc CLO, ma trận tuần và chủ đề bài học
+                      AI tự động phân tích chuẩn CLO và tiến trình 150 phút
                     </p>
                   </Dragger>
                 ) : (
@@ -428,16 +621,6 @@ export default function AiAuthoringStudio() {
                 )}
               </div>
 
-              <div style={{ marginBottom: 14 }}>
-                <Text strong>Chủ đề trọng tâm bài học:</Text>
-                <Input
-                  value={topic}
-                  onChange={e => setTopic(e.target.value)}
-                  style={{ marginTop: 6, fontWeight: 500 }}
-                  placeholder="Ví dụ: Con trỏ và Cấp phát động..."
-                />
-              </div>
-
               <div style={{ marginBottom: 16 }}>
                 <Text strong>Lớp học phần LMS nhận bài giảng:</Text>
                 <Select
@@ -448,6 +631,7 @@ export default function AiAuthoringStudio() {
                   <Option value="1">IT101_66.CNTT-1_HK1 (Lớp 66.CNTT-1 - 42 SV)</Option>
                   <Option value="2">IT101_66.CNTT-2_HK1 (Lớp 66.CNTT-2 - 40 SV)</Option>
                   <Option value="3">IT201_66.CNPM-1_HK1 (Lớp 66.CNPM-1 - 38 SV)</Option>
+                  <Option value="4">IT301_66.KHMT-1_HK1 (Lớp 66.KHMT-1 - 44 SV)</Option>
                 </Select>
               </div>
 
@@ -466,7 +650,7 @@ export default function AiAuthoringStudio() {
                   borderRadius: 8
                 }}
               >
-                AI Trích Xuất Đề Cương & Biên Soạn 4 Định Dạng
+                AI Biên Soạn 4 Định Dạng Chuẩn Bộ GD&ĐT
               </Button>
             </Card>
           </Col>
@@ -479,7 +663,7 @@ export default function AiAuthoringStudio() {
                   <Col>
                     <Space>
                       <BookOutlined style={{ color: '#2563eb' }} />
-                      <span style={{ fontWeight: 700 }}>2. Kết Quả Số Hóa 4 Định Dạng (Xem Trước & Tái Sử Dụng)</span>
+                      <span style={{ fontWeight: 700 }}>2. Kết Quả Số Hóa 4 Định Dạng (Trực Quan & Tái Sử Dụng)</span>
                     </Space>
                   </Col>
                   {authoringResult && (
@@ -498,35 +682,29 @@ export default function AiAuthoringStudio() {
                         >
                           {isSavedToLms ? `Đã Lưu Vào LMS Tuần ${weekNumber}` : `Lưu Vào LMS (Tuần ${weekNumber})`}
                         </Button>
-                        <Button
-                          icon={<CopyOutlined />}
-                          onClick={() => handleCopyText(authoringResult)}
-                        >
-                          Sao chép
-                        </Button>
                       </Space>
                     </Col>
                   )}
                 </Row>
               }
-              style={{ borderRadius: 12, minHeight: 560, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
+              style={{ borderRadius: 12, minHeight: 620, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
             >
               {authoringLoading && (
-                <div style={{ textAlign: 'center', padding: '100px 0' }}>
+                <div style={{ textAlign: 'center', padding: '110px 0' }}>
                   <Spin size="large" />
                   <div style={{ marginTop: 20, color: '#7c3aed', fontWeight: 600, fontSize: 16 }}>
-                    Trí tuệ nhân tạo đang trích xuất đề cương và biên soạn tài liệu 4 định dạng...
+                    AI Studio đang trích xuất đề cương và biên soạn tài liệu 4 định dạng chuẩn Bộ GD&ĐT...
                   </div>
-                  <Text type="secondary">Phân tích chuẩn đầu ra CLO • Tạo kế hoạch 150 phút • Thiết kế Slide • Soạn kịch bản Video • Sinh trắc nghiệm Bloom</Text>
+                  <Text type="secondary">Xây dựng ma trận LLO -> CLO -> PLO • Kế hoạch 150 phút • Thiết kế 12 Slides • Kịch bản Teleprompter • Sinh trắc nghiệm Bloom C1-C4</Text>
                 </div>
               )}
 
               {!authoringLoading && !authoringResult && (
-                <div style={{ textAlign: 'center', padding: '120px 20px', color: '#94a3b8' }}>
+                <div style={{ textAlign: 'center', padding: '130px 20px', color: '#94a3b8' }}>
                   <RobotOutlined style={{ fontSize: 64, marginBottom: 16, color: '#cbd5e1' }} />
                   <Title level={4} style={{ color: '#64748b' }}>Chưa khởi tạo bài giảng</Title>
                   <Text type="secondary">
-                    Tải lên file Đề cương chi tiết (Word / PDF) hoặc bấm "AI Trích Xuất Đề Cương & Biên Soạn" để khởi tạo tự động.
+                    Chọn môn học, tuần học và bấm "AI Biên Soạn 4 Định Dạng Chuẩn Bộ GD&ĐT" để tự động sinh giáo trình, slide, kịch bản video và đề trắc nghiệm.
                   </Text>
                 </div>
               )}
@@ -537,12 +715,12 @@ export default function AiAuthoringStudio() {
                     <Alert
                       message={
                         <span>
-                          <b>Thành công:</b> Bài giảng và bộ câu hỏi Quiz đã được đồng bộ vào <b>Tuần {weekNumber}</b> của Lớp học phần LMS. Học viên có thể truy cập học tập ngay lập tức!
+                          <b>Thành công:</b> Bài giảng, tài liệu slide và bộ Quiz trắc nghiệm đã được đồng bộ vào <b>Tuần {weekNumber}</b> của Lớp học phần LMS!
                         </span>
                       }
                       type="success"
                       showIcon
-                      style={{ marginBottom: 16, borderRadius: 8 }}
+                      style={{ marginBottom: 14, borderRadius: 8 }}
                     />
                   )}
 
@@ -555,33 +733,108 @@ export default function AiAuthoringStudio() {
                         key: 'WORD',
                         label: <span><FileWordOutlined style={{ color: '#2563eb' }} /> Giáo Trình (Word / Plan)</span>,
                         children: (
-                          <div style={{ background: '#f8fafc', padding: 20, borderRadius: 8, border: '1px solid #e2e8f0', whiteSpace: 'pre-wrap', fontFamily: 'Segoe UI, sans-serif', lineHeight: 1.6, maxHeight: 440, overflowY: 'auto' }}>
-                            {authoringResult.word_document?.outline}
+                          <div>
+                            {/* Toolbar thao tác cho Kế hoạch bài dạy */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, background: '#f1f5f9', padding: '8px 12px', borderRadius: 8 }}>
+                              <Radio.Group
+                                size="small"
+                                value={lessonPlanEditMode}
+                                onChange={e => setLessonPlanEditMode(e.target.value)}
+                              >
+                                <Radio.Button value="PREVIEW"><EyeOutlined /> Xem Định Dạng</Radio.Button>
+                                <Radio.Button value="EDIT"><EditOutlined /> Chỉnh Sửa Trực Tiếp</Radio.Button>
+                              </Radio.Group>
+
+                              <Space>
+                                <Button
+                                  type="primary"
+                                  icon={<PrinterOutlined />}
+                                  size="small"
+                                  onClick={handlePrintLessonPlan}
+                                  style={{ background: '#2563eb', borderColor: '#2563eb', fontWeight: 600 }}
+                                >
+                                  In Kế Hoạch Bài Dạy
+                                </Button>
+                                <Button
+                                  icon={<DownloadOutlined />}
+                                  size="small"
+                                  onClick={handleDownloadWord}
+                                >
+                                  Tải File Word (.doc)
+                                </Button>
+                                <Button
+                                  icon={<CopyOutlined />}
+                                  size="small"
+                                  onClick={() => handleCopyText(editableLessonPlanText || authoringResult.word_document?.outline)}
+                                >
+                                  Sao chép
+                                </Button>
+                              </Space>
+                            </div>
+
+                            {lessonPlanEditMode === 'PREVIEW' ? (
+                              <div style={{
+                                background: '#f8fafc',
+                                padding: 20,
+                                borderRadius: 8,
+                                border: '1px solid #e2e8f0',
+                                whiteSpace: 'pre-wrap',
+                                fontFamily: "'Times New Roman', serif",
+                                fontSize: 14,
+                                lineHeight: 1.6,
+                                maxHeight: 460,
+                                overflowY: 'auto'
+                              }}>
+                                {editableLessonPlanText || authoringResult.word_document?.outline}
+                              </div>
+                            ) : (
+                              <TextArea
+                                rows={18}
+                                value={editableLessonPlanText}
+                                onChange={e => setEditableLessonPlanText(e.target.value)}
+                                style={{ fontFamily: 'Consolas, monospace', fontSize: 13, borderRadius: 8 }}
+                              />
+                            )}
                           </div>
                         )
                       },
                       {
                         key: 'SLIDES',
-                        label: <span><PlaySquareOutlined style={{ color: '#ea580c' }} /> Slide Thuyết Trình ({authoringResult.slide_deck?.length || 6} Slides)</span>,
+                        label: <span><PlaySquareOutlined style={{ color: '#ea580c' }} /> Slide Thuyết Trình ({authoringResult.slide_deck?.length || 12} Slides)</span>,
                         children: (
-                          <div style={{ maxHeight: 440, overflowY: 'auto', paddingRight: 8 }}>
-                            <Row gutter={[12, 12]}>
-                              {(authoringResult.slide_deck || []).map(s => (
-                                <Col xs={24} sm={12} key={s.slide}>
-                                  <Card size="small" style={{ borderRadius: 8, borderColor: '#cbd5e1', background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                                      <Tag color="orange" style={{ fontWeight: 600 }}>Slide {s.slide}</Tag>
-                                      <Tag color="blue" style={{ fontSize: 10 }}>16:9 HD</Tag>
-                                    </div>
-                                    <Title level={5} style={{ margin: '4px 0 6px', fontSize: 14, color: '#1e293b' }}>{s.title}</Title>
-                                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 6 }}>{s.subtitle}</Text>
-                                    <div style={{ background: '#f1f5f9', padding: '6px 10px', borderRadius: 6, fontSize: 11, color: '#475569' }}>
-                                      <b>Lời thuyết minh:</b> {s.notes}
-                                    </div>
-                                  </Card>
-                                </Col>
-                              ))}
-                            </Row>
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                              <Text type="secondary" style={{ fontSize: 12 }}>
+                                Chuẩn thiết kế 16:9 HD, tích hợp ghi chú thuyết minh chi tiết cho từng slide của giảng viên.
+                              </Text>
+                              <Button
+                                size="small"
+                                icon={<CopyOutlined />}
+                                onClick={() => handleCopyText(authoringResult.slide_deck)}
+                              >
+                                Sao chép dữ liệu Slide
+                              </Button>
+                            </div>
+
+                            <div style={{ maxHeight: 460, overflowY: 'auto', paddingRight: 8 }}>
+                              <Row gutter={[12, 12]}>
+                                {(authoringResult.slide_deck || []).map(s => (
+                                  <Col xs={24} sm={12} key={s.slide}>
+                                    <Card size="small" style={{ borderRadius: 8, borderColor: '#cbd5e1', background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                        <Tag color="orange" style={{ fontWeight: 600 }}>Slide {s.slide}</Tag>
+                                        <Tag color="blue" style={{ fontSize: 10 }}>16:9 HD</Tag>
+                                      </div>
+                                      <Title level={5} style={{ margin: '4px 0 6px', fontSize: 13, color: '#1e293b' }}>{s.title}</Title>
+                                      <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 6 }}>{s.subtitle}</Text>
+                                      <div style={{ background: '#f1f5f9', padding: '6px 10px', borderRadius: 6, fontSize: 11, color: '#475569' }}>
+                                        <b>Lời thuyết minh giảng viên:</b> {s.notes}
+                                      </div>
+                                    </Card>
+                                  </Col>
+                                ))}
+                              </Row>
+                            </div>
                           </div>
                         )
                       },
@@ -589,30 +842,51 @@ export default function AiAuthoringStudio() {
                         key: 'VIDEO',
                         label: <span><VideoCameraOutlined style={{ color: '#db2777' }} /> Kịch Bản Video Studio ({authoringResult.video_script?.duration_minutes || 15} phút)</span>,
                         children: (
-                          <div style={{ maxHeight: 440, overflowY: 'auto', paddingRight: 8 }}>
-                            <Alert
-                              message={`Kịch bản: ${authoringResult.video_script?.title} (Thời lượng chuẩn Studio: ${authoringResult.video_script?.duration_minutes || 15} phút - Có điểm dừng trắc nghiệm tương tác)`}
-                              type="info"
-                              showIcon
-                              style={{ marginBottom: 14, borderRadius: 8 }}
-                            />
-                            {(authoringResult.video_script?.scenes || []).map((sc, i) => (
-                              <Card key={i} size="small" style={{ marginBottom: 10, borderRadius: 8, borderColor: sc.visual?.includes('Checkpoint') || sc.visual?.includes('tương tác') ? '#f59e0b' : '#e2e8f0' }}>
-                                <Row gutter={12} align="middle">
-                                  <Col span={7}>
-                                    <Tag color={sc.visual?.includes('Checkpoint') ? 'warning' : 'blue'} style={{ fontWeight: 600 }}>{sc.time}</Tag>
-                                    <div style={{ fontSize: 11, marginTop: 4, color: '#475569' }}>
-                                      <b>Khung hình:</b> {sc.visual}
-                                    </div>
-                                  </Col>
-                                  <Col span={17}>
-                                    <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: 6, fontSize: 12 }}>
-                                      <b style={{ color: '#1e293b' }}>Lời thoại giảng viên:</b> "{sc.audio}"
-                                    </div>
-                                  </Col>
-                                </Row>
-                              </Card>
-                            ))}
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, background: '#fdf2f8', padding: '8px 12px', borderRadius: 8, border: '1px solid #fbcfe8' }}>
+                              <Space>
+                                <Tag color="magenta" style={{ fontWeight: 700 }}>TELEPROMPTER STUDIO</Tag>
+                                <Text strong style={{ color: '#9d174d' }}>Thời lượng: {authoringResult.video_script?.duration_minutes || 15} phút (Có Điểm dừng tương tác Checkpoint)</Text>
+                              </Space>
+                              <Space>
+                                <Button
+                                  type="primary"
+                                  size="small"
+                                  icon={<VideoCameraOutlined />}
+                                  onClick={() => setShowTeleprompterModal(true)}
+                                  style={{ background: '#db2777', borderColor: '#db2777', fontWeight: 600 }}
+                                >
+                                  Mở Máy Nhắc Chữ Studio
+                                </Button>
+                                <Button
+                                  size="small"
+                                  icon={<CopyOutlined />}
+                                  onClick={() => handleCopyText(authoringResult.video_script)}
+                                >
+                                  Sao chép kịch bản
+                                </Button>
+                              </Space>
+                            </div>
+
+                            <div style={{ maxHeight: 460, overflowY: 'auto', paddingRight: 8 }}>
+                              {(authoringResult.video_script?.scenes || []).map((sc, i) => (
+                                <Card key={i} size="small" style={{ marginBottom: 10, borderRadius: 8, borderColor: sc.visual?.includes('CHECKPOINT') || sc.visual?.includes('tương tác') ? '#f59e0b' : '#e2e8f0' }}>
+                                  <Row gutter={12} align="middle">
+                                    <Col span={7}>
+                                      <Tag color={sc.visual?.includes('CHECKPOINT') ? 'warning' : 'blue'} style={{ fontWeight: 600 }}>{sc.time}</Tag>
+                                      <div style={{ fontSize: 11, marginTop: 4, color: '#475569' }}>
+                                        <b>Khung hình & Cue:</b> {sc.visual}
+                                      </div>
+                                    </Col>
+                                    <Col span={17}>
+                                      <div style={{ background: sc.visual?.includes('CHECKPOINT') ? '#fef3c7' : '#f8fafc', padding: '8px 12px', borderRadius: 6, fontSize: 12 }}>
+                                        <b style={{ color: sc.visual?.includes('CHECKPOINT') ? '#92400e' : '#1e293b' }}>Lời thoại giảng viên:</b> "{sc.audio}"
+                                      </div>
+                                    </Col>
+                                  </Row>
+                                </Card>
+                              ))}
+                            </div>
                           </div>
                         )
                       },
@@ -620,46 +894,64 @@ export default function AiAuthoringStudio() {
                         key: 'QUIZ',
                         label: <span><ThunderboltOutlined style={{ color: '#16a34a' }} /> Quiz & Đề Thi (Thang Bloom)</span>,
                         children: (
-                          <div style={{ maxHeight: 440, overflowY: 'auto', paddingRight: 8 }}>
-                            <Alert
-                              message="Bộ câu hỏi trắc nghiệm tự động phân tầng 4 cấp độ nhận thức Bloom (Nhận biết, Thông hiểu, Vận dụng, Vận dụng cao) theo Thông tư 08/2021/TT-BGDĐT"
-                              type="success"
-                              showIcon
-                              style={{ marginBottom: 14, borderRadius: 8 }}
-                            />
-                            {(authoringResult.quiz_questions || []).map((q, idx) => (
-                              <Card key={q.id || idx} size="small" style={{ marginBottom: 12, borderRadius: 8, borderColor: '#e2e8f0' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                                  <Text strong style={{ fontSize: 13, color: '#0f172a' }}>Câu {idx + 1}: {q.question}</Text>
-                                  <Tag color={idx === 0 ? 'blue' : idx === 1 ? 'cyan' : idx === 2 ? 'orange' : 'purple'} style={{ fontWeight: 600 }}>
-                                    {q.bloom}
-                                  </Tag>
-                                </div>
-                                <Row gutter={[8, 8]}>
-                                  {q.options.map(opt => (
-                                    <Col span={12} key={opt.key}>
-                                      <div style={{
-                                        padding: '6px 10px',
-                                        borderRadius: 6,
-                                        background: opt.is_correct ? '#f0fdf4' : '#ffffff',
-                                        border: opt.is_correct ? '1px solid #86efac' : '1px solid #e2e8f0',
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center'
-                                      }}>
-                                        <Text strong style={{ color: opt.is_correct ? '#16a34a' : '#334155', fontSize: 12 }}>
-                                          [{opt.key}] {opt.text}
-                                        </Text>
-                                        {opt.is_correct && <Tag color="success" style={{ margin: 0, fontSize: 10 }}>Đáp án đúng</Tag>}
-                                      </div>
-                                    </Col>
-                                  ))}
-                                </Row>
-                                <div style={{ marginTop: 8, fontSize: 11, color: '#64748b', background: '#f8fafc', padding: '4px 8px', borderRadius: 4 }}>
-                                  <b>Giải thích sư phạm:</b> {q.explanation}
-                                </div>
-                              </Card>
-                            ))}
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                              <Tag color="success" style={{ fontWeight: 600, padding: '4px 8px' }}>
+                                Phân tầng 4 cấp độ nhận thức Bloom (Nhận biết, Thông hiểu, Vận dụng, Vận dụng cao) chuẩn TT 08
+                              </Tag>
+                              <Space>
+                                <Button
+                                  size="small"
+                                  icon={<DownloadOutlined />}
+                                  onClick={handleDownloadAikenQuiz}
+                                >
+                                  Xuất Định Dạng Aiken (LMS/Moodle)
+                                </Button>
+                                <Button
+                                  size="small"
+                                  icon={<CopyOutlined />}
+                                  onClick={() => handleCopyText(authoringResult.quiz_questions)}
+                                >
+                                  Sao chép bộ câu hỏi
+                                </Button>
+                              </Space>
+                            </div>
+
+                            <div style={{ maxHeight: 460, overflowY: 'auto', paddingRight: 8 }}>
+                              {(authoringResult.quiz_questions || []).map((q, idx) => (
+                                <Card key={q.id || idx} size="small" style={{ marginBottom: 12, borderRadius: 8, borderColor: '#e2e8f0' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                                    <Text strong style={{ fontSize: 13, color: '#0f172a' }}>Câu {idx + 1}: {q.question}</Text>
+                                    <Tag color={idx === 0 ? 'blue' : idx === 1 ? 'cyan' : idx === 2 ? 'orange' : 'purple'} style={{ fontWeight: 600 }}>
+                                      {q.bloom}
+                                    </Tag>
+                                  </div>
+                                  <Row gutter={[8, 8]}>
+                                    {(q.options || []).map(opt => (
+                                      <Col span={12} key={opt.key}>
+                                        <div style={{
+                                          padding: '6px 10px',
+                                          borderRadius: 6,
+                                          background: opt.is_correct ? '#f0fdf4' : '#ffffff',
+                                          border: opt.is_correct ? '1px solid #86efac' : '1px solid #e2e8f0',
+                                          display: 'flex',
+                                          justifyContent: 'space-between',
+                                          alignItems: 'center'
+                                        }}>
+                                          <Text strong style={{ color: opt.is_correct ? '#16a34a' : '#334155', fontSize: 12 }}>
+                                            [{opt.key}] {opt.text}
+                                          </Text>
+                                          {opt.is_correct && <Tag color="success" style={{ margin: 0, fontSize: 10 }}>Đáp án đúng</Tag>}
+                                        </div>
+                                      </Col>
+                                    ))}
+                                  </Row>
+                                  <div style={{ marginTop: 8, fontSize: 11, color: '#64748b', background: '#f8fafc', padding: '6px 10px', borderRadius: 4 }}>
+                                    <b>Giải thích sư phạm:</b> {q.explanation}
+                                  </div>
+                                </Card>
+                              ))}
+                            </div>
                           </div>
                         )
                       }
@@ -785,20 +1077,22 @@ export default function AiAuthoringStudio() {
                           Xem Biên Bản Thẩm Định Số
                         </Button>
                         <Button
+                          type="primary"
                           icon={<PrinterOutlined />}
-                          onClick={() => message.info('Đang kết xuất bản in trọn bộ 3 đề thi kèm Bareme điểm chuẩn Bộ GD&ĐT...')}
+                          onClick={handlePrint3Exams}
+                          style={{ background: '#2563eb', borderColor: '#2563eb', fontWeight: 600 }}
                         >
-                          In / Xuất PDF
+                          In / Xuất PDF 3 Đề Thi
                         </Button>
                       </Space>
                     </Col>
                   )}
                 </Row>
               }
-              style={{ borderRadius: 12, minHeight: 560, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
+              style={{ borderRadius: 12, minHeight: 620, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
             >
               {examLoading && (
-                <div style={{ textAlign: 'center', padding: '100px 0' }}>
+                <div style={{ textAlign: 'center', padding: '110px 0' }}>
                   <Spin size="large" />
                   <div style={{ marginTop: 20, color: '#2563eb', fontWeight: 600, fontSize: 16 }}>
                     AI đang xây dựng ma trận và soạn song song 3 bộ đề thi chính thức & dự bị...
@@ -808,7 +1102,7 @@ export default function AiAuthoringStudio() {
               )}
 
               {!examLoading && !examResult && (
-                <div style={{ textAlign: 'center', padding: '120px 20px', color: '#94a3b8' }}>
+                <div style={{ textAlign: 'center', padding: '130px 20px', color: '#94a3b8' }}>
                   <FileProtectOutlined style={{ fontSize: 64, marginBottom: 16, color: '#cbd5e1' }} />
                   <Title level={4} style={{ color: '#64748b' }}>Chưa khởi tạo bộ đề thi</Title>
                   <Text type="secondary">
@@ -842,11 +1136,11 @@ export default function AiAuthoringStudio() {
                       label: (
                         <span>
                           <FileProtectOutlined style={{ color: idx === 2 ? '#d97706' : '#2563eb' }} />
-                          <b>{paper.paper_name.split('—')[0]}</b>
+                          <b>{paper.paper_name?.split('—')[0]}</b>
                         </span>
                       ),
                       children: (
-                        <div style={{ maxHeight: 440, overflowY: 'auto', paddingRight: 8 }}>
+                        <div style={{ maxHeight: 460, overflowY: 'auto', paddingRight: 8 }}>
                           {/* THÔNG TIN MA TRẬN ĐỀ THI */}
                           <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: 8, border: '1px solid #e2e8f0', marginBottom: 14 }}>
                             <Row justify="space-between" align="middle">
@@ -892,6 +1186,69 @@ export default function AiAuthoringStudio() {
           </Col>
         </Row>
       )}
+
+      {/* MODAL MÁY NHẮC CHỮ TELEPROMPTER STUDIO */}
+      <Modal
+        title={
+          <Space>
+            <VideoCameraOutlined style={{ color: '#db2777' }} />
+            <span>MÁY NHẮC CHỮ SỐ HÓA STUDIO (TELEPROMPTER PRO) — TUẦN {weekNumber}: {topic}</span>
+          </Space>
+        }
+        open={showTeleprompterModal}
+        onCancel={() => { setShowTeleprompterModal(false); setTeleprompterPlaying(false); }}
+        footer={[
+          <Button key="close" onClick={() => { setShowTeleprompterModal(false); setTeleprompterPlaying(false); }}>
+            Đóng
+          </Button>
+        ]}
+        width={800}
+      >
+        <div style={{ padding: '8px 0' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, background: '#1e293b', padding: '10px 16px', borderRadius: 8, color: '#fff' }}>
+            <Space size={16}>
+              <Button
+                type="primary"
+                icon={teleprompterPlaying ? <PauseOutlined /> : <CaretRightOutlined />}
+                onClick={() => setTeleprompterPlaying(!teleprompterPlaying)}
+                style={{ background: teleprompterPlaying ? '#f59e0b' : '#10b981', borderColor: teleprompterPlaying ? '#f59e0b' : '#10b981', fontWeight: 600 }}
+              >
+                {teleprompterPlaying ? 'Tạm Dừng Cuộn' : 'Bắt Đầu Cuộn'}
+              </Button>
+              <span>Tốc độ đọc: <b>{teleprompterSpeed}x</b></span>
+            </Space>
+            <div style={{ width: 180 }}>
+              <Slider min={1} max={5} value={teleprompterSpeed} onChange={setTeleprompterSpeed} tooltip={{ formatter: v => `${v}x` }} />
+            </div>
+          </div>
+
+          <div
+            id="teleprompter-content-box"
+            style={{
+              background: '#0f172a',
+              color: '#38bdf8',
+              padding: 24,
+              borderRadius: 8,
+              height: 380,
+              overflowY: 'auto',
+              fontFamily: "'Segoe UI', Roboto, sans-serif",
+              fontSize: 18,
+              lineHeight: 1.8
+            }}
+          >
+            {(authoringResult?.video_script?.scenes || []).map((sc, i) => (
+              <div key={i} style={{ marginBottom: 24, borderBottom: '1px dashed #334155', paddingBottom: 16 }}>
+                <div style={{ color: '#fbbf24', fontSize: 13, fontWeight: 700, marginBottom: 4 }}>
+                  [{sc.time}] • {sc.visual}
+                </div>
+                <div style={{ color: '#f8fafc', fontWeight: 500 }}>
+                  "{sc.audio}"
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Modal>
 
       {/* MODAL XEM BIÊN BẢN THẨM ĐỊNH SỐ HÓA */}
       <Modal
