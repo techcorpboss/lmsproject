@@ -217,25 +217,41 @@ export default function ExamAdministrationView({ currentUser }) {
       const facultyObj = academicOptions.faculties.find(f => f.id === values.faculty_id);
       const majorObj = academicOptions.majors.find(m => m.id === values.major_id);
 
+      let formattedStartTime = '08:00';
+      if (values.time_range && values.time_range[0]) {
+        formattedStartTime = values.time_range[0].format ? values.time_range[0].format('HH:mm') : values.time_range[0];
+      } else if (values.start_time) {
+        formattedStartTime = values.start_time.format ? values.start_time.format('HH:mm') : values.start_time;
+      }
+
+      let formattedEndTime = '09:30';
+      if (values.time_range && values.time_range[1]) {
+        formattedEndTime = values.time_range[1].format ? values.time_range[1].format('HH:mm') : values.time_range[1];
+      } else if (values.end_time) {
+        formattedEndTime = values.end_time.format ? values.end_time.format('HH:mm') : values.end_time;
+      }
+
       const payload = {
         ...values,
         faculty_name: facultyObj ? facultyObj.name : undefined,
         major_name: majorObj ? majorObj.name : undefined,
         exam_date: values.exam_date ? (values.exam_date.format ? values.exam_date.format('YYYY-MM-DD') : values.exam_date) : new Date().toISOString().split('T')[0],
-        start_time: values.time_range ? values.time_range[0].format('HH:mm') : (values.start_time || '08:00'),
-        end_time: values.time_range ? values.time_range[1].format('HH:mm') : (values.end_time || '09:30')
+        start_time: formattedStartTime,
+        end_time: formattedEndTime
       };
       const res = await apiClient.post('/exam/admin/schedules', payload);
       if (res && res.success) {
-        message.success('Đã khởi tạo ca thi trực tuyến mới thành công!');
+        message.success(res.message || 'Đã khởi tạo ca thi trực tuyến mới thành công!');
         setScheduleModalOpen(false);
         scheduleForm.resetFields();
         setSelectedFaculty(null);
         setSelectedMajor(null);
         fetchSchedules();
+      } else {
+        message.error(res?.message || 'Không thể tạo ca thi');
       }
     } catch (err) {
-      message.error('Lỗi tạo ca thi: ' + (err.message || 'Lỗi'));
+      message.error('Lỗi tạo ca thi: ' + (err.response?.data?.message || err.message || 'Lỗi server'));
     }
   };
 
@@ -943,7 +959,29 @@ export default function ExamAdministrationView({ currentUser }) {
             </Col>
           </Row>
 
-          {/* HÀNG 4: HỌC KỲ, NĂM HỌC, THỜI LƯỢNG */}
+          {/* HÀNG 4: LỊCH THI - NGÀY THI & KHUNG GIỜ THI */}
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item
+                label={<Space><ScheduleOutlined style={{ color: '#1677ff' }} /><span>Ngày Thi (YYYY-MM-DD)</span></Space>}
+                name="exam_date"
+              >
+                <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" placeholder="Chọn ngày thi" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item label="Giờ Bắt Đầu" name="start_time">
+                <TimePicker format="HH:mm" style={{ width: '100%' }} placeholder="08:00" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item label="Giờ Kết Thúc" name="end_time">
+                <TimePicker format="HH:mm" style={{ width: '100%' }} placeholder="09:30" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* HÀNG 5: HỌC KỲ, NĂM HỌC, THỜI LƯỢNG */}
           <Row gutter={16}>
             <Col span={8}>
               <Form.Item label="Học Kỳ" name="semester">

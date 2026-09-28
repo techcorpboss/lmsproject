@@ -201,4 +201,13 @@ router.post('/proctor/violation-log', examAdvanced.reportProctoringIncident);
 router.get('/proctor/incidents', examAdvanced.getProctoringIncidents);
 router.put('/proctor/incidents/:id/resolve', examAdvanced.resolveIncident);
 
+// 12. Import Bộ đề đa định dạng (Word .docx, PDF, HTML, XML, Aiken)
+router.post('/questions/import-multi', examAdvanced.importQuestionsMultiFormat);
+
+// 13. Động cơ AI Tạo Đề & Sinh Câu Hỏi từ Đề Cương & Dữ liệu Internet
+router.post('/ai/generate-from-syllabus', examAdvanced.generateQuestionsFromSyllabusAI);
+
+// 14. Cơ chế AI Thẩm Định & Kiểm Duyệt Đề Thi Bám Sát Đề Cương (Audit Engine)
+router.post('/ai/audit-syllabus-alignment', examAdvanced.auditExamSyllabusAlignment);
+
 module.exports = router;

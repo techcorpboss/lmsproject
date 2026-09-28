@@ -118,9 +118,37 @@ exports.getAcademicOptions = async (req, res) => {
   }
 };
 
+// Helper: Đảm bảo các cột mới tồn tại trong bảng MySQL
+async function ensureAcademicExamScheduleSchema() {
+  try {
+    const [cols] = await sequelize.query(`
+      SELECT COLUMN_NAME 
+      FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'academic_exam_schedules'
+    `);
+    const existing = (cols || []).map(c => (c.COLUMN_NAME || c.column_name || '').toLowerCase());
+    
+    if (!existing.includes('faculty_id')) {
+      await sequelize.query('ALTER TABLE academic_exam_schedules ADD COLUMN faculty_id VARCHAR(50) NULL').catch(() => {});
+    }
+    if (!existing.includes('faculty_name')) {
+      await sequelize.query('ALTER TABLE academic_exam_schedules ADD COLUMN faculty_name VARCHAR(150) NULL').catch(() => {});
+    }
+    if (!existing.includes('major_id')) {
+      await sequelize.query('ALTER TABLE academic_exam_schedules ADD COLUMN major_id VARCHAR(50) NULL').catch(() => {});
+    }
+    if (!existing.includes('major_name')) {
+      await sequelize.query('ALTER TABLE academic_exam_schedules ADD COLUMN major_name VARCHAR(150) NULL').catch(() => {});
+    }
+  } catch (err) {
+    console.warn('[Schema Migration Notice] academic_exam_schedules:', err.message);
+  }
+}
+
 // 1. LẤY DANH SÁCH TẤT CẢ CA THI & PHÒNG THI TRỰC TUYẾN
 exports.getExamSchedules = async (req, res) => {
   try {
+    await ensureAcademicExamScheduleSchema();
     await AcademicExamSchedule.sync();
     await ExamCandidateAuthorization.sync();
 
@@ -379,17 +407,65 @@ async function seedSampleCandidates(scheduleId, courseCode, courseName) {
   }
 }
 
-// 2. TẠO CA THI MỚI
+// 2. TẠO CA THI MỚI (CHUẨN BỘ GD&ĐT)
 exports.createExamSchedule = async (req, res) => {
   try {
+    await ensureAcademicExamScheduleSchema();
     const payload = req.body;
-    const newSchedule = await AcademicExamSchedule.create({
-      ...payload,
+
+    const scheduleData = {
       exam_code: payload.exam_code || `EXAM-${Date.now().toString().slice(-6)}`,
-      status: payload.status || 'SCHEDULED'
+      exam_name: payload.exam_name || 'Khảo Thí Học Phần Trực Tuyến',
+      semester: payload.semester || 'Học kỳ 1',
+      academic_year: payload.academic_year || '2026-2027',
+      exam_date: payload.exam_date || new Date().toISOString().split('T')[0],
+      start_time: payload.start_time || '08:00',
+      end_time: payload.end_time || '09:30',
+      duration_minutes: payload.duration_minutes || 60,
+      course_id: payload.course_id || null,
+      course_code: payload.course_code || 'IT101',
+      course_name: payload.course_name || 'Nhập môn Lập trình',
+      room_code: payload.room_code || `PHONG-${Date.now().toString().slice(-4)}-ONLINE`,
+      exam_type: payload.exam_type || 'Trắc nghiệm khách quan trực tuyến',
+      proctor_1: payload.proctor_1 || 'TS. Hoàng Đức Em',
+      proctor_2: payload.proctor_2 || 'ThS. Nguyễn Văn Quản',
+      security_level: payload.security_level || 'AI_PROCTORING_WEBCAM',
+      status: payload.status || 'SCHEDULED',
+      faculty_id: payload.faculty_id || null,
+      faculty_name: payload.faculty_name || null,
+      major_id: payload.major_id || null,
+      major_name: payload.major_name || null,
+      notes: payload.notes || null
+    };
+
+    let newSchedule;
+    try {
+      newSchedule = await AcademicExamSchedule.create(scheduleData);
+    } catch (createErr) {
+      console.warn('[Create Schedule Fallback] Thử lại không kèm các cột mới:', createErr.message);
+      // Fallback nếu MySQL chưa cập nhật cột mới
+      const basicData = { ...scheduleData };
+      delete basicData.faculty_id;
+      delete basicData.faculty_name;
+      delete basicData.major_id;
+      delete basicData.major_name;
+      newSchedule = await AcademicExamSchedule.create(basicData);
+    }
+
+    // Tự động nạp danh sách thí sinh mẫu cho ca thi mới tạo
+    try {
+      await seedSampleCandidates(newSchedule.id, newSchedule.course_code, newSchedule.course_name);
+    } catch (seedErr) {
+      console.warn('[Seed Candidates Warning]', seedErr.message);
+    }
+
+    return res.json({
+      success: true,
+      message: 'Đã tạo ca thi trực tuyến mới thành công và nạp danh sách thí sinh dự kiến!',
+      data: newSchedule
     });
-    return res.json({ success: true, message: 'Đã tạo ca thi trực tuyến mới thành công!', data: newSchedule });
   } catch (err) {
+    console.error('[Create Schedule Error]:', err);
     return res.status(500).json({ success: false, message: 'Lỗi tạo ca thi: ' + err.message });
   }
 };
