@@ -203,7 +203,7 @@ async function startServer() {
           } catch (e) {}
         }
       }
-      candidates.push('Thong7690@', 'root123@', '123456', '');
+      candidates.push('Thong1976', 'Thong7690@', 'root123@', '123456', '');
 
       let recovered = false;
       for (const trialPass of candidates) {

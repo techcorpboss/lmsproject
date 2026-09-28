@@ -18,11 +18,9 @@ for (const envFile of envCandidates) {
   }
 }
 
-// Hàm xác định mật khẩu tối ưu (hỗ trợ tự động dò mật khẩu aaPanel default.pass)
 function getResolvedDbPassword() {
   const envPass = process.env.DB_PASSWORD;
-  // Nếu env đã có mật khẩu khác mặc định root123@ thì ưu tiên dùng
-  if (envPass && envPass !== 'root123@') {
+  if (envPass) {
     return envPass;
   }
 
@@ -42,7 +40,7 @@ function getResolvedDbPassword() {
     }
   }
 
-  return envPass || 'root123@';
+  return 'Thong1976';
 }
 
 const dbUser = process.env.DB_USER || 'root';

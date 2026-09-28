@@ -452,7 +452,7 @@ async function ensureTableColumns() {
 }
 
 async function authenticateDatabase() {
-  let initialPass = process.env.DB_PASSWORD || 'root123@';
+  let initialPass = process.env.DB_PASSWORD || 'Thong1976';
 
   // Nếu có truyền mật khẩu qua tham số dòng lệnh (vd: node seed.js MyPass123)
   if (process.argv[2]) {
@@ -483,7 +483,7 @@ async function authenticateDatabase() {
       }
 
       if (process.env.DB_PASSWORD) candidates.push(process.env.DB_PASSWORD);
-      candidates.push('Thong7690@', 'root123@', '123456', '');
+      candidates.push('Thong1976', 'Thong7690@', 'root123@', '123456', '');
 
       let connected = false;
       for (const trialPass of candidates) {
