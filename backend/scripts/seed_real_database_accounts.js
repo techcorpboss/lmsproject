@@ -402,10 +402,58 @@ async function ensureTableColumns() {
   console.log('[Database] Table `users` schema verified and up-to-date.');
 }
 
-async function seedRealDatabaseAccounts() {
+async function authenticateDatabase() {
+  // Nếu có truyền mật khẩu qua tham số dòng lệnh (vd: node seed.js MyPass123)
+  if (process.argv[2]) {
+    const cliPass = process.argv[2].trim();
+    sequelize.config.password = cliPass;
+    sequelize.connectionManager.config.password = cliPass;
+  }
+
   try {
     await sequelize.authenticate();
     console.log('[Database] Connected to MySQL successfully.');
+    return;
+  } catch (err) {
+    if (err.name === 'SequelizeAccessDeniedError') {
+      console.warn('[Database] Initial password failed. Testing fallback server passwords...');
+      const candidates = [
+        process.argv[2],
+        process.env.DB_PASSWORD,
+        'Thong7690@',
+        'root123@',
+        ''
+      ].filter(p => p !== undefined && p !== null);
+
+      let connected = false;
+      for (const trialPass of candidates) {
+        try {
+          sequelize.config.password = trialPass;
+          sequelize.connectionManager.config.password = trialPass;
+          await sequelize.authenticate();
+          console.log(`[Database] Connection established with verified password.`);
+          connected = true;
+          break;
+        } catch (e) {
+          // thử tiếp
+        }
+      }
+
+      if (!connected) {
+        console.error('\n❌ [LỖI TRUY CẬP MYSQL]: Mật khẩu MySQL không chính xác.');
+        console.error('👉 Quý Thầy/Cô vui lòng chạy lại lệnh và truyền mật khẩu MySQL của VPS:');
+        console.error('   node backend/scripts/seed_real_database_accounts.js <mat_khau_mysql_root>\n');
+        throw err;
+      }
+    } else {
+      throw err;
+    }
+  }
+}
+
+async function seedRealDatabaseAccounts() {
+  try {
+    await authenticateDatabase();
 
     await ensureTableColumns();
 

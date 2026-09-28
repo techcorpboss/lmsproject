@@ -1,14 +1,36 @@
 // config/database.js
 const { Sequelize } = require('sequelize');
-require('dotenv').config();
+const path = require('path');
+const fs = require('fs');
+
+// Tự động tìm và nạp tệp .env dù lệnh được thực thi từ bất kỳ thư mục nào
+const envCandidates = [
+  path.join(__dirname, '..', '.env'),           // backend/.env
+  path.join(process.cwd(), 'backend', '.env'),  // từ root project: backend/.env
+  path.join(process.cwd(), '.env'),             // cwd/.env
+  '/www/wwwroot/lms.techcorp.info.vn/backend/.env' // đường dẫn tuyệt đối trên VPS
+];
+
+for (const envFile of envCandidates) {
+  if (fs.existsSync(envFile)) {
+    require('dotenv').config({ path: envFile });
+    break;
+  }
+}
+
+const dbUser = process.env.DB_USER || 'root';
+const dbPass = process.env.DB_PASSWORD || 'root123@';
+const dbName = process.env.DB_NAME || 'lms_db';
+const dbHost = process.env.DB_HOST || '127.0.0.1';
+const dbPort = process.env.DB_PORT || 3306;
 
 const sequelize = new Sequelize(
-  process.env.DB_NAME || 'lms_db',
-  process.env.DB_USER || 'root',
-  process.env.DB_PASSWORD || 'root123@',
+  dbName,
+  dbUser,
+  dbPass,
   {
-    host: process.env.DB_HOST || '127.0.0.1',
-    port: process.env.DB_PORT || 3306,
+    host: dbHost,
+    port: dbPort,
     dialect: 'mysql',
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
     dialectOptions: {
