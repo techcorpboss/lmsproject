@@ -27,11 +27,18 @@ const User = sequelize.define('User', {
     allowNull: false,
   },
   role: {
-    type: DataTypes.ENUM('STUDENT', 'TEACHER', 'MANAGER', 'ADMIN'),
+    type: DataTypes.STRING(50),
     allowNull: false,
-    defaultValue: 'STUDENT',
+    defaultValue: 'student',
   },
-  // Các trường khác như avatar, phone_number... có thể thêm sau
+  avatar: { type: DataTypes.STRING(255) },
+  faculty_id: { type: DataTypes.STRING(50) },
+  faculty_name: { type: DataTypes.STRING(150) },
+  department: { type: DataTypes.STRING(150) },
+  title: { type: DataTypes.STRING(50) },
+  student_code: { type: DataTypes.STRING(50) },
+  class_name: { type: DataTypes.STRING(50) },
+  cohort: { type: DataTypes.STRING(50) }
 }, {
   tableName: 'users',
   timestamps: true, // Tự động quản lý createdAt và updatedAt

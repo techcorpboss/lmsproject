@@ -10,9 +10,10 @@ import {
   MenuFoldOutlined, MenuUnfoldOutlined, BellOutlined, ApartmentOutlined,
   RobotOutlined, AuditOutlined, FileTextOutlined, CloudSyncOutlined,
   HistoryOutlined, CheckCircleOutlined, ExclamationCircleOutlined,
-  BankOutlined, SolutionOutlined, SettingOutlined,
+  BankOutlined, SolutionOutlined, SettingOutlined, CrownOutlined,
   CommentOutlined, RocketOutlined, PlaySquareOutlined, LinkOutlined
 } from '@ant-design/icons';
+import apiClient from './services/apiClient';
 import LoginPage from './components/LoginPage';
 import AcademicLmsWorkspace from './components/AcademicLmsWorkspace';
 import CourseHierarchySelector from './components/CourseHierarchySelector';
@@ -94,110 +95,23 @@ function App() {
     message.info('Đã đăng xuất khỏi hệ thống.');
   };
 
-  const handleChangeRole = (role, facultyId = 'CNTT') => {
-    let updated = null;
-    if (role === 'student') {
-      if (facultyId === 'KT') {
-        updated = {
-          id: 7,
-          username: 'sv_kinhte',
-          student_code: '261BA001',
-          full_name: 'Lê Thị Mỹ Duyên',
-          role: 'student',
-          faculty_id: 'KT',
-          faculty_name: 'Khoa Kinh Tế & QTKD',
-          major_id: 'QTKD',
-          major_name: 'Quản trị Kinh doanh',
-          cohort: 'K66',
-          class_name: '66.QTKD-1',
-          birth_date: '10/05/2004',
-          email: 'duyen.ltm@techcorp.edu.vn'
-        };
-      } else if (facultyId === 'NN') {
-        updated = {
-          id: 9,
-          username: 'sv_ngoaingu',
-          student_code: '261NN001',
-          full_name: 'Hoàng Thùy Linh',
-          role: 'student',
-          faculty_id: 'NN',
-          faculty_name: 'Khoa Ngoại Ngữ',
-          major_id: 'NNA',
-          major_name: 'Ngôn ngữ Anh',
-          cohort: 'K66',
-          class_name: '66.NNA-1',
-          birth_date: '28/02/2004',
-          email: 'linh.ht@techcorp.edu.vn'
-        };
-      } else if (facultyId === 'DDT') {
-        updated = {
-          id: 11,
-          username: 'sv_dientu',
-          student_code: '261DT001',
-          full_name: 'Nguyễn Văn Cường',
-          role: 'student',
-          faculty_id: 'DDT',
-          faculty_name: 'Khoa Điện - Điện Tử & Tự Động Hóa',
-          major_id: 'DDT',
-          major_name: 'Kỹ thuật Điện - Điện tử & IoT',
-          cohort: 'K66',
-          class_name: '66.DDT-1',
-          birth_date: '19/09/2004',
-          email: 'cuong.nv@techcorp.edu.vn'
-        };
-      } else if (facultyId === 'DL') {
-        updated = {
-          id: 13,
-          username: 'sv_dulich',
-          student_code: '261DL001',
-          full_name: 'Phan Quỳnh Trang',
-          role: 'student',
-          faculty_id: 'DL',
-          faculty_name: 'Khoa Du Lịch & Khách Sạn',
-          major_id: 'DL',
-          major_name: 'Quản trị Dịch vụ Du lịch & Lữ hành',
-          cohort: 'K66',
-          class_name: '66.DL-1',
-          birth_date: '05/04/2004',
-          email: 'trang.pq@techcorp.edu.vn'
-        };
-      } else {
-        updated = {
-          id: 3,
-          username: 'sv_cntt',
-          student_code: '261IT001',
-          full_name: 'Trần Văn Nam',
-          role: 'student',
-          faculty_id: 'CNTT',
-          faculty_name: 'Khoa Công Nghệ Thông Tin',
-          major_id: 'CNPM',
-          major_code: '7480103',
-          major_name: 'Kỹ thuật Phần mềm',
-          cohort: 'K66',
-          class_name: '66.CNTT-1',
-          birth_date: '15/08/2004',
-          email: 'nam.tv@techcorp.edu.vn'
-        };
+  // CHUYỂN ĐỔI TÀI KHOẢN XÁC THỰC THỰC TẾ QUA CSDL MYSQL
+  const handleSwitchAccount = async (targetUsername) => {
+    try {
+      const res = await apiClient.post('/auth/login', {
+        username: targetUsername,
+        password: 'root123@'
+      });
+      if (res && res.success && res.user) {
+        localStorage.setItem('lms_token', res.token);
+        localStorage.setItem('lms_user', JSON.stringify(res.user));
+        setCurrentUser(res.user);
+        setActiveMenuKey('lms_workspace');
+        message.success(`Đã chuyển sang tài khoản CSDL: ${res.user.full_name} (${res.user.role.toUpperCase()})`);
       }
-    } else if (role === 'teacher') {
-      if (facultyId === 'KT') {
-        updated = { id: 6, username: 'gv_kinhte', full_name: 'TS. Nguyễn Thị Hồng', role: 'teacher', faculty_id: 'KT', faculty_name: 'Khoa Kinh Tế & QTKD', title: 'Tiến sĩ' };
-      } else if (facultyId === 'NN') {
-        updated = { id: 8, username: 'gv_ngoaingu', full_name: 'TS. Phạm Thu Hương', role: 'teacher', faculty_id: 'NN', faculty_name: 'Khoa Ngoại Ngữ', title: 'Tiến sĩ' };
-      } else if (facultyId === 'DDT') {
-        updated = { id: 10, username: 'gv_dientu', full_name: 'TS. Bùi Quốc Thái', role: 'teacher', faculty_id: 'DDT', faculty_name: 'Khoa Điện - Điện Tử & Tự Động Hóa', title: 'Tiến sĩ' };
-      } else if (facultyId === 'DL') {
-        updated = { id: 12, username: 'gv_dulich', full_name: 'ThS. Đỗ Quang Vinh', role: 'teacher', faculty_id: 'DL', faculty_name: 'Khoa Du Lịch & Khách Sạn', title: 'Thạc sĩ' };
-      } else {
-        updated = { id: 2, username: 'gv_cntt', full_name: 'TS. Hoàng Đức Em', role: 'teacher', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', title: 'Tiến sĩ' };
-      }
-    } else {
-      updated = { id: 1, username: 'admin', full_name: 'Quản trị viên Hệ thống (Admin)', role: 'admin', faculty_id: 'ALL', faculty_name: 'Toàn trường' };
+    } catch (err) {
+      message.error('Không thể chuyển đổi tài khoản: ' + (err.message || 'Lỗi'));
     }
-    setActiveMenuKey('lms_workspace');
-    setCurrentUser(updated);
-    localStorage.setItem('lms_user', JSON.stringify(updated));
-    message.success(`Đã chuyển sang: ${updated.full_name} (${updated.faculty_name || ''})`);
   };
 
   // NẾU CHƯA ĐĂNG NHẬP -> HIỂN THỊ CỔNG ĐĂNG NHẬP CHUẨN QUỐC TẾ
@@ -212,76 +126,67 @@ function App() {
         key: 'header_role',
         label: (
           <div style={{ padding: '4px 0' }}>
-            <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>VAI TRÒ & ĐƠN VỊ</Text>
-            <b>{currentUser.role === 'student' ? '🎓 Sinh Viên' : currentUser.role === 'teacher' ? '👨‍🏫 Giảng Viên' : '⚡ Quản trị viên (Admin)'}</b>
+            <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>VAI TRÒ & ĐƠN VỊ CSDL</Text>
+            <b>
+              {currentUser.role === 'superadmin' ? '👑 Chủ Dự Án (SuperAdmin)' :
+               currentUser.role === 'admin' ? '⚡ Quản trị viên (Admin)' :
+               currentUser.role === 'teacher' ? '👨‍🏫 Giảng Viên' : '🎓 Sinh Viên'}
+            </b>
             <div style={{ fontSize: 12, color: '#0958d9' }}>{currentUser.faculty_name}</div>
+            {currentUser.student_code && (
+              <div style={{ fontSize: 11, color: '#64748b' }}>MSSV: {currentUser.student_code} • {currentUser.class_name}</div>
+            )}
           </div>
         ),
         disabled: true
       },
       { type: 'divider' },
       {
-        key: 'switch_sv_cntt',
-        icon: <SwapOutlined />,
-        label: 'SV: Trần Văn Nam (Khoa CNTT - 66.CNTT-1)',
-        onClick: () => handleChangeRole('student', 'CNTT')
-      },
-      {
-        key: 'switch_sv_kt',
-        icon: <SwapOutlined />,
-        label: 'SV: Lê Thị Mỹ Duyên (Khoa Kinh Tế - 66.QTKD-1)',
-        onClick: () => handleChangeRole('student', 'KT')
-      },
-      {
-        key: 'switch_sv_nn',
-        icon: <SwapOutlined />,
-        label: 'SV: Hoàng Thùy Linh (Khoa Ngoại Ngữ - 66.NNA-1)',
-        onClick: () => handleChangeRole('student', 'NN')
-      },
-      {
-        key: 'switch_gv_cntt',
-        icon: <SwapOutlined />,
-        label: 'GV: TS. Hoàng Đức Em (Khoa CNTT)',
-        onClick: () => handleChangeRole('teacher', 'CNTT')
-      },
-      {
-        key: 'switch_gv_kt',
-        icon: <SwapOutlined />,
-        label: 'GV: TS. Nguyễn Thị Hồng (Khoa Kinh Tế)',
-        onClick: () => handleChangeRole('teacher', 'KT')
-      },
-      {
-        key: 'switch_gv_nn',
-        icon: <SwapOutlined />,
-        label: 'GV: TS. Phạm Thu Hương (Khoa Ngoại Ngữ)',
-        onClick: () => handleChangeRole('teacher', 'NN')
+        key: 'switch_superadmin',
+        icon: <CrownOutlined style={{ color: '#7c3aed' }} />,
+        label: '👑 Chuyển sang Chủ dự án (SuperAdmin)',
+        onClick: () => handleSwitchAccount('superadmin')
       },
       {
         key: 'switch_admin',
-        icon: <SwapOutlined />,
-        label: 'Quản trị viên Toàn Trường (Admin)',
-        onClick: () => handleChangeRole('admin')
+        icon: <SwapOutlined style={{ color: '#d97706' }} />,
+        label: '⚡ Chuyển sang Quản trị viên (Admin)',
+        onClick: () => handleSwitchAccount('admin')
+      },
+      {
+        key: 'switch_gv_cntt',
+        icon: <SwapOutlined style={{ color: '#16a34a' }} />,
+        label: '👨‍🏫 Chuyển sang Giảng viên (TS. Hoàng Đức Em)',
+        onClick: () => handleSwitchAccount('em.hd')
+      },
+      {
+        key: 'switch_sv_cntt',
+        icon: <SwapOutlined style={{ color: '#2563eb' }} />,
+        label: '🎓 Chuyển sang Sinh viên (Trần Văn Nam)',
+        onClick: () => handleSwitchAccount('sv_cntt')
       },
       { type: 'divider' },
       {
         key: 'logout',
         icon: <LogoutOutlined style={{ color: '#ff4d4f' }} />,
-        label: <span style={{ color: '#ff4d4f' }}>Đăng xuất</span>,
+        label: <span style={{ color: '#ff4d4f' }}>Đăng xuất khỏi hệ thống</span>,
         onClick: handleLogout
       }
     ]
   };
 
   const getRoleTag = (role) => {
-    if (role === 'student') return <Tag color="blue" style={{ borderRadius: 12, padding: '2px 10px' }}>🎓 SINH VIÊN</Tag>;
-    if (role === 'teacher') return <Tag color="green" style={{ borderRadius: 12, padding: '2px 10px' }}>👨‍🏫 GIẢNG VIÊN</Tag>;
-    return <Tag color="gold" style={{ borderRadius: 12, padding: '2px 10px' }}>⚡ QUẢN TRỊ VIÊN</Tag>;
+    if (role === 'superadmin') return <Tag color="purple" style={{ borderRadius: 12, padding: '2px 10px', fontWeight: 700, border: '1px solid #7c3aed' }}>👑 CHỦ DỰ ÁN (SUPERADMIN)</Tag>;
+    if (role === 'student') return <Tag color="blue" style={{ borderRadius: 12, padding: '2px 10px', fontWeight: 600 }}>🎓 SINH VIÊN</Tag>;
+    if (role === 'teacher') return <Tag color="green" style={{ borderRadius: 12, padding: '2px 10px', fontWeight: 600 }}>👨‍🏫 GIẢNG VIÊN</Tag>;
+    return <Tag color="gold" style={{ borderRadius: 12, padding: '2px 10px', fontWeight: 600 }}>⚡ QUẢN TRỊ VIÊN</Tag>;
   };
 
   // CẤU TRÚC MENU SIDEBAR ĐA TẦNG CHO TỪNG VAI TRÒ
   const getSidebarMenuItems = () => {
-    const isTeacherOrAdmin = currentUser.role === 'teacher' || currentUser.role === 'admin';
-    const isAdmin = currentUser.role === 'admin';
+    const isSuperAdmin = currentUser.role === 'superadmin';
+    const isAdmin = currentUser.role === 'admin' || isSuperAdmin;
+    const isTeacherOrAdmin = currentUser.role === 'teacher' || isAdmin;
 
     const items = [
       {
@@ -582,7 +487,7 @@ function App() {
                 <Avatar
                   size={30}
                   style={{
-                    backgroundColor: currentUser.role === 'admin' ? '#faad14' : currentUser.role === 'teacher' ? '#52c41a' : '#1677ff',
+                    backgroundColor: currentUser.role === 'superadmin' ? '#7c3aed' : currentUser.role === 'admin' ? '#faad14' : currentUser.role === 'teacher' ? '#52c41a' : '#1677ff',
                     fontWeight: 700
                   }}
                   icon={<UserOutlined />}

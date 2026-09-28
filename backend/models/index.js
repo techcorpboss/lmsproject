@@ -9,8 +9,20 @@ const User = sequelize.define('User', {
   email: { type: DataTypes.STRING(150), allowNull: false, unique: true },
   password: { type: DataTypes.STRING(255), allowNull: false },
   full_name: { type: DataTypes.STRING(150), allowNull: false },
-  role: { type: DataTypes.STRING(50), defaultValue: 'student' }, // admin, teacher, student, proctor
-  avatar: { type: DataTypes.STRING(255) }
+  role: { type: DataTypes.STRING(50), defaultValue: 'student' }, // superadmin, admin, teacher, student, proctor
+  avatar: { type: DataTypes.STRING(255) },
+  faculty_id: { type: DataTypes.STRING(50) },
+  faculty_name: { type: DataTypes.STRING(150) },
+  department: { type: DataTypes.STRING(150) },
+  title: { type: DataTypes.STRING(50) },
+  academic_rank: { type: DataTypes.STRING(50) },
+  student_code: { type: DataTypes.STRING(50) },
+  class_name: { type: DataTypes.STRING(50) },
+  cohort: { type: DataTypes.STRING(50) },
+  major_id: { type: DataTypes.STRING(50) },
+  major_name: { type: DataTypes.STRING(150) },
+  phone: { type: DataTypes.STRING(50) },
+  status: { type: DataTypes.STRING(20), defaultValue: 'ACTIVE' }
 }, { tableName: 'users', underscored: true, timestamps: true });
 
 // 2. Course Model
