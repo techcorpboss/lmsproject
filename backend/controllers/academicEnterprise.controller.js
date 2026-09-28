@@ -1070,6 +1070,8 @@ exports.generate3ExamPapers = async (req, res) => {
       }
     };
 
+    appraisalStore.unshift(appraisalRecord);
+
     res.json({
       success: true,
       message: `Đã khởi tạo thành công Bộ 3 đề thi chuyên môn và hồ sơ thẩm định cho môn ${cName}!`,
@@ -1081,52 +1083,6 @@ exports.generate3ExamPapers = async (req, res) => {
   } catch (err) {
     console.error('[Generate 3 Exams Error]:', err);
     res.status(500).json({ success: false, message: 'Lỗi soạn đề thi AI: ' + err.message });
-  }
-};
-
-    // Tự động tạo hồ sơ thẩm định cho cả 3 đề thi
-    const appraisalRecord = {
-      id: Date.now(),
-      appraisal_code: `BB-TD-${new Date().getFullYear()}-${cCode}-${Math.floor(Math.random() * 900 + 100)}`,
-      course_code: cCode,
-      course_name: cName,
-      exam_paper_code: `BỘ 3 ĐỀ THI (${papers.map(p => p.paper_code).join(', ')})`,
-      author_lecturer: (req.user && req.user.full_name) || 'TS. Hoàng Đức Em',
-      reviewer_dept: 'TS. Nguyễn Văn An (Trưởng Bộ Môn CNPM)',
-      council_president: 'PGS. TS. Trần Mạnh Tuấn (Trưởng Khoa CNTT)',
-      created_at: new Date().toISOString(),
-      status: 'APPROVED',
-      criteria: {
-        matrix_coverage_score: 9.8,
-        bloom_distribution_score: 9.5,
-        clarity_score: 9.6,
-        security_classification: 'TUYET_MAT_CAP_TRUONG',
-        exam_duration_fit: `PHÙ HỢP ${duration} PHÚT`,
-        notes: `Đã hoàn thành thẩm định bộ 3 đề thi chính thức và dự bị cho môn ${cName}. Đáp ứng 100% chuẩn đầu ra TT 08/2021.`
-      },
-      digital_signatures: {
-        author_signed: true,
-        author_signed_at: new Date().toISOString(),
-        reviewer_signed: true,
-        reviewer_signed_at: new Date().toISOString(),
-        president_signed: true,
-        president_signed_at: new Date().toISOString(),
-        digital_cert_id: `CERT-TCU-SHA256-${Date.now()}`
-      }
-    };
-
-    appraisalStore.unshift(appraisalRecord);
-
-    res.json({
-      success: true,
-      message: `Đã tự động soạn thành công bộ 3 đề thi chuẩn ma trận Bloom cho môn ${cName} và gửi sang Hội đồng Thẩm định số hóa!`,
-      data: {
-        papers,
-        appraisal_record: appraisalRecord
-      }
-    });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
   }
 };
 
