@@ -118,7 +118,7 @@ exports.getAcademicOptions = async (req, res) => {
   }
 };
 
-// Helper: Đảm bảo các cột mới tồn tại trong bảng MySQL
+// Helper: Đảm bảo toàn bộ các cột của academic_exam_schedules tồn tại trong MySQL
 async function ensureAcademicExamScheduleSchema() {
   try {
     const [cols] = await sequelize.query(`
@@ -127,18 +127,35 @@ async function ensureAcademicExamScheduleSchema() {
       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'academic_exam_schedules'
     `);
     const existing = (cols || []).map(c => (c.COLUMN_NAME || c.column_name || '').toLowerCase());
-    
-    if (!existing.includes('faculty_id')) {
-      await sequelize.query('ALTER TABLE academic_exam_schedules ADD COLUMN faculty_id VARCHAR(50) NULL').catch(() => {});
-    }
-    if (!existing.includes('faculty_name')) {
-      await sequelize.query('ALTER TABLE academic_exam_schedules ADD COLUMN faculty_name VARCHAR(150) NULL').catch(() => {});
-    }
-    if (!existing.includes('major_id')) {
-      await sequelize.query('ALTER TABLE academic_exam_schedules ADD COLUMN major_id VARCHAR(50) NULL').catch(() => {});
-    }
-    if (!existing.includes('major_name')) {
-      await sequelize.query('ALTER TABLE academic_exam_schedules ADD COLUMN major_name VARCHAR(150) NULL').catch(() => {});
+
+    const neededColumns = [
+      { name: 'exam_code', type: 'VARCHAR(50) NULL' },
+      { name: 'semester', type: "VARCHAR(50) NULL DEFAULT 'Học kỳ 1'" },
+      { name: 'academic_year', type: "VARCHAR(50) NULL DEFAULT '2026-2027'" },
+      { name: 'duration_minutes', type: 'INT NULL DEFAULT 60' },
+      { name: 'course_id', type: 'INT NULL' },
+      { name: 'course_code', type: 'VARCHAR(50) NULL' },
+      { name: 'course_name', type: 'VARCHAR(255) NULL' },
+      { name: 'room_code', type: "VARCHAR(50) NULL DEFAULT 'PHONG-ONLINE-01'" },
+      { name: 'paper_id', type: 'INT NULL' },
+      { name: 'exam_type', type: "VARCHAR(100) NULL DEFAULT 'Trắc nghiệm khách quan trực tuyến'" },
+      { name: 'proctor_1', type: 'VARCHAR(150) NULL' },
+      { name: 'proctor_2', type: 'VARCHAR(150) NULL' },
+      { name: 'security_level', type: "VARCHAR(50) NULL DEFAULT 'AI_PROCTORING_WEBCAM'" },
+      { name: 'status', type: "VARCHAR(50) NULL DEFAULT 'SCHEDULED'" },
+      { name: 'faculty_id', type: 'VARCHAR(50) NULL' },
+      { name: 'faculty_name', type: 'VARCHAR(150) NULL' },
+      { name: 'major_id', type: 'VARCHAR(50) NULL' },
+      { name: 'major_name', type: 'VARCHAR(150) NULL' },
+      { name: 'notes', type: 'TEXT NULL' }
+    ];
+
+    for (const col of neededColumns) {
+      if (!existing.includes(col.name.toLowerCase())) {
+        await sequelize.query(`ALTER TABLE academic_exam_schedules ADD COLUMN ${col.name} ${col.type}`).catch(err => {
+          console.warn(`[Migration Notice] Bổ sung cột ${col.name}:`, err.message);
+        });
+      }
     }
   } catch (err) {
     console.warn('[Schema Migration Notice] academic_exam_schedules:', err.message);
@@ -411,9 +428,22 @@ async function seedSampleCandidates(scheduleId, courseCode, courseName) {
 exports.createExamSchedule = async (req, res) => {
   try {
     await ensureAcademicExamScheduleSchema();
+    await AcademicExamSchedule.sync().catch(() => {});
+    await ExamCandidateAuthorization.sync().catch(() => {});
     const payload = req.body;
 
-    const scheduleData = {
+    // Lấy danh sách cột thực tế của bảng academic_exam_schedules trong CSDL
+    let validColNames = new Set();
+    try {
+      const [currentCols] = await sequelize.query(`
+        SELECT COLUMN_NAME 
+        FROM INFORMATION_SCHEMA.COLUMNS 
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'academic_exam_schedules'
+      `);
+      validColNames = new Set((currentCols || []).map(c => (c.COLUMN_NAME || c.column_name || '').toLowerCase()));
+    } catch (e) {}
+
+    const rawSchedule = {
       exam_code: payload.exam_code || `EXAM-${Date.now().toString().slice(-6)}`,
       exam_name: payload.exam_name || 'Khảo Thí Học Phần Trực Tuyến',
       semester: payload.semester || 'Học kỳ 1',
@@ -421,11 +451,12 @@ exports.createExamSchedule = async (req, res) => {
       exam_date: payload.exam_date || new Date().toISOString().split('T')[0],
       start_time: payload.start_time || '08:00',
       end_time: payload.end_time || '09:30',
-      duration_minutes: payload.duration_minutes || 60,
-      course_id: payload.course_id || null,
+      duration_minutes: parseInt(payload.duration_minutes, 10) || 60,
+      course_id: payload.course_id ? (parseInt(payload.course_id, 10) || null) : null,
       course_code: payload.course_code || 'IT101',
       course_name: payload.course_name || 'Nhập môn Lập trình',
       room_code: payload.room_code || `PHONG-${Date.now().toString().slice(-4)}-ONLINE`,
+      paper_id: payload.paper_id ? (parseInt(payload.paper_id, 10) || null) : null,
       exam_type: payload.exam_type || 'Trắc nghiệm khách quan trực tuyến',
       proctor_1: payload.proctor_1 || 'TS. Hoàng Đức Em',
       proctor_2: payload.proctor_2 || 'ThS. Nguyễn Văn Quản',
@@ -438,23 +469,34 @@ exports.createExamSchedule = async (req, res) => {
       notes: payload.notes || null
     };
 
+    // Chỉ truyền các trường thực sự đang có trong bảng MySQL để tuyệt đối không bị lỗi Unknown column
+    const scheduleData = {};
+    for (const [k, v] of Object.entries(rawSchedule)) {
+      if (validColNames.size === 0 || validColNames.has(k.toLowerCase())) {
+        scheduleData[k] = v;
+      }
+    }
+
     let newSchedule;
     try {
       newSchedule = await AcademicExamSchedule.create(scheduleData);
     } catch (createErr) {
-      console.warn('[Create Schedule Fallback] Thử lại không kèm các cột mới:', createErr.message);
-      // Fallback nếu MySQL chưa cập nhật cột mới
-      const basicData = { ...scheduleData };
-      delete basicData.faculty_id;
-      delete basicData.faculty_name;
-      delete basicData.major_id;
-      delete basicData.major_name;
-      newSchedule = await AcademicExamSchedule.create(basicData);
+      console.warn('[Create Schedule Fallback]:', createErr.message);
+      // Fallback tối thiểu: Chỉ tạo các trường cơ bản nhất
+      const minimalData = {
+        exam_name: rawSchedule.exam_name,
+        exam_date: rawSchedule.exam_date,
+        start_time: rawSchedule.start_time,
+        end_time: rawSchedule.end_time,
+        status: rawSchedule.status
+      };
+      if (validColNames.has('course_name')) minimalData.course_name = rawSchedule.course_name;
+      newSchedule = await AcademicExamSchedule.create(minimalData);
     }
 
     // Tự động nạp danh sách thí sinh mẫu cho ca thi mới tạo
     try {
-      await seedSampleCandidates(newSchedule.id, newSchedule.course_code, newSchedule.course_name);
+      await seedSampleCandidates(newSchedule.id, newSchedule.course_code || 'IT101', newSchedule.course_name || 'Khảo thí');
     } catch (seedErr) {
       console.warn('[Seed Candidates Warning]', seedErr.message);
     }
