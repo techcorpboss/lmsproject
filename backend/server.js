@@ -186,6 +186,11 @@ function syncEnvPassword(pass) {
 }
 
 async function startServer() {
+  server.listen(PORT, () => {
+    console.log(`[LMS Platform] Server is running on port ${PORT}`);
+    console.log(`[Domain] Configured for: https://lms.techcorp.info.vn`);
+  });
+
   try {
     await sequelize.authenticate();
     console.log('[MySQL] Database connected successfully to lms_db.');
@@ -354,11 +359,6 @@ async function startServer() {
   } catch (e) {
     console.warn('[Seed Warning] Lecturer auto-seed warning:', e.message);
   }
-
-  server.listen(PORT, () => {
-    console.log(`[LMS Platform] Server is running on port ${PORT}`);
-    console.log(`[Domain] Configured for: https://lms.techcorp.info.vn`);
-  });
 }
 
 startServer();
