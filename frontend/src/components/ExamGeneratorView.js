@@ -12,7 +12,7 @@ import {
   BranchesOutlined, DownloadOutlined, UploadOutlined, InfoCircleOutlined,
   DeleteOutlined, CheckOutlined, SearchOutlined, DatabaseOutlined,
   AppstoreOutlined, KeyOutlined, SettingOutlined, SwapOutlined,
-  ApartmentOutlined, ExportOutlined, CopyOutlined
+  ApartmentOutlined, ExportOutlined, CopyOutlined, PrinterOutlined
 } from '@ant-design/icons';
 import apiClient from '../services/apiClient';
 
@@ -79,6 +79,14 @@ export default function ExamGeneratorView() {
   const [semesterFilter, setSemesterFilter] = useState('ALL');
   const [facultyFilter, setFacultyFilter] = useState('ALL');
   const [searchText, setSearchText] = useState('');
+
+  // Bộ lọc Kho Đề Thi Đã Sinh (120 Đề Thi Chuẩn Hóa - 8 Môn Học)
+  const [paperCourseFilter, setPaperCourseFilter] = useState('ALL');
+  const [paperTypeFilter, setPaperTypeFilter] = useState('ALL');
+  const [paperSearchText, setPaperSearchText] = useState('');
+  const [papersLoading, setPapersLoading] = useState(false);
+  const [paperDetailLoading, setPaperDetailLoading] = useState(false);
+  const [matrixLoading, setMatrixLoading] = useState(false);
 
   // 1. Tải danh sách ma trận đề
   const fetchTemplates = async () => {
@@ -162,53 +170,102 @@ export default function ExamGeneratorView() {
     }
   };
 
-  // 2. Tải danh sách đề thi đã xuất bản
-  const fetchPapers = async () => {
+  // 2. Tải danh sách đề thi đã xuất bản (Hỗ trợ 120 đề thi chuẩn hóa của 8 môn)
+  const fetchPapers = async (overrideParams = {}) => {
+    setPapersLoading(true);
     try {
-      const res = await apiClient.get('/exam/papers');
+      const course = overrideParams.course_code !== undefined ? overrideParams.course_code : paperCourseFilter;
+      const type = overrideParams.paper_type !== undefined ? overrideParams.paper_type : paperTypeFilter;
+      const search = overrideParams.search !== undefined ? overrideParams.search : paperSearchText;
+
+      const params = {};
+      if (course && course !== 'ALL') params.course_code = course;
+      if (type && type !== 'ALL') params.paper_type = type;
+      if (search && search.trim()) params.search = search.trim();
+
+      const res = await apiClient.get('/exam/papers', { params });
       if (res && res.success && res.data) {
         setPapers(res.data);
       }
     } catch (e) {
-      setPapers([
-        {
-          id: 1,
-          paper_code: 'DE-2026-IT101-101',
-          name: 'Đề Thi Chính Thức — Nhập Môn Lập Trình (Mã đề 101)',
-          total_marks: 10.0,
-          status: 'APPROVED',
-          created_at: new Date(Date.now() - 3600000 * 24 * 2).toISOString(),
-          questions_count: 40,
-          duration_minutes: 60,
-          course_name: 'Nhập môn Lập trình C/C++',
-          proctor_status: 'SEALED'
-        },
-        {
-          id: 2,
-          paper_code: 'DE-2026-IT101-102',
-          name: 'Đề Thi Chính Thức — Nhập Môn Lập Trình (Mã đề 102)',
-          total_marks: 10.0,
-          status: 'APPROVED',
-          created_at: new Date(Date.now() - 3600000 * 24 * 2).toISOString(),
-          questions_count: 40,
-          duration_minutes: 60,
-          course_name: 'Nhập môn Lập trình C/C++',
-          proctor_status: 'SEALED'
-        },
-        {
-          id: 3,
-          paper_code: 'DE-2026-QA401-201',
-          name: 'Đề Thi Khảo Thí & Đảm Bảo Chất Lượng Đào Tạo (Mã đề 201)',
-          total_marks: 10.0,
-          status: 'APPROVED',
-          created_at: new Date(Date.now() - 3600000 * 24 * 5).toISOString(),
-          questions_count: 30,
-          duration_minutes: 60,
-          course_name: 'Khảo thí & Đảm bảo Chất lượng Đào tạo',
-          proctor_status: 'SEALED'
-        }
-      ]);
+      console.warn('Lỗi tải danh sách đề thi:', e.message);
+    } finally {
+      setPapersLoading(false);
     }
+  };
+
+  // Xem chi tiết đề thi kèm toàn bộ 40 câu hỏi chuẩn hóa
+  const handleViewPaper = async (paperRecord) => {
+    setPaperDetailLoading(true);
+    try {
+      const res = await apiClient.get(`/exam/papers/${paperRecord.id || paperRecord.paper_code}`);
+      if (res && res.success && res.data) {
+        setGeneratedPaper(res.data);
+      } else {
+        setGeneratedPaper(paperRecord);
+      }
+    } catch (err) {
+      setGeneratedPaper(paperRecord);
+    } finally {
+      setPaperDetailLoading(false);
+      setIsPaperModalVisible(true);
+    }
+  };
+
+  // Xem ma trận đối sánh đáp án 40 câu giữa các đề hoán vị
+  const handleViewAnswerMatrix = async (paperRecord) => {
+    setMatrixLoading(true);
+    try {
+      const courseCode = paperRecord.course_code || 'IT101';
+      const rootCode = paperRecord.root_code || paperRecord.paper_code;
+      const res = await apiClient.get('/exam/papers/matrix', {
+        params: { course_code: courseCode, root_code: rootCode }
+      });
+      if (res && res.success && res.data) {
+        setMultiVariantResult({
+          course_code: res.data.course_code,
+          course_name: res.data.course_name,
+          root_code: res.data.root_code,
+          root_name: res.data.root_name,
+          variant_codes: res.data.variant_codes,
+          master_answer_matrix: res.data.matrix
+        });
+        setIsMultiResultVisible(true);
+      } else {
+        message.warning('Không tìm thấy ma trận đáp án cho đề thi này.');
+      }
+    } catch (err) {
+      message.error('Lỗi khi tải ma trận đáp án: ' + (err.message || 'Lỗi kết nối'));
+    } finally {
+      setMatrixLoading(false);
+    }
+  };
+
+  // Xuất file CSV cho Ma trận đối sánh đáp án 40 câu hỏi
+  const handleExportAnswerMatrixCSV = () => {
+    if (!multiVariantResult || !multiVariantResult.master_answer_matrix || multiVariantResult.master_answer_matrix.length === 0) {
+      message.warning('Chưa có dữ liệu ma trận đáp án để xuất file.');
+      return;
+    }
+    const variants = multiVariantResult.variant_codes || ['101', '102', '103', '104'];
+    const headers = ['Câu hỏi số', ...variants.map(v => `Mã đề ${v}`)];
+    const rows = multiVariantResult.master_answer_matrix.map(row => {
+      const line = [row.question_number];
+      for (const v of variants) {
+        line.push(row[`code_${v}`] || '-');
+      }
+      return line.join(',');
+    });
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Bang_Dap_An_${multiVariantResult.root_code || 'DeThi'}_40Cau.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    message.success('Đã kết xuất bảng đáp án 40 câu hỏi thành công (File CSV/Excel)!');
   };
 
   useEffect(() => {
@@ -1476,114 +1533,241 @@ export default function ExamGeneratorView() {
           {
             key: 'repository',
             label: (
-              <span><KeyOutlined /> Kho Đề Đã Sinh & Ma Trận Đáp Án</span>
+              <span><KeyOutlined /> Kho Đề Đã Sinh & Ma Trận Đáp Án (120 Đề Thi)</span>
             ),
             children: (
               <Card bordered={false} style={{ borderRadius: 14 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                  <div>
-                    <Title level={4} style={{ margin: 0 }}>📚 Kho Lưu Trữ Đề Thi & Bảng Đáp Án Gốc (Exam Repository)</Title>
-                    <Text type="secondary">Danh sách tất cả các gói đề thi đã tạo, mã đề xáo trộn và bảng tra cứu đáp án chấm thi</Text>
-                  </div>
-                  <Space>
-                    <Button icon={<FileWordOutlined />} onClick={() => message.info('Đang kết xuất đề thi định dạng Word chuẩn mẫu Bộ...')}>
-                      Xuất Word (.docx)
-                    </Button>
-                    <Button icon={<FilePdfOutlined />} onClick={() => message.info('Đang kết xuất đề thi định dạng PDF in ấn...')}>
-                      Xuất PDF
-                    </Button>
-                    <Button icon={<ExportOutlined />} onClick={() => message.info('Đang xuất gói chuẩn quốc tế IMS QTI v2.1 XML')}>
-                      Xuất IMS QTI XML
-                    </Button>
-                  </Space>
-                </div>
+                {/* 1. THỐNG KÊ TỔNG QUAN KHO ĐỀ */}
+                <Row gutter={[16, 16]} style={{ marginBottom: 18 }}>
+                  <Col xs={12} sm={6}>
+                    <Card style={{ background: '#eff6ff', borderRadius: 10, borderColor: '#bfdbfe' }}>
+                      <Statistic
+                        title={<Text strong style={{ color: '#1e40af' }}>Tổng Số Đề Khảo Thí</Text>}
+                        value={papers.length || 120}
+                        suffix="đề"
+                        valueStyle={{ color: '#2563eb', fontWeight: 700 }}
+                        prefix={<DatabaseOutlined />}
+                      />
+                      <Text type="secondary" style={{ fontSize: 12 }}>Đủ 8 môn học trong hệ thống</Text>
+                    </Card>
+                  </Col>
+                  <Col xs={12} sm={6}>
+                    <Card style={{ background: '#f0fdf4', borderRadius: 10, borderColor: '#bbf7d0' }}>
+                      <Statistic
+                        title={<Text strong style={{ color: '#166534' }}>Đề Gốc Chuẩn Hóa</Text>}
+                        value={papers.filter(p => p.paper_type === 'ROOT').length || 24}
+                        suffix="đề gốc"
+                        valueStyle={{ color: '#16a34a', fontWeight: 700 }}
+                        prefix={<SafetyCertificateOutlined />}
+                      />
+                      <Text type="secondary" style={{ fontSize: 12 }}>3 đề gốc độc lập / mỗi môn</Text>
+                    </Card>
+                  </Col>
+                  <Col xs={12} sm={6}>
+                    <Card style={{ background: '#faf5ff', borderRadius: 10, borderColor: '#e9d5ff' }}>
+                      <Statistic
+                        title={<Text strong style={{ color: '#6b21a8' }}>Đề Hoán Vị (Variants)</Text>}
+                        value={papers.filter(p => p.paper_type === 'VARIANT').length || 96}
+                        suffix="đề xáo trộn"
+                        valueStyle={{ color: '#9333ea', fontWeight: 700 }}
+                        prefix={<SwapOutlined />}
+                      />
+                      <Text type="secondary" style={{ fontSize: 12 }}>12 đề trộn (101-304) / mỗi môn</Text>
+                    </Card>
+                  </Col>
+                  <Col xs={12} sm={6}>
+                    <Card style={{ background: '#fffbeb', borderRadius: 10, borderColor: '#fde68a' }}>
+                      <Statistic
+                        title={<Text strong style={{ color: '#92400e' }}>Quy Cách Khảo Thí</Text>}
+                        value={40}
+                        suffix="câu / đề"
+                        valueStyle={{ color: '#d97706', fontWeight: 700 }}
+                        prefix={<ThunderboltOutlined />}
+                      />
+                      <Text type="secondary" style={{ fontSize: 12 }}>10.0 điểm (0.25đ/câu) • 60 phút</Text>
+                    </Card>
+                  </Col>
+                </Row>
 
+                {/* 2. THANH LỌC & TÌM KIẾM ĐỀ THI */}
+                <Card bordered style={{ borderRadius: 10, marginBottom: 16, backgroundColor: '#f8fafc' }}>
+                  <Row gutter={[12, 12]} align="middle">
+                    <Col xs={24} md={7}>
+                      <Input
+                        prefix={<SearchOutlined />}
+                        placeholder="Tìm theo mã đề (IT101-GOC-01, IT101-HV-101) hoặc tên môn..."
+                        allowClear
+                        value={paperSearchText}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setPaperSearchText(val);
+                          fetchPapers({ search: val });
+                        }}
+                      />
+                    </Col>
+                    <Col xs={12} md={6}>
+                      <Select
+                        style={{ width: '100%' }}
+                        value={paperCourseFilter}
+                        onChange={val => {
+                          setPaperCourseFilter(val);
+                          fetchPapers({ course_code: val });
+                        }}
+                        options={[
+                          { label: 'Tất cả 8 Môn Học (120 Đề)', value: 'ALL' },
+                          { label: 'IT101 - Nhập Môn Lập Trình C/C++ (15 Đề)', value: 'IT101' },
+                          { label: 'IT201 - Cơ Sở Dữ Liệu (15 Đề)', value: 'IT201' },
+                          { label: 'IT301 - Cấu Trúc Dữ Liệu & Giải Thuật (15 Đề)', value: 'IT301' },
+                          { label: 'BA101 - Kinh Tế Vi Mô (15 Đề)', value: 'BA101' },
+                          { label: 'BA102 - Quản Trị Học Đại Cương (15 Đề)', value: 'BA102' },
+                          { label: 'ENG101 - Tiếng Anh Học Thuật 1 (15 Đề)', value: 'ENG101' },
+                          { label: 'EE101 - Kỹ Thuật Mạch Điện Tử & IoT (15 Đề)', value: 'EE101' },
+                          { label: 'TOU101 - Tổng Quan Du Lịch & Lữ Hành (15 Đề)', value: 'TOU101' }
+                        ]}
+                      />
+                    </Col>
+                    <Col xs={12} md={5}>
+                      <Select
+                        style={{ width: '100%' }}
+                        value={paperTypeFilter}
+                        onChange={val => {
+                          setPaperTypeFilter(val);
+                          fetchPapers({ paper_type: val });
+                        }}
+                        options={[
+                          { label: 'Tất cả loại đề (120 đề)', value: 'ALL' },
+                          { label: 'Đề Gốc (Master - 24 đề)', value: 'ROOT' },
+                          { label: 'Đề Hoán Vị (Variants - 96 đề)', value: 'VARIANT' }
+                        ]}
+                      />
+                    </Col>
+                    <Col xs={24} md={6} style={{ textAlign: 'right' }}>
+                      <Space>
+                        <Button
+                          icon={<ReloadOutlined />}
+                          loading={papersLoading}
+                          onClick={() => fetchPapers()}
+                        >
+                          Làm mới
+                        </Button>
+                        <Button
+                          icon={<KeyOutlined />}
+                          type="primary"
+                          style={{ backgroundColor: '#10b981', borderColor: '#10b981' }}
+                          onClick={() => {
+                            const firstRoot = papers.find(p => p.paper_type === 'ROOT') || papers[0];
+                            if (firstRoot) handleViewAnswerMatrix(firstRoot);
+                            else message.info('Vui lòng chọn một đề thi để xem ma trận đáp án.');
+                          }}
+                        >
+                          Ma Trận Đáp Án
+                        </Button>
+                      </Space>
+                    </Col>
+                  </Row>
+                </Card>
+
+                {/* 3. BẢNG DANH SÁCH 120 ĐỀ THI */}
                 <Table
                   dataSource={papers}
-                  rowKey="id"
-                  pagination={{ pageSize: 8 }}
+                  rowKey="paper_code"
+                  loading={papersLoading}
+                  pagination={{ pageSize: 10, showSizeChanger: true, pageSizeOptions: ['10', '15', '30', '60', '120'] }}
                   columns={[
                     {
-                      title: 'Mã Gói Đề',
+                      title: 'Mã Đề Thi',
                       dataIndex: 'paper_code',
                       key: 'paper_code',
-                      render: text => <strong style={{ color: '#2563eb' }}>{text}</strong>
-                    },
-                    {
-                      title: 'Tên Đề Thi Khảo Thí',
-                      dataIndex: 'name',
-                      key: 'name',
-                      render: (text, record) => (
+                      width: 170,
+                      render: (code, record) => (
                         <div>
-                          <div style={{ fontWeight: 600 }}>{text}</div>
-                          <Text type="secondary" style={{ fontSize: 12 }}>{record.course_name || 'Học phần đại học'}</Text>
+                          <strong style={{ color: record.paper_type === 'ROOT' ? '#1d4ed8' : '#7c3aed', fontSize: 13 }}>
+                            {code}
+                          </strong>
+                          <div style={{ marginTop: 2 }}>
+                            {record.paper_type === 'ROOT' ? (
+                              <Tag color="blue" style={{ fontSize: 11, margin: 0 }}>ĐỀ GỐC MASTER</Tag>
+                            ) : (
+                              <Tag color="purple" style={{ fontSize: 11, margin: 0 }}>MÃ ĐỀ {record.variant_number || '101'}</Tag>
+                            )}
+                          </div>
                         </div>
                       )
                     },
                     {
-                      title: 'Thời Gian',
+                      title: 'Tên Đề Thi & Học Phần Khảo Thí',
+                      dataIndex: 'name',
+                      key: 'name',
+                      render: (text, record) => (
+                        <div>
+                          <div style={{ fontWeight: 600, color: '#0f172a' }}>{text}</div>
+                          <Space size={4} style={{ marginTop: 2 }}>
+                            <Tag color="cyan">{record.course_code}</Tag>
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              {record.course_name}
+                            </Text>
+                            {record.root_code && record.paper_type === 'VARIANT' && (
+                              <Text type="secondary" style={{ fontSize: 11 }}>
+                                • Gốc: <b>{record.root_code}</b>
+                              </Text>
+                            )}
+                          </Space>
+                        </div>
+                      )
+                    },
+                    {
+                      title: 'Quy Cách',
+                      key: 'specs',
+                      width: 140,
+                      render: (_, record) => (
+                        <div>
+                          <div><b>{record.questions_count || 40}</b> câu hỏi</div>
+                          <div style={{ fontSize: 11, color: '#64748b' }}>Thang <b>{record.total_marks || 10.0}đ</b> (0.25đ/câu)</div>
+                        </div>
+                      )
+                    },
+                    {
+                      title: 'Thời Lượng',
                       dataIndex: 'duration_minutes',
                       key: 'duration_minutes',
                       width: 100,
-                      render: m => `${m || 60} phút`
+                      align: 'center',
+                      render: m => <Tag color="geekblue">{m || 60} phút</Tag>
                     },
                     {
-                      title: 'Thang Điểm',
-                      dataIndex: 'total_marks',
-                      key: 'total_marks',
-                      width: 110,
-                      render: pts => <span>{pts} điểm</span>
-                    },
-                    {
-                      title: 'Trạng Thái Niêm Phong',
+                      title: 'Niêm Phong',
                       dataIndex: 'status',
                       key: 'status',
-                      width: 160,
+                      width: 130,
+                      align: 'center',
                       render: status => (
                         <Tag color={status === 'APPROVED' ? 'green' : 'orange'}>
-                          {status === 'APPROVED' ? 'ĐÃ PHÊ DUYỆT' : 'BẢN NHÁP'}
+                          {status === 'APPROVED' ? 'ĐÃ NIÊM PHONG' : 'BẢN NHÁP'}
                         </Tag>
                       )
                     },
                     {
-                      title: 'Ngày Tạo',
-                      dataIndex: 'created_at',
-                      key: 'created_at',
-                      width: 140,
-                      render: d => d ? new Date(d).toLocaleDateString('vi-VN') : 'Mới tạo'
-                    },
-                    {
-                      title: 'Thao Tác',
+                      title: 'Thao Tác Khảo Thí',
                       key: 'actions',
-                      width: 160,
+                      width: 220,
+                      align: 'center',
                       render: (_, record) => (
-                        <Space>
+                        <Space size="small">
                           <Button
-                            type="link"
+                            type="primary"
+                            size="small"
                             icon={<EyeOutlined />}
-                            onClick={() => {
-                              setGeneratedPaper(record);
-                              setIsPaperModalVisible(true);
-                            }}
+                            loading={paperDetailLoading}
+                            onClick={() => handleViewPaper(record)}
                           >
-                            Xem đề
+                            Xem 40 câu
                           </Button>
                           <Button
-                            type="link"
+                            size="small"
                             icon={<KeyOutlined />}
-                            onClick={() => {
-                              // Xem ma trận đáp án
-                              setMultiVariantResult({
-                                variant_codes: ['101', '102', '103', '104'],
-                                master_answer_matrix: [
-                                  { question_number: 1, code_101: 'B', code_102: 'A', code_103: 'C', code_104: 'A' },
-                                  { question_number: 2, code_101: 'A', code_102: 'D', code_103: 'B', code_104: 'D' },
-                                  { question_number: 3, code_101: 'C', code_102: 'B', code_103: 'D', code_104: 'C' },
-                                  { question_number: 4, code_101: 'A', code_102: 'C', code_103: 'A', code_104: 'B' }
-                                ]
-                              });
-                              setIsMultiResultVisible(true);
-                            }}
+                            style={{ color: '#059669', borderColor: '#a7f3d0' }}
+                            loading={matrixLoading}
+                            onClick={() => handleViewAnswerMatrix(record)}
                           >
                             Đáp án
                           </Button>
@@ -1598,24 +1782,30 @@ export default function ExamGeneratorView() {
         ]}
       />
 
-      {/* MODAL 1: XEM CHI TIẾT ĐỀ THI ĐƯỢC BỐC NGẪU NHIÊN */}
+      {/* MODAL 1: XEM CHI TIẾT ĐỀ THI 40 CÂU HỎI CHUẨN HÓA */}
       <Modal
         title={
           <Space>
             <ThunderboltOutlined style={{ color: '#2563eb' }} />
-            <span>Đề Thi Trắc Nghiệm Khảo Thí Chuẩn Hóa</span>
+            <span>Chi Tiết Đề Thi Khảo Thí Chuẩn Hóa ({generatedPaper?.questions?.length || 40} Câu Hỏi)</span>
           </Space>
         }
         open={isPaperModalVisible}
-        width={880}
+        width={920}
         onCancel={() => setIsPaperModalVisible(false)}
         footer={
           <Space>
-            <Button icon={<FileWordOutlined />} onClick={() => message.success('Đang tạo và tải file Word (.docx) đề thi...')}>
-              Tải File Word
+            <Button
+              icon={<PrinterOutlined />}
+              onClick={() => window.print()}
+            >
+              In Bản Giấy / PDF
             </Button>
-            <Button icon={<FilePdfOutlined />} onClick={() => message.success('Đang kết xuất bản in PDF...')}>
-              In Đề Thi (PDF)
+            <Button
+              icon={<FileWordOutlined />}
+              onClick={() => message.success('Đang tạo và tải file Word (.docx) đề thi...')}
+            >
+              Tải File Word
             </Button>
             <Button type="primary" onClick={() => setIsPaperModalVisible(false)}>
               Đóng
@@ -1626,7 +1816,7 @@ export default function ExamGeneratorView() {
         {generatedPaper && (
           <div>
             {/* Header Mẫu In Chuẩn Bộ GD&ĐT */}
-            <div style={{ border: '2px solid #1e293b', padding: '16px 20px', borderRadius: 8, marginBottom: 20 }}>
+            <div style={{ border: '2px solid #1e293b', padding: '16px 20px', borderRadius: 8, marginBottom: 20, backgroundColor: '#fdfefe' }}>
               <Row justify="space-between" align="top">
                 <Col span={12} style={{ textAlign: 'center' }}>
                   <Text strong style={{ fontSize: 13 }}>BỘ GIÁO DỤC VÀ ĐÀO TẠO</Text><br />
@@ -1636,47 +1826,74 @@ export default function ExamGeneratorView() {
                 <Col span={12} style={{ textAlign: 'center' }}>
                   <Text strong style={{ fontSize: 13 }}>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</Text><br />
                   <Text strong style={{ fontSize: 13 }}>Độc lập - Tự do - Hạnh phúc</Text><br />
-                  <Text type="secondary" style={{ fontSize: 12 }}>Mã Đề Thi: <strong style={{ color: '#2563eb' }}>{generatedPaper.paper_code || 'DE-101'}</strong></Text>
+                  <div style={{ marginTop: 4 }}>
+                    <Tag color="blue" style={{ fontSize: 13, fontWeight: 700, padding: '2px 8px' }}>
+                      MÃ ĐỀ: {generatedPaper.paper_code || 'DE-101'}
+                    </Tag>
+                  </div>
                 </Col>
               </Row>
               <Divider style={{ margin: '12px 0' }} />
               <div style={{ textAlign: 'center' }}>
-                <Title level={4} style={{ margin: 0, textTransform: 'uppercase' }}>
+                <Title level={4} style={{ margin: 0, textTransform: 'uppercase', color: '#1e3a8a' }}>
                   {generatedPaper.name || 'ĐỀ THI HẾT HỌC PHẦN TRỰC TUYẾN'}
                 </Title>
-                <Text>Thời gian làm bài: <b>60 phút</b> (Không kể thời gian phát đề) — Tổng thang điểm: <b>{generatedPaper.total_marks || 10.0} điểm</b></Text>
+                <Text style={{ fontSize: 13 }}>
+                  Thời gian làm bài: <b>{generatedPaper.duration_minutes || 60} phút</b> • Tổng thang điểm: <b>{generatedPaper.total_marks || 10.0} điểm</b> ({generatedPaper.questions?.length || 40} câu hỏi - 0.25đ/câu)
+                </Text>
               </div>
             </div>
 
-            {/* Danh sách câu hỏi */}
-            <div style={{ maxHeight: 500, overflowY: 'auto', paddingRight: 8 }}>
+            {/* Danh sách 40 câu hỏi */}
+            <div style={{ maxHeight: 520, overflowY: 'auto', paddingRight: 10 }}>
               {generatedPaper.questions && generatedPaper.questions.length > 0 ? (
                 generatedPaper.questions.map((q, idx) => (
-                  <div key={q.id || idx} style={{ marginBottom: 16, paddingBottom: 14, borderBottom: '1px solid #e2e8f0' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <Text strong style={{ fontSize: 14 }}>Câu {idx + 1}: {q.content}</Text>
-                      <Tag color={q.difficulty === 'EASY' ? 'green' : (q.difficulty === 'MEDIUM' ? 'blue' : (q.difficulty === 'HARD' ? 'orange' : 'purple'))}>
-                        {q.difficulty || 'MEDIUM'}
-                      </Tag>
+                  <div key={q.id || idx} style={{ marginBottom: 18, paddingBottom: 16, borderBottom: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                      <div style={{ flex: 1, paddingRight: 12 }}>
+                        <Text strong style={{ fontSize: 14, color: '#0f172a' }}>
+                          Câu {idx + 1} ({q.default_mark || 0.25}đ): {q.content}
+                        </Text>
+                      </div>
+                      <Space size={4}>
+                        {q.clo && <Tag color="cyan">{q.clo}</Tag>}
+                        <Tag color={q.difficulty === 'EASY' ? 'green' : (q.difficulty === 'MEDIUM' ? 'blue' : (q.difficulty === 'HARD' ? 'orange' : 'purple'))}>
+                          {q.difficulty === 'EASY' ? 'Nhận biết' : (q.difficulty === 'MEDIUM' ? 'Thông hiểu' : (q.difficulty === 'HARD' ? 'Vận dụng' : 'Vận dụng cao'))}
+                        </Tag>
+                      </Space>
                     </div>
-                    <div style={{ paddingLeft: 16 }}>
-                      {q.answers?.map((a, aIdx) => (
-                        <div
-                          key={aIdx}
-                          style={{
-                            padding: '3px 0',
-                            color: a.is_correct ? '#16a34a' : '#475569',
-                            fontWeight: a.is_correct ? 600 : 'normal'
-                          }}
-                        >
-                          {String.fromCharCode(65 + aIdx)}. {a.content} {a.is_correct && '✓ (Đáp án gốc)'}
-                        </div>
-                      ))}
+                    <div style={{ paddingLeft: 18 }}>
+                      {q.answers?.map((a, aIdx) => {
+                        const letter = String.fromCharCode(65 + aIdx);
+                        const isCorrect = a.is_correct || (q.correct_letter && q.correct_letter === letter);
+                        return (
+                          <div
+                            key={aIdx}
+                            style={{
+                              padding: '5px 10px',
+                              marginBottom: 4,
+                              borderRadius: 6,
+                              backgroundColor: isCorrect ? '#ecfdf5' : 'transparent',
+                              border: isCorrect ? '1px solid #a7f3d0' : '1px solid transparent',
+                              color: isCorrect ? '#065f46' : '#334155',
+                              fontWeight: isCorrect ? 600 : 'normal'
+                            }}
+                          >
+                            <span style={{ fontWeight: 700, marginRight: 6 }}>{letter}.</span>
+                            {a.content}
+                            {isCorrect && (
+                              <Tag color="green" style={{ marginLeft: 8, fontSize: 11 }}>
+                                ✓ Đáp án đúng
+                              </Tag>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ))
               ) : (
-                <Empty description="Đề thi chưa có câu hỏi hoặc đang nạp dữ liệu..." />
+                <Empty description="Đang tải dữ liệu câu hỏi hoặc chưa có câu hỏi..." />
               )}
             </div>
           </div>
@@ -1757,18 +1974,23 @@ export default function ExamGeneratorView() {
         title={
           <Space>
             <KeyOutlined style={{ color: '#10b981' }} />
-            <span>Bảng Ma Trận Đối Sánh Đáp Án Chùm Mã Đề (Master Answer Matrix)</span>
+            <span>Bảng Ma Trận Đối Sánh Đáp Án Chùm Mã Đề (40 Câu Hỏi Chuẩn Hóa)</span>
           </Space>
         }
         open={isMultiResultVisible}
-        width={800}
+        width={850}
         onCancel={() => setIsMultiResultVisible(false)}
         footer={
           <Space>
-            <Button icon={<DownloadOutlined />} onClick={() => message.success('Đang xuất bảng đáp án Excel cho Ban Chấm Thi...')}>
-              Xuất File Excel Đáp Án
+            <Button
+              icon={<DownloadOutlined />}
+              type="primary"
+              style={{ backgroundColor: '#10b981', borderColor: '#10b981' }}
+              onClick={handleExportAnswerMatrixCSV}
+            >
+              Xuất File Excel/CSV Đáp Án
             </Button>
-            <Button type="primary" onClick={() => setIsMultiResultVisible(false)}>
+            <Button onClick={() => setIsMultiResultVisible(false)}>
               Đóng
             </Button>
           </Space>
@@ -1779,33 +2001,47 @@ export default function ExamGeneratorView() {
             <Alert
               type="success"
               showIcon
-              message={`Đã tạo thành công ${multiVariantResult.variant_codes?.length || 4} mã đề thi: ${multiVariantResult.variant_codes?.join(', ')}`}
-              description="Bảng tra cứu đáp án A/B/C/D tương ứng giữa các mã đề dành cho Ban Khảo Thí và Hội Đồng Chấm Thi."
+              message={
+                <div>
+                  <strong>{multiVariantResult.course_name ? `${multiVariantResult.course_name} (${multiVariantResult.course_code})` : 'Ma trận đối sánh đáp án'}</strong>
+                  {multiVariantResult.root_name && (
+                    <div style={{ fontSize: 13, marginTop: 2, color: '#065f46' }}>
+                      Đề gốc: <b>{multiVariantResult.root_name}</b> ({multiVariantResult.root_code})
+                    </div>
+                  )}
+                </div>
+              }
+              description={`Bảng tra cứu đáp án A/B/C/D đối sánh qua ${multiVariantResult.variant_codes?.length || 4} mã đề hoán vị: [${multiVariantResult.variant_codes?.join(', ')}] cho toàn bộ 40 câu hỏi khảo thí.`}
               style={{ marginBottom: 16 }}
             />
 
             <Table
               dataSource={multiVariantResult.master_answer_matrix || []}
               rowKey="question_number"
-              pagination={false}
+              pagination={{ pageSize: 10, showSizeChanger: true, pageSizeOptions: ['10', '20', '40'] }}
+              scroll={{ y: 380 }}
               bordered
               columns={[
                 {
-                  title: 'Câu Hỏi Số',
+                  title: 'Câu Số',
                   dataIndex: 'question_number',
                   key: 'question_number',
                   align: 'center',
-                  width: 110,
-                  render: n => <strong>Câu {n}</strong>
+                  width: 90,
+                  render: n => <strong style={{ color: '#0f172a' }}>Câu {n}</strong>
                 },
                 ...(multiVariantResult.variant_codes || ['101', '102', '103', '104']).map(code => ({
-                  title: <span style={{ color: '#2563eb' }}>Mã Đề {code}</span>,
+                  title: <span style={{ color: '#2563eb', fontWeight: 700 }}>Mã Đề {code}</span>,
                   dataIndex: `code_${code}`,
                   key: `code_${code}`,
                   align: 'center',
+                  width: 120,
                   render: letter => (
-                    <Tag color="blue" style={{ fontSize: 14, fontWeight: 700, padding: '2px 10px' }}>
-                      {letter || 'A'}
+                    <Tag
+                      color={letter === 'A' ? 'blue' : (letter === 'B' ? 'green' : (letter === 'C' ? 'orange' : 'purple'))}
+                      style={{ fontSize: 14, fontWeight: 700, padding: '2px 12px' }}
+                    >
+                      {letter || '-'}
                     </Tag>
                   )
                 }))

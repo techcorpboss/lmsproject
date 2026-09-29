@@ -50,6 +50,7 @@ export default function ExamAdministrationView({ currentUser }) {
     courses: [],
     lecturers: []
   });
+  const [availablePapers, setAvailablePapers] = useState([]);
   const [selectedFaculty, setSelectedFaculty] = useState(null);
   const [selectedMajor, setSelectedMajor] = useState(null);
 
@@ -61,6 +62,14 @@ export default function ExamAdministrationView({ currentUser }) {
       }
     } catch (err) {
       console.warn('Lỗi tải danh mục học thuật:', err);
+    }
+    try {
+      const pRes = await apiClient.get('/exam/papers');
+      if (pRes && pRes.success && pRes.data) {
+        setAvailablePapers(pRes.data);
+      }
+    } catch (err) {
+      console.warn('Lỗi tải ngân hàng 120 đề thi:', err);
     }
   }, []);
 
@@ -74,7 +83,8 @@ export default function ExamAdministrationView({ currentUser }) {
     scheduleForm.setFieldsValue({
       major_id: undefined,
       course_code: undefined,
-      course_name: undefined
+      course_name: undefined,
+      paper_id: undefined
     });
   };
 
@@ -82,7 +92,8 @@ export default function ExamAdministrationView({ currentUser }) {
     setSelectedMajor(majorId);
     scheduleForm.setFieldsValue({
       course_code: undefined,
-      course_name: undefined
+      course_name: undefined,
+      paper_id: undefined
     });
     if (majorId && !selectedFaculty) {
       const m = academicOptions.majors.find(item => item.id === majorId);
@@ -99,11 +110,18 @@ export default function ExamAdministrationView({ currentUser }) {
       const autoExamName = `Khảo Thí Học Phần: ${selectedCourse.name} (${selectedCourse.code})`;
       const autoRoomCode = `PHONG-${selectedCourse.code}-ONLINE`;
 
+      // Tự động tìm đề thi hoán vị hoặc đề gốc phù hợp từ Ngân hàng 120 đề
+      const matchedPaper = availablePapers.find(p => p.course_code === courseCode);
+
       const updates = {
         course_name: selectedCourse.name,
         exam_name: autoExamName,
         room_code: autoRoomCode
       };
+
+      if (matchedPaper) {
+        updates.paper_id = matchedPaper.id;
+      }
 
       if (!selectedFaculty && selectedCourse.faculty_id) {
         setSelectedFaculty(selectedCourse.faculty_id);
@@ -551,6 +569,9 @@ export default function ExamAdministrationView({ currentUser }) {
           <div style={{ fontWeight: 600, color: '#0f172a' }}>{record.exam_name}</div>
           <div style={{ fontSize: 12, color: '#64748b' }}>
             Môn: <Tag color="blue">{record.course_code || 'IT101'}</Tag> {record.course_name}
+            {record.paper_id && (
+              <Tag color="purple" style={{ marginLeft: 4, fontSize: 11 }}>Đề thi #{record.paper_id}</Tag>
+            )}
           </div>
           <div style={{ fontSize: 11, color: '#94a3b8' }}>
             Phòng: <b>{record.room_code || 'PHÒNG-01'}</b> • {record.semester} ({record.academic_year})
@@ -1164,6 +1185,43 @@ export default function ExamAdministrationView({ currentUser }) {
                     border: '1px solid #86efac'
                   }}
                 />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* HÀNG 2.5: GÁN ĐỀ THI KHẢO THÍ TỪ NGÂN HÀNG 120 ĐỀ THI */}
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item
+                label={<Space><SafetyCertificateOutlined style={{ color: '#10b981' }} /><span>Gán Đề Thi Khảo Thí (Ngân Hàng 120 Đề Chuẩn Hóa 40 Câu)</span></Space>}
+                name="paper_id"
+                tooltip="Chọn một trong 120 đề thi chuẩn hóa (3 đề gốc hoặc 12 đề hoán vị 101-304) của môn học"
+              >
+                <Select
+                  showSearch
+                  placeholder="-- Chọn đề thi từ Ngân Hàng 120 Đề Thi (Hoặc hệ thống tự động gán) --"
+                  allowClear
+                  optionFilterProp="label"
+                >
+                  {(scheduleForm.getFieldValue('course_code')
+                    ? availablePapers.filter(p => p.course_code === scheduleForm.getFieldValue('course_code'))
+                    : availablePapers
+                  ).map(p => (
+                    <Option key={`paper_${p.id}`} value={p.id} label={`${p.paper_code} ${p.name} ${p.course_code}`}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>
+                          <b style={{ color: p.paper_type === 'ROOT' ? '#1d4ed8' : '#7c3aed' }}>{p.paper_code}</b> - {p.name}
+                        </span>
+                        <Space size={4}>
+                          <Tag color={p.paper_type === 'ROOT' ? 'blue' : 'purple'} style={{ fontSize: 11 }}>
+                            {p.paper_type === 'ROOT' ? 'ĐỀ GỐC' : `MÃ ĐỀ ${p.variant_number || '101'}`}
+                          </Tag>
+                          <Tag color="green" style={{ fontSize: 11 }}>40 câu</Tag>
+                        </Space>
+                      </div>
+                    </Option>
+                  ))}
+                </Select>
               </Form.Item>
             </Col>
           </Row>

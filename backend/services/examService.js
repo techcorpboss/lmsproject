@@ -14,6 +14,7 @@ const {
   AcademicExamSchedule,
   ExamCandidateAuthorization
 } = require('../models');
+const examBankSeeder = require('./examBankSeederService');
 
 class ExamService {
 
@@ -686,88 +687,86 @@ class ExamService {
     };
   }
 
-  // 4.2. Lấy danh sách các đề thi đã xuất bản trong hệ thống
-  async getPapers() {
+  // 4.2. Lấy danh sách các đề thi trong hệ thống (Hỗ trợ 120 đề thi chuẩn hóa của 8 môn học)
+  async getPapers(filter = {}) {
     try {
-      const papers = await ExamPaper.findAll({
-        order: [['id', 'DESC']],
-        limit: 50,
+      // 1. Lấy toàn bộ danh sách 120 đề thi chuẩn hóa từ ExamBank
+      let bankPapers = examBankSeeder.getPapers(filter);
+
+      // 2. Thử truy vấn thêm các đề tự sinh từ MySQL (nếu có)
+      try {
+        const dbPapers = await ExamPaper.findAll({
+          order: [['id', 'DESC']],
+          limit: 150
+        });
+
+        if (dbPapers && dbPapers.length > 0) {
+          const bankCodes = new Set(bankPapers.map(p => p.paper_code));
+          const extraPapers = dbPapers
+            .filter(dp => !bankCodes.has(dp.paper_code))
+            .map(dp => ({
+              id: dp.id,
+              paper_code: dp.paper_code,
+              name: dp.name,
+              course_code: dp.course_code || 'GEN101',
+              course_name: dp.course_name || 'Học phần đại học',
+              faculty_name: dp.faculty_name || '',
+              paper_type: dp.paper_type || 'ROOT',
+              root_code: dp.root_code || dp.paper_code,
+              variant_number: dp.variant_number,
+              total_marks: dp.total_marks || 10.0,
+              duration_minutes: dp.duration_minutes || 60,
+              questions_count: dp.total_questions || 40,
+              status: dp.status || 'APPROVED',
+              proctor_status: 'SEALED',
+              created_at: dp.created_at || dp.createdAt
+            }));
+
+          if (extraPapers.length > 0) {
+            bankPapers = [...bankPapers, ...extraPapers];
+          }
+        }
+      } catch (dbErr) {
+        // MySQL offline, rely entirely on ExamBank
+      }
+
+      return bankPapers;
+    } catch (e) {
+      console.warn('[ExamService getPapers error]:', e.message);
+      return examBankSeeder.getPapers(filter);
+    }
+  }
+
+  // 4.2.1. Lấy chi tiết đề thi kèm 40 câu hỏi và phương án đáp án
+  async getPaperById(idOrCode) {
+    try {
+      // Tìm trong ExamBank (đầy đủ 40 câu hỏi chuẩn hóa và đáp án)
+      const bankPaper = examBankSeeder.getPaperById(idOrCode);
+      if (bankPaper) return bankPaper;
+
+      // Tìm trong MySQL
+      const whereClause = isNaN(Number(idOrCode)) ? { paper_code: String(idOrCode) } : { id: Number(idOrCode) };
+      const paper = await ExamPaper.findOne({
+        where: whereClause,
         include: [
           {
             model: QbankQuestion,
             as: 'questions',
-            attributes: ['id', 'content', 'difficulty', 'default_mark']
+            include: [{ model: QbankAnswer, as: 'answers' }]
           }
         ]
       });
 
-      if (!papers || papers.length === 0) {
-        return [
-          {
-            id: 1,
-            paper_code: 'DE-2026-IT101-101',
-            name: 'Đề Thi Chính Thức — Nhập Môn Lập Trình (Mã đề 101)',
-            total_marks: 10.0,
-            status: 'APPROVED',
-            created_at: new Date(Date.now() - 3600000 * 24 * 2).toISOString(),
-            questions_count: 40,
-            duration_minutes: 60,
-            course_name: 'Nhập môn Lập trình C/C++',
-            proctor_status: 'SEALED'
-          },
-          {
-            id: 2,
-            paper_code: 'DE-2026-IT101-102',
-            name: 'Đề Thi Chính Thức — Nhập Môn Lập Trình (Mã đề 102)',
-            total_marks: 10.0,
-            status: 'APPROVED',
-            created_at: new Date(Date.now() - 3600000 * 24 * 2).toISOString(),
-            questions_count: 40,
-            duration_minutes: 60,
-            course_name: 'Nhập môn Lập trình C/C++',
-            proctor_status: 'SEALED'
-          },
-          {
-            id: 3,
-            paper_code: 'DE-2026-QA401-201',
-            name: 'Đề Thi Khảo Thí & Đảm Bảo Chất Lượng Đào Tạo (Mã đề 201)',
-            total_marks: 10.0,
-            status: 'APPROVED',
-            created_at: new Date(Date.now() - 3600000 * 24 * 5).toISOString(),
-            questions_count: 30,
-            duration_minutes: 60,
-            course_name: 'Khảo thí & Đảm bảo Chất lượng Đào tạo',
-            proctor_status: 'SEALED'
-          },
-          {
-            id: 4,
-            paper_code: 'DE-2026-AI301-301',
-            name: 'Đề Thi Khảo Thí Trí Tuệ Nhân Tạo & Khoa Học Dữ Liệu (Mã đề 301)',
-            total_marks: 10.0,
-            status: 'DRAFT',
-            created_at: new Date(Date.now() - 3600000 * 5).toISOString(),
-            questions_count: 25,
-            duration_minutes: 90,
-            course_name: 'Trí tuệ Nhân tạo & Khoa học Dữ liệu',
-            proctor_status: 'PENDING_APPRAISAL'
-          }
-        ];
-      }
-
-      return papers.map(p => ({
-        id: p.id,
-        paper_code: p.paper_code,
-        name: p.name,
-        total_marks: p.total_marks,
-        status: p.status,
-        created_at: p.created_at || p.createdAt,
-        questions_count: p.questions ? p.questions.length : 0,
-        duration_minutes: 60
-      }));
+      return paper || null;
     } catch (e) {
-      console.warn('[ExamService getPapers fallback]', e.message);
-      return [];
+      console.warn('[ExamService getPaperById error]:', e.message);
+      return examBankSeeder.getPaperById(idOrCode);
     }
+  }
+
+  // 4.2.2. Lấy ma trận đối sánh đáp án 40 câu hỏi giữa các đề hoán vị
+  async getMasterAnswerMatrix(courseCode, rootCode) {
+    return examBankSeeder.getAnswerMatrix(courseCode, rootCode);
   }
 
   // 4.3. Xóa đề thi đã sinh
@@ -897,92 +896,33 @@ class ExamService {
     };
   }
 
-  // Lấy đề thi chuẩn cho ca thi (kèm fallback để không bao giờ bị lỗi crash)
+  // Lấy đề thi chuẩn cho ca thi (kèm fallback đầy đủ 40 câu hỏi chuẩn hóa)
   async getSampleOrFirstPaper(paperId) {
     try {
-      let paper = null;
+      // 1. Tìm trong ExamBank (đầy đủ 40 câu hỏi, phương án chuẩn)
+      let paper = examBankSeeder.getPaperById(paperId);
+      if (paper) return paper;
+
+      // 2. Thử tìm trong MySQL nếu paperId là ID DB
       if (paperId) {
         paper = await ExamPaper.findByPk(paperId, {
           include: [{
             model: QbankQuestion,
             as: 'questions',
-            include: [{ model: QbankAnswer, as: 'answers', attributes: ['id', 'content'] }]
+            include: [{ model: QbankAnswer, as: 'answers', attributes: ['id', 'content', 'is_correct'] }]
           }]
         });
+        if (paper) return paper;
       }
 
-      if (!paper) {
-        paper = await ExamPaper.findOne({
-          include: [{
-            model: QbankQuestion,
-            as: 'questions',
-            include: [{ model: QbankAnswer, as: 'answers', attributes: ['id', 'content'] }]
-          }]
-        });
-      }
-
-      if (paper) return paper;
+      // 3. Fallback: Lấy đề thi chuẩn IT101-HV-101 (40 câu)
+      const defaultPaper = examBankSeeder.getPaperById('IT101-HV-101') || examBankSeeder.getPapers()[0];
+      if (defaultPaper) return defaultPaper;
     } catch (e) {
       console.warn('[ExamService getSampleOrFirstPaper fallback]', e.message);
     }
 
-    return {
-      id: 101,
-      name: 'Đề Thi Số 1: Khảo Thí Đảm Bảo Chất Lượng & Quản Trị Số Đại Học',
-      total_marks: 10.0,
-      questions: [
-        {
-          id: 1,
-          content: 'Bộ tiêu chuẩn AUN-QA 4.0 cấp Chương trình đào tạo bao gồm bao nhiêu tiêu chuẩn?',
-          answers: [
-            { id: 11, content: '11 tiêu chuẩn' },
-            { id: 12, content: '15 tiêu chuẩn (Chính xác)', is_correct: true },
-            { id: 13, content: '8 tiêu chuẩn' },
-            { id: 14, content: '20 tiêu chuẩn' }
-          ]
-        },
-        {
-          id: 2,
-          content: 'Tiêu chuẩn ISO 21001:2018 áp dụng cấu trúc bậc cao gồm bao nhiêu điều khoản chính?',
-          answers: [
-            { id: 21, content: '10 điều khoản (Điều 4 đến Điều 10 chứa yêu cầu cốt lõi)', is_correct: true },
-            { id: 22, content: '7 điều khoản' },
-            { id: 23, content: '12 điều khoản' },
-            { id: 24, content: '15 điều khoản' }
-          ]
-        },
-        {
-          id: 3,
-          content: 'Chu trình cải tiến liên tục Deming trong quản lý chất lượng giáo dục viết tắt là gì?',
-          answers: [
-            { id: 31, content: 'PDCA (Plan - Do - Check - Act)', is_correct: true },
-            { id: 32, content: 'SWOT' },
-            { id: 33, content: 'SMART' },
-            { id: 34, content: 'OKR' }
-          ]
-        },
-        {
-          id: 4,
-          content: 'Hệ thống LMS tiêu chuẩn quốc tế bắt buộc phải hỗ trợ chuẩn đóng gói học liệu số nào sau đây?',
-          answers: [
-            { id: 41, content: 'SCORM 1.2 / 2004 và xAPI (Tin Can API / cmi5)', is_correct: true },
-            { id: 42, content: 'Chỉ hỗ trợ file MP4 đơn thuần' },
-            { id: 43, content: 'Chỉ hỗ trợ file nén ZIP' },
-            { id: 44, content: 'Flash SWF' }
-          ]
-        },
-        {
-          id: 5,
-          content: 'Chuẩn trao đổi dữ liệu ngân hàng đề thi quốc tế viết tắt là gì?',
-          answers: [
-            { id: 51, content: 'IMS QTI (Question & Test Interoperability) v2.1/v3.0', is_correct: true },
-            { id: 52, content: 'JSON API' },
-            { id: 53, content: 'SQL DUMP' },
-            { id: 54, content: 'CSV Export' }
-          ]
-        }
-      ]
-    };
+    return examBankSeeder.getPaperById('IT101-GOC-01');
   }
 }
 

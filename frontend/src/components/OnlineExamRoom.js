@@ -1024,7 +1024,9 @@ export default function OnlineExamRoom({ currentUser, onNavigate }) {
                   <Tag color="blue" style={{ fontSize: 13 }}>
                     Câu hỏi {currentQuestionIdx + 1} / {questions.length}
                   </Tag>
-                  <Text type="secondary">Điểm: 2.0 đ (Chuẩn Bloom)</Text>
+                  <Text type="secondary">
+                    Điểm: <b>{activeQuestion?.default_mark || 0.25}đ</b> • 40 câu / 10.0 điểm
+                  </Text>
                 </div>
 
                 <Title level={4} style={{ fontSize: 17, lineHeight: 1.6, marginBottom: 24, color: '#1e293b' }}>
@@ -1129,9 +1131,17 @@ export default function OnlineExamRoom({ currentUser, onNavigate }) {
             </div>
           </Card>
 
-          {/* PALETTE DANH SÁCH CÂU HỎI */}
-          <Card title="Danh Sách Câu Hỏi" style={{ borderRadius: 8 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
+          {/* PALETTE DANH SÁCH 40 CÂU HỎI */}
+          <Card title={`Danh Sách Câu Hỏi (${questions.length || 40} câu)`} style={{ borderRadius: 8 }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(5, 1fr)',
+              gap: 6,
+              marginBottom: 16,
+              maxHeight: 280,
+              overflowY: 'auto',
+              paddingRight: 4
+            }}>
               {questions.map((q, idx) => {
                 const isAnswered = answers[q.id] !== undefined;
                 const isCurrent = currentQuestionIdx === idx;
@@ -1140,11 +1150,14 @@ export default function OnlineExamRoom({ currentUser, onNavigate }) {
                     key={q.id}
                     onClick={() => setCurrentQuestionIdx(idx)}
                     type={isCurrent ? 'primary' : (isAnswered ? 'default' : 'dashed')}
+                    size="small"
                     style={{
                       background: isCurrent ? '#1677ff' : (isAnswered ? '#f6ffed' : '#fff'),
                       borderColor: isAnswered ? '#52c41a' : '#d9d9d9',
                       fontWeight: isCurrent || isAnswered ? 'bold' : 'normal',
-                      color: isAnswered && !isCurrent ? '#52c41a' : undefined
+                      color: isAnswered && !isCurrent ? '#52c41a' : undefined,
+                      padding: 0,
+                      height: 32
                     }}
                   >
                     {idx + 1}

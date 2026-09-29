@@ -111,10 +111,34 @@ router.post('/templates/:id/generate-multi', async (req, res) => {
   }
 });
 
-// 6.0.1. Danh sách các đề thi đã xuất bản
+// 6.0.1. Danh sách các đề thi đã xuất bản (Hỗ trợ lọc theo môn và loại đề)
 router.get('/papers', async (req, res) => {
   try {
-    const data = await examService.getPapers();
+    const data = await examService.getPapers(req.query);
+    res.json({ success: true, data, count: data.length });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 6.0.1.b. Ma trận đối sánh đáp án 40 câu hỏi giữa các đề hoán vị
+router.get('/papers/matrix', async (req, res) => {
+  try {
+    const { course_code, root_code } = req.query;
+    const data = await examService.getMasterAnswerMatrix(course_code || 'IT101', root_code);
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 6.0.1.c. Xem chi tiết đề thi kèm toàn bộ 40 câu hỏi và phương án
+router.get('/papers/:id', async (req, res) => {
+  try {
+    const data = await examService.getPaperById(req.params.id);
+    if (!data) {
+      return res.status(404).json({ success: false, error: 'Không tìm thấy đề thi trong ngân hàng.' });
+    }
     res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -167,15 +191,22 @@ router.post('/submit', async (req, res) => {
     const { paper_id, answers, time_spent_seconds, violation_count } = req.body;
     
     // Tự động chấm điểm trắc nghiệm
-    const paper = await ExamPaper.findByPk(paper_id, {
-      include: [{
-        model: QbankQuestion,
-        as: 'questions',
-        include: [{ model: QbankAnswer, as: 'answers' }]
-      }]
-    });
+    let paper = null;
+    try {
+      paper = await ExamPaper.findByPk(paper_id, {
+        include: [{
+          model: QbankQuestion,
+          as: 'questions',
+          include: [{ model: QbankAnswer, as: 'answers' }]
+        }]
+      });
+    } catch (e) {}
 
     if (!paper) {
+      paper = await examService.getPaperById(paper_id);
+    }
+
+    if (!paper || !paper.questions) {
       return res.status(404).json({ success: false, error: 'Không tìm thấy đề thi.' });
     }
 
@@ -184,12 +215,15 @@ router.post('/submit', async (req, res) => {
     const details = [];
 
     for (const q of paper.questions) {
-      const qMark = Number(q.ExamPaperQuestion?.mark_allocated || q.default_mark || 1);
+      const qMark = Number(q.ExamPaperQuestion?.mark_allocated || q.default_mark || 0.25);
       totalMarks += qMark;
 
       const chosenAnswerId = answers ? answers[q.id] : null;
-      const correctAnswer = q.answers.find(a => a.is_correct);
-      const isCorrect = correctAnswer && Number(chosenAnswerId) === Number(correctAnswer.id);
+      const correctAnswer = q.answers?.find(a => a.is_correct);
+      const isCorrect = correctAnswer && (
+        String(chosenAnswerId) === String(correctAnswer.id) ||
+        String(chosenAnswerId).toUpperCase() === String(q.correct_letter || '').toUpperCase()
+      );
 
       if (isCorrect) {
         earnedMarks += qMark;
