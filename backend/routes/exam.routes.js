@@ -54,6 +54,21 @@ router.post('/questions/batch', async (req, res) => {
   }
 });
 
+// 3.2. Ngân hàng câu hỏi: Xóa mềm câu hỏi (Soft Delete)
+router.delete('/questions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await QbankQuestion.update({
+      is_deleted: true,
+      deleted_at: new Date(),
+      status: 'DELETED'
+    }, { where: { id } });
+    res.json({ success: true, message: 'Đã xóa mềm câu hỏi khỏi ngân hàng đề thi (bảo lưu dữ liệu kiểm định)!' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // 4. Ma trận đề thi: Danh sách mẫu ma trận
 router.get('/templates', async (req, res) => {
   try {

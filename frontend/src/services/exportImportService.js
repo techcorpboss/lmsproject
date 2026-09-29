@@ -1,53 +1,116 @@
 // frontend/src/services/exportImportService.js
-// Tiện ích xuất/nhập tệp tin đa định dạng (Excel UTF-8 BOM, Word chuẩn XML, PDF & In ấn chuẩn Bộ GD&ĐT)
+// Tiện ích xuất/nhập tệp tin đa định dạng tiêu chuẩn (Excel .xlsx với SheetJS, Word .doc chuẩn NĐ 30/2020/NĐ-CP, PDF & In ấn chuẩn Bộ GD&ĐT)
+import * as XLSX from 'xlsx';
 
 /**
- * 1. XUẤT FILE EXCEL / CSV CHUẨN UNICODE UTF-8 BOM
- * Đảm bảo 100% tiếng Việt hiển thị sắc nét, không bao giờ bị lỗi font trên Microsoft Excel và Google Sheets
+ * 1. XUẤT FILE MICROSOFT EXCEL (.XLSX) CHUẨN ĐỊNH DẠNG & ĐẦY ĐỦ SHEET
+ * Hỗ trợ tạo file .xlsx thực thụ với tiêu đề lớn, metadata hành chính, tiêu đề in đậm và tự động co giãn độ rộng cột
  */
 export function exportToExcel(filename, headers, dataRows, title = '', metaInfo = {}) {
   try {
-    let csv = '\uFEFF'; // Ký tự UTF-8 BOM bắt buộc cho Excel
+    const wb = XLSX.utils.book_new();
+    const sheetData = [];
 
-    // Tiêu đề văn bản hành chính nếu có
+    // 1. Dòng Tiêu đề chính của biểu mẫu (In hoa, chiếm dòng đầu)
     if (title) {
-      csv += `"${title.replace(/"/g, '""')}"\n`;
+      sheetData.push([title.toUpperCase()]);
+      sheetData.push([]); // Dòng trống
     }
 
-    // Thông tin metadata (Khoa, Lớp, Học kỳ...)
+    // 2. Thông tin Metadata hành chính (Trường, Khoa, Lớp, Học phần, Học kỳ...)
     if (metaInfo && Object.keys(metaInfo).length > 0) {
       for (const [key, val] of Object.entries(metaInfo)) {
-        csv += `"${key}: ${String(val).replace(/"/g, '""')}"\n`;
+        sheetData.push([`${key}:`, String(val)]);
       }
-      csv += '\n';
+      sheetData.push([]); // Dòng trống ngăn cách
     }
 
-    // Tiêu đề các cột
-    const headerLine = headers.map(h => `"${String(h).replace(/"/g, '""')}"`).join(',');
-    csv += headerLine + '\n';
+    // Ghi nhận vị trí dòng tiêu đề cột
+    const headerRowIndex = sheetData.length;
+    sheetData.push(headers);
 
-    // Dữ liệu từng dòng
+    // 3. Dữ liệu các dòng
     for (const row of dataRows) {
-      const line = row.map(cell => {
-        if (cell === null || cell === undefined) return '""';
-        return `"${String(cell).replace(/"/g, '""')}"`;
-      }).join(',');
-      csv += line + '\n';
+      const sanitizedRow = row.map(cell => (cell === null || cell === undefined ? '' : cell));
+      sheetData.push(sanitizedRow);
     }
 
-    // Tạo blob và tải về
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    // Chuyển mảng thành Worksheet
+    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+    // 4. Định dạng merge cell cho tiêu đề chính
+    if (title && headers.length > 1) {
+      if (!ws['!merges']) ws['!merges'] = [];
+      ws['!merges'].push({ s: { r: 0, c: 0 }, e: { r: 0, c: Math.max(headers.length - 1, 1) } });
+    }
+
+    // 5. Tự động tính toán độ rộng tối ưu cho từng cột (Auto column widths)
+    const colWidths = headers.map((header, colIdx) => {
+      let maxLen = String(header).length;
+      for (const row of dataRows) {
+        const cellValue = row[colIdx];
+        if (cellValue !== undefined && cellValue !== null) {
+          const len = String(cellValue).length;
+          if (len > maxLen) maxLen = len;
+        }
+      }
+      return { wch: Math.min(Math.max(maxLen + 4, 10), 45) };
+    });
+    ws['!cols'] = colWidths;
+
+    // Thêm sheet vào workbook
+    XLSX.utils.book_append_sheet(wb, ws, 'Du_Lieu');
+
+    // Tạo file buffer và kích hoạt tải về .xlsx
+    const cleanFileName = filename.replace(/\.(xlsx|csv|xls)$/i, '');
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', filename.endsWith('.csv') ? filename : `${filename}.csv`);
+    link.setAttribute('download', `${cleanFileName}.xlsx`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     return true;
   } catch (err) {
-    console.error('[Export Excel Error]:', err);
+    console.warn('[Export Excel .xlsx Warning, fallback to UTF-8 BOM CSV]:', err);
+    // Fallback sang CSV UTF-8 BOM nếu môi trường trình duyệt hạn chế
+    return exportToCsvFallback(filename, headers, dataRows, title, metaInfo);
+  }
+}
+
+/**
+ * Fallback xuất file CSV Unicode UTF-8 BOM
+ */
+function exportToCsvFallback(filename, headers, dataRows, title, metaInfo) {
+  try {
+    let csv = '\uFEFF';
+    if (title) csv += `"${title.replace(/"/g, '""')}"\n\n`;
+    if (metaInfo && Object.keys(metaInfo).length > 0) {
+      for (const [key, val] of Object.entries(metaInfo)) {
+        csv += `"${key}: ${String(val).replace(/"/g, '""')}"\n`;
+      }
+      csv += '\n';
+    }
+    csv += headers.map(h => `"${String(h).replace(/"/g, '""')}"`).join(',') + '\n';
+    for (const row of dataRows) {
+      csv += row.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',') + '\n';
+    }
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `${filename.replace(/\.csv$/i, '')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    return true;
+  } catch (e) {
+    console.error('[Fallback CSV Export Error]:', e);
     return false;
   }
 }
@@ -183,23 +246,90 @@ export function exportToWord(filename, { title, subtitle, organization = 'BỘ G
 }
 
 /**
- * 3. ĐỌC FILE CSV / EXCEL TẢI LÊN (IMPORT PARSER)
+ * 3. ĐỌC FILE EXCEL (.XLSX, .XLS) HOẶC CSV TẢI LÊN (UNIVERSAL PARSER)
+ * Tự động xử lý cả tệp nhị phân Excel .xlsx, .xls và tệp .csv (có hoặc không có UTF-8 BOM)
  */
-export function parseCsvFile(file) {
+export function parseExcelFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      try {
+        const buffer = e.target.result;
+        // Đọc workbook bằng SheetJS
+        const workbook = XLSX.read(buffer, { type: 'array' });
+        if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+          return resolve({ headers: [], rows: [] });
+        }
+
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        // Chuyển sheet thành ma trận mảng
+        const rawGrid = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+
+        if (!rawGrid || rawGrid.length === 0) {
+          return resolve({ headers: [], rows: [] });
+        }
+
+        // Tìm dòng tiêu đề (Header row): là dòng đầu tiên có ít nhất 2 cột có chữ
+        let headerRowIndex = 0;
+        for (let i = 0; i < Math.min(rawGrid.length, 10); i++) {
+          const row = rawGrid[i];
+          if (Array.isArray(row)) {
+            const textCols = row.filter(cell => cell !== '' && cell !== null && cell !== undefined);
+            const hasCommonKeywords = row.some(cell => /mssv|mã|tên|họ|stt|student|điểm/i.test(String(cell)));
+            if (hasCommonKeywords || textCols.length >= 2) {
+              headerRowIndex = i;
+              break;
+            }
+          }
+        }
+
+        const headers = (rawGrid[headerRowIndex] || []).map(h => String(h || '').trim());
+        const rows = [];
+
+        for (let i = headerRowIndex + 1; i < rawGrid.length; i++) {
+          const row = rawGrid[i];
+          if (Array.isArray(row) && row.some(cell => cell !== '' && cell !== null && cell !== undefined)) {
+            // Định dạng lại các cell thành string/number sạch
+            const cleanRow = headers.map((_, colIdx) => {
+              const val = row[colIdx];
+              return val !== undefined && val !== null ? String(val).trim() : '';
+            });
+            rows.push(cleanRow);
+          }
+        }
+
+        resolve({ headers, rows });
+      } catch (err) {
+        console.error('[Parse Excel Error]:', err);
+        // Fallback đọc văn bản nếu SheetJS gặp sự cố định dạng
+        parseCsvTextFallback(file).then(resolve).catch(reject);
+      }
+    };
+
+    reader.onerror = (err) => reject(err);
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// Giữ lại alias parseCsvFile để tương thích ngược 100% với các component cũ
+export const parseCsvFile = parseExcelFile;
+
+/**
+ * Fallback đọc text CSV thuần túy
+ */
+function parseCsvTextFallback(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         let text = e.target.result;
         if (text.charCodeAt(0) === 0xFEFF) {
-          text = text.slice(1); // Cắt bỏ UTF-8 BOM
+          text = text.slice(1);
         }
         const lines = text.split(/\r\n|\n/).filter(l => l.trim().length > 0);
-        if (lines.length < 2) {
-          return resolve({ headers: [], rows: [] });
-        }
+        if (lines.length < 2) return resolve({ headers: [], rows: [] });
 
-        // Tách tiêu đề
         const parseLine = (line) => {
           const result = [];
           let insideQuotes = false;
@@ -220,13 +350,7 @@ export function parseCsvFile(file) {
         };
 
         const headers = parseLine(lines[0]);
-        const rows = [];
-        for (let i = 1; i < lines.length; i++) {
-          const cells = parseLine(lines[i]);
-          if (cells.some(c => c.length > 0)) {
-            rows.push(cells);
-          }
-        }
+        const rows = lines.slice(1).map(l => parseLine(l)).filter(r => r.some(c => c.length > 0));
         resolve({ headers, rows });
       } catch (err) {
         reject(err);

@@ -443,13 +443,16 @@ exports.restoreBackup = async (req, res) => {
 // --- 5. QUẢN LÝ HỌC VIÊN (STUDENT DIRECTORY) ---
 exports.getStudents = async (req, res) => {
   try {
-    let students = await AcademicStudent.findAll({ order: [['id', 'DESC']] }).catch(() => []);
+    let students = await AcademicStudent.findAll({
+      where: { is_deleted: false },
+      order: [['id', 'DESC']]
+    }).catch(() => []);
     if (!students || students.length === 0) {
-      students = studentsStore;
+      students = studentsStore.filter(s => !s.is_deleted);
     }
     res.json({ success: true, data: students });
   } catch (err) {
-    res.json({ success: true, data: studentsStore });
+    res.json({ success: true, data: studentsStore.filter(s => !s.is_deleted) });
   }
 };
 
@@ -482,7 +485,8 @@ exports.saveStudent = async (req, res) => {
         academic_rank: data.academic_rank || 'KHÁ',
         status: data.status || 'ACTIVE',
         training_system: data.training_system || 'Đại học Chính quy (Tín chỉ TT 08/2021)',
-        advisor: data.advisor || 'TS. Hoàng Đức Em'
+        advisor: data.advisor || 'TS. Hoàng Đức Em',
+        is_deleted: false
       }).catch(() => null);
 
       if (!saved) {
@@ -491,7 +495,8 @@ exports.saveStudent = async (req, res) => {
           ...data,
           status: data.status || 'ACTIVE',
           gpa: data.gpa || 3.0,
-          lms_progress_pct: data.lms_progress_pct || 0
+          lms_progress_pct: data.lms_progress_pct || 0,
+          is_deleted: false
         };
       }
       studentsStore.unshift(saved);
@@ -506,9 +511,31 @@ exports.saveStudent = async (req, res) => {
 exports.deleteStudent = async (req, res) => {
   try {
     const { id } = req.params;
-    await AcademicStudent.destroy({ where: { id } }).catch(() => {});
+    // ÁP DỤNG SOFT DELETE THEO CHÍNH SÁCH KIỂM ĐỊNH GIÁO DỤC (LỰA CHỌN A)
+    await AcademicStudent.update({
+      is_deleted: true,
+      deleted_at: new Date(),
+      status: 'DELETED'
+    }, { where: { id } }).catch(() => {});
+
+    try {
+      await SystemAuditLog.create({
+        user: (req.user && req.user.username) || 'admin',
+        action: 'SOFT_DELETE_STUDENT',
+        description: `Xóa mềm hồ sơ học viên ID=${id}, bảo lưu dữ liệu phục vụ thanh tra đào tạo`,
+        ip: req.ip || '127.0.0.1',
+        status: 'SUCCESS'
+      });
+    } catch (e) {}
+
+    const targetStudent = studentsStore.find(s => String(s.id) === String(id));
+    if (targetStudent) {
+      targetStudent.is_deleted = true;
+      targetStudent.deleted_at = new Date();
+      targetStudent.status = 'DELETED';
+    }
     studentsStore = studentsStore.filter(s => String(s.id) !== String(id));
-    res.json({ success: true, message: 'Đã xóa hồ sơ học viên thành công!' });
+    res.json({ success: true, message: 'Đã xóa mềm hồ sơ học viên (bảo lưu dữ liệu kiểm định CSDL)!' });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }
@@ -589,8 +616,11 @@ let k68CoursesStore = [
 
 exports.getCurriculum = async (req, res) => {
   try {
-    let courses = await CurriculumCourse.findAll({ order: [['semester', 'ASC'], ['id', 'ASC']] }).catch(() => []);
-    if (!courses || courses.length === 0) courses = k68CoursesStore;
+    let courses = await CurriculumCourse.findAll({
+      where: { is_deleted: false },
+      order: [['semester', 'ASC'], ['id', 'ASC']]
+    }).catch(() => []);
+    if (!courses || courses.length === 0) courses = k68CoursesStore.filter(c => !c.is_deleted);
     res.json({ success: true, data: courses });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -599,8 +629,11 @@ exports.getCurriculum = async (req, res) => {
 
 exports.getCurriculumArchitecture = async (req, res) => {
   try {
-    let courses = await CurriculumCourse.findAll({ order: [['semester', 'ASC'], ['id', 'ASC']] }).catch(() => []);
-    if (!courses || courses.length === 0) courses = k68CoursesStore;
+    let courses = await CurriculumCourse.findAll({
+      where: { is_deleted: false },
+      order: [['semester', 'ASC'], ['id', 'ASC']]
+    }).catch(() => []);
+    if (!courses || courses.length === 0) courses = k68CoursesStore.filter(c => !c.is_deleted);
 
     const totalCredits = courses.reduce((acc, c) => acc + (Number(c.credits) || 0), 0);
     res.json({
@@ -651,7 +684,8 @@ exports.saveCurriculumCourse = async (req, res) => {
         credits: Number(course.credits) || 3,
         is_compulsory: course.is_compulsory !== undefined ? course.is_compulsory : true,
         faculty_id: course.faculty_id || 'CNTT',
-        major_id: course.major_id || '7480103'
+        major_id: course.major_id || '7480103',
+        is_deleted: false
       }).catch(() => null);
 
       if (!saved) {
@@ -662,12 +696,16 @@ exports.saveCurriculumCourse = async (req, res) => {
           name: course.name,
           description: course.description || '',
           credits: Number(course.credits) || 3,
-          is_compulsory: course.is_compulsory !== undefined ? course.is_compulsory : true
+          is_compulsory: course.is_compulsory !== undefined ? course.is_compulsory : true,
+          is_deleted: false
         };
       }
       k68CoursesStore.push(saved);
     }
-    const allCourses = await CurriculumCourse.findAll({ order: [['semester', 'ASC'], ['id', 'ASC']] }).catch(() => k68CoursesStore);
+    const allCourses = await CurriculumCourse.findAll({
+      where: { is_deleted: false },
+      order: [['semester', 'ASC'], ['id', 'ASC']]
+    }).catch(() => k68CoursesStore.filter(c => !c.is_deleted));
     res.json({ success: true, message: 'Cập nhật học phần trong khung CTĐT thành công!', data: allCourses.length ? allCourses : k68CoursesStore });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
@@ -677,10 +715,34 @@ exports.saveCurriculumCourse = async (req, res) => {
 exports.deleteCurriculumCourse = async (req, res) => {
   try {
     const { id } = req.params;
-    await CurriculumCourse.destroy({ where: { id } }).catch(() => {});
+    // ÁP DỤNG SOFT DELETE (LỰA CHỌN A)
+    await CurriculumCourse.update({
+      is_deleted: true,
+      deleted_at: new Date(),
+      status: 'DELETED'
+    }, { where: { id } }).catch(() => {});
+
+    try {
+      await SystemAuditLog.create({
+        user: (req.user && req.user.username) || 'admin',
+        action: 'SOFT_DELETE_COURSE',
+        description: `Xóa mềm học phần ID=${id} khỏi khung CTĐT`,
+        ip: req.ip || '127.0.0.1',
+        status: 'SUCCESS'
+      });
+    } catch (e) {}
+
+    const targetCourse = k68CoursesStore.find(c => String(c.id) === String(id));
+    if (targetCourse) {
+      targetCourse.is_deleted = true;
+      targetCourse.deleted_at = new Date();
+    }
     k68CoursesStore = k68CoursesStore.filter(c => String(c.id) !== String(id));
-    const allCourses = await CurriculumCourse.findAll({ order: [['semester', 'ASC'], ['id', 'ASC']] }).catch(() => k68CoursesStore);
-    res.json({ success: true, message: 'Đã xóa học phần khỏi khung chương trình đào tạo!', data: allCourses.length ? allCourses : k68CoursesStore });
+    const allCourses = await CurriculumCourse.findAll({
+      where: { is_deleted: false },
+      order: [['semester', 'ASC'], ['id', 'ASC']]
+    }).catch(() => k68CoursesStore.filter(c => !c.is_deleted));
+    res.json({ success: true, message: 'Đã xóa mềm học phần khỏi khung chương trình đào tạo (bảo lưu vết CSDL)!', data: allCourses.length ? allCourses : k68CoursesStore });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }

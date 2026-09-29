@@ -137,7 +137,9 @@ const QbankQuestion = sequelize.define('QbankQuestion', {
   question_type: { type: DataTypes.ENUM('SINGLE_CHOICE', 'MULTIPLE_CHOICE', 'ESSAY', 'TRUE_FALSE'), defaultValue: 'SINGLE_CHOICE' },
   difficulty: { type: DataTypes.ENUM('EASY', 'MEDIUM', 'HARD', 'EXPERT'), defaultValue: 'MEDIUM' },
   default_mark: { type: DataTypes.DECIMAL(4, 2), defaultValue: 1.0 },
-  status: { type: DataTypes.ENUM('DRAFT', 'APPROVED', 'REJECTED'), defaultValue: 'APPROVED' }
+  status: { type: DataTypes.ENUM('DRAFT', 'APPROVED', 'REJECTED', 'DELETED'), defaultValue: 'APPROVED' },
+  is_deleted: { type: DataTypes.BOOLEAN, defaultValue: false },
+  deleted_at: { type: DataTypes.DATE, allowNull: true }
 }, { tableName: 'qbank_questions', underscored: true, timestamps: true });
 
 // 11. QBank Answer Model
@@ -213,7 +215,9 @@ const AcademicExamSchedule = sequelize.define('AcademicExamSchedule', {
   faculty_name: { type: DataTypes.STRING(150), allowNull: true },
   major_id: { type: DataTypes.STRING(50), allowNull: true },
   major_name: { type: DataTypes.STRING(150), allowNull: true },
-  notes: { type: DataTypes.TEXT, allowNull: true }
+  notes: { type: DataTypes.TEXT, allowNull: true },
+  is_deleted: { type: DataTypes.BOOLEAN, defaultValue: false },
+  deleted_at: { type: DataTypes.DATE, allowNull: true }
 }, { tableName: 'academic_exam_schedules', underscored: true, timestamps: true });
 
 // 17. Exam Candidate Authorization Model (Cấp quyền & Thí sinh dự thi theo quy chế Bộ GD&ĐT)
@@ -251,7 +255,9 @@ const CurriculumCourse = sequelize.define('CurriculumCourse', {
   prerequisite_codes: { type: DataTypes.STRING(255) },
   faculty_id: { type: DataTypes.STRING(50), defaultValue: 'CNTT' },
   major_id: { type: DataTypes.STRING(50), defaultValue: '7480103' },
-  status: { type: DataTypes.STRING(20), defaultValue: 'ACTIVE' }
+  status: { type: DataTypes.STRING(20), defaultValue: 'ACTIVE' },
+  is_deleted: { type: DataTypes.BOOLEAN, defaultValue: false },
+  deleted_at: { type: DataTypes.DATE, allowNull: true }
 }, { tableName: 'curriculum_courses', underscored: true, timestamps: true });
 
 // 19. Academic Lecturer Model (Hồ sơ giảng viên & chuyên môn)
@@ -274,7 +280,9 @@ const AcademicLecturer = sequelize.define('AcademicLecturer', {
   assigned_courses: { type: DataTypes.JSON },
   research_interests: { type: DataTypes.TEXT },
   status: { type: DataTypes.STRING(50), defaultValue: 'Đang công tác' },
-  active_courses_count: { type: DataTypes.INTEGER, defaultValue: 1 }
+  active_courses_count: { type: DataTypes.INTEGER, defaultValue: 1 },
+  is_deleted: { type: DataTypes.BOOLEAN, defaultValue: false },
+  deleted_at: { type: DataTypes.DATE, allowNull: true }
 }, { tableName: 'academic_lecturers', underscored: true, timestamps: true });
 
 // 20. Academic Student Model (Hồ sơ sinh viên, lớp, ngành & GPA)
@@ -299,7 +307,9 @@ const AcademicStudent = sequelize.define('AcademicStudent', {
   warning_level: { type: DataTypes.INTEGER, defaultValue: 0 },
   status: { type: DataTypes.STRING(50), defaultValue: 'ACTIVE' },
   training_system: { type: DataTypes.STRING(100), defaultValue: 'Đại học Chính quy (Tín chỉ TT 08/2021)' },
-  advisor: { type: DataTypes.STRING(150), defaultValue: 'TS. Hoàng Đức Em' }
+  advisor: { type: DataTypes.STRING(150), defaultValue: 'TS. Hoàng Đức Em' },
+  is_deleted: { type: DataTypes.BOOLEAN, defaultValue: false },
+  deleted_at: { type: DataTypes.DATE, allowNull: true }
 }, { tableName: 'academic_students', underscored: true, timestamps: true });
 
 // 21. System Audit Log Model (Nhật ký thao tác hệ thống)

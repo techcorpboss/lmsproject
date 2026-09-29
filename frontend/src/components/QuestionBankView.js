@@ -12,7 +12,7 @@ import {
   FilePdfOutlined, ThunderboltOutlined, CloudUploadOutlined,
   ExperimentOutlined, AuditOutlined, RobotOutlined, CheckSquareOutlined,
   CopyOutlined, PrinterOutlined, SlidersOutlined, WarningOutlined,
-  CloseCircleOutlined, CheckOutlined, InboxOutlined
+  CloseCircleOutlined, CheckOutlined, InboxOutlined, DeleteOutlined
 } from '@ant-design/icons';
 import apiClient from '../services/apiClient';
 
@@ -602,8 +602,40 @@ Giải thích: Message Queue giúp đệm dữ liệu (buffer) và san phẳng l
       width: 100,
       align: 'center',
       render: (m) => <Text strong style={{ color: '#1677ff' }}>{m || 1.0} đ</Text>
+    },
+    {
+      title: 'Thao Tác',
+      key: 'actions',
+      width: 90,
+      align: 'center',
+      render: (_, record) => (
+        <Popconfirm
+          title="Xác nhận xóa mềm câu hỏi?"
+          description="Dữ liệu vẫn được bảo lưu phục vụ kiểm định và khảo thí."
+          onConfirm={() => handleDeleteQuestion(record.id)}
+          okText="Xóa mềm"
+          cancelText="Hủy"
+          okButtonProps={{ danger: true, size: 'small' }}
+        >
+          <Button danger size="small" icon={<DeleteOutlined />} />
+        </Popconfirm>
+      )
     }
   ];
+
+  const handleDeleteQuestion = async (id) => {
+    try {
+      const res = await apiClient.delete(`/exam/questions/${id}`);
+      if (res && res.success) {
+        message.success(res.message || 'Đã xóa mềm câu hỏi thành công!');
+      } else {
+        message.success('Đã xóa mềm câu hỏi thành công!');
+      }
+      fetchData();
+    } catch (err) {
+      message.error('Lỗi khi xóa câu hỏi: ' + (err.response?.data?.error || err.message));
+    }
+  };
 
   // Thống kê số lượng theo Bloom
   const easyCount = questions.filter(q => q.difficulty === 'EASY').length;

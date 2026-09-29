@@ -384,17 +384,17 @@ export default function StudentDirectoryView() {
               ref={fileInputRef}
               onChange={handleFileImport}
               style={{ display: 'none' }}
-              accept=".csv,.txt"
+              accept=".xlsx,.xls,.csv,.txt"
             />
             <Button
               icon={<UploadOutlined />}
               onClick={handleTriggerImport}
               style={{ borderColor: '#10b981', color: '#10b981' }}
             >
-              Nhập Excel
+              Nhập Excel (.xlsx)
             </Button>
             <Button icon={<DownloadOutlined />} onClick={handleExportExcel}>
-              Xuất Excel (BOM)
+              Xuất File Excel (.xlsx)
             </Button>
             <Button
               icon={<FileWordOutlined />}

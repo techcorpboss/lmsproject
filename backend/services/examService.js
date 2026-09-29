@@ -118,10 +118,10 @@ class ExamService {
     }
   }
 
-  // 2. Lấy danh sách câu hỏi trong ngân hàng
+  // 2. Lấy danh sách câu hỏi trong ngân hàng (Lọc bỏ câu hỏi xóa mềm)
   async getQuestions(categoryId, difficulty) {
     try {
-      const where = {};
+      const where = { is_deleted: false };
       if (categoryId) where.category_id = categoryId;
       if (difficulty && difficulty !== 'ALL') where.difficulty = difficulty;
 

@@ -986,7 +986,7 @@ export default function ExamAdministrationView({ currentUser }) {
                         icon={<DownloadOutlined />}
                         onClick={handleExportCandidatesExcel}
                       >
-                        Xuất Excel (BOM)
+                        Xuất File Excel (.xlsx)
                       </Button>
 
                       <Button

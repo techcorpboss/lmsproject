@@ -663,19 +663,19 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
                   ref={fileInputRef}
                   onChange={handleFileChange}
                   style={{ display: 'none' }}
-                  accept=".csv,.txt"
+                  accept=".xlsx,.xls,.csv,.txt"
                 />
                 <Button
                   icon={<UploadOutlined />}
                   onClick={handleImportExcelGrades}
                   style={{ borderColor: '#10b981', color: '#10b981' }}
                 >
-                  Nhập Điểm Excel
+                  Nhập Điểm Excel (.xlsx)
                 </Button>
               </>
             )}
             <Button type="primary" icon={<DownloadOutlined />} onClick={handleExportExcel}>
-              Xuất Excel (BOM)
+              Xuất File Excel (.xlsx)
             </Button>
             <Button
               icon={<FileWordOutlined />}

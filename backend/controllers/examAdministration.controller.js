@@ -170,6 +170,7 @@ exports.getExamSchedules = async (req, res) => {
     await ExamCandidateAuthorization.sync();
 
     let schedules = await AcademicExamSchedule.findAll({
+      where: { is_deleted: false },
       order: [['exam_date', 'DESC'], ['start_time', 'ASC']],
       include: [
         {
@@ -527,13 +528,16 @@ exports.updateExamSchedule = async (req, res) => {
   }
 };
 
-// 4. XÓA CA THI
+// 4. XÓA CA THI (CHÍNH SÁCH SOFT DELETE PHỤC VỤ HẬU KIỂM KHẢO THÍ)
 exports.deleteExamSchedule = async (req, res) => {
   try {
     const { id } = req.params;
-    await ExamCandidateAuthorization.destroy({ where: { schedule_id: id } });
-    await AcademicExamSchedule.destroy({ where: { id } });
-    return res.json({ success: true, message: 'Đã xóa ca thi và danh sách thí sinh liên quan.' });
+    await AcademicExamSchedule.update({
+      is_deleted: true,
+      deleted_at: new Date(),
+      status: 'CANCELLED'
+    }, { where: { id } });
+    return res.json({ success: true, message: 'Đã xóa mềm ca thi (bảo lưu vết CSDL phục vụ thanh tra, kiểm định chất lượng)!' });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Lỗi xóa ca thi: ' + err.message });
   }

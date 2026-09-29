@@ -264,12 +264,14 @@ class SchemaIntegrityService {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
       `).catch(() => {});
 
-      // TỰ ĐỘNG BỔ SUNG CỘT CÒN THIẾU CHO BẢNG CŨ
+      // TỰ ĐỘNG BỔ SUNG CỘT CÒN THIẾU CHO BẢNG CŨ (BAO GỒM SOFT DELETE POLICY)
       await this.ensureTableColumns('qbank_questions', [
         { name: 'status', type: "VARCHAR(50) DEFAULT 'APPROVED'" },
         { name: 'difficulty', type: "VARCHAR(50) DEFAULT 'MEDIUM'" },
         { name: 'default_mark', type: "DECIMAL(4,2) DEFAULT 1.00" },
-        { name: 'question_type', type: "VARCHAR(50) DEFAULT 'SINGLE_CHOICE'" }
+        { name: 'question_type', type: "VARCHAR(50) DEFAULT 'SINGLE_CHOICE'" },
+        { name: 'is_deleted', type: 'TINYINT(1) DEFAULT 0' },
+        { name: 'deleted_at', type: 'DATETIME NULL' }
       ]);
 
       await this.ensureTableColumns('academic_exam_schedules', [
@@ -277,7 +279,24 @@ class SchemaIntegrityService {
         { name: 'faculty_name', type: 'VARCHAR(150) NULL' },
         { name: 'major_id', type: 'VARCHAR(50) NULL' },
         { name: 'major_name', type: 'VARCHAR(150) NULL' },
-        { name: 'notes', type: 'TEXT NULL' }
+        { name: 'notes', type: 'TEXT NULL' },
+        { name: 'is_deleted', type: 'TINYINT(1) DEFAULT 0' },
+        { name: 'deleted_at', type: 'DATETIME NULL' }
+      ]);
+
+      await this.ensureTableColumns('academic_students', [
+        { name: 'is_deleted', type: 'TINYINT(1) DEFAULT 0' },
+        { name: 'deleted_at', type: 'DATETIME NULL' }
+      ]);
+
+      await this.ensureTableColumns('curriculum_courses', [
+        { name: 'is_deleted', type: 'TINYINT(1) DEFAULT 0' },
+        { name: 'deleted_at', type: 'DATETIME NULL' }
+      ]);
+
+      await this.ensureTableColumns('academic_lecturers', [
+        { name: 'is_deleted', type: 'TINYINT(1) DEFAULT 0' },
+        { name: 'deleted_at', type: 'DATETIME NULL' }
       ]);
 
       // NẠP DỮ LIỆU KHỞI TẠO NẾU CSDL ĐANG TRỐNG
