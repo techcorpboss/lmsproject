@@ -229,28 +229,19 @@ async function startServer() {
     }
   }
 
-  // 1. Tự động đồng bộ toàn bộ bảng CSDL khi khởi động máy chủ
+  // 1. Tự động đồng bộ và bảo đảm tính toàn vẹn 100% của bảng & cột CSDL
   try {
-    await sequelize.sync({ alter: true });
-    console.log('[MySQL] All models & tables synchronized successfully with { alter: true }.');
-  } catch (syncErr) {
-    console.warn('[MySQL Warning] Model synchronization warning:', syncErr.message);
+    const schemaIntegrityService = require('./services/schemaIntegrityService');
+    await schemaIntegrityService.ensureAllTablesAndColumns();
+  } catch (schemaErr) {
+    console.warn('[SchemaIntegrity Error]:', schemaErr.message);
   }
 
-  // Đảm bảo các cột mới của academic_exam_schedules luôn tồn tại
   try {
-    const [cols] = await sequelize.query(`
-      SELECT COLUMN_NAME 
-      FROM INFORMATION_SCHEMA.COLUMNS 
-      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'academic_exam_schedules'
-    `);
-    const existing = (cols || []).map(c => (c.COLUMN_NAME || c.column_name || '').toLowerCase());
-    if (!existing.includes('faculty_id')) await sequelize.query('ALTER TABLE academic_exam_schedules ADD COLUMN faculty_id VARCHAR(50) NULL').catch(() => {});
-    if (!existing.includes('faculty_name')) await sequelize.query('ALTER TABLE academic_exam_schedules ADD COLUMN faculty_name VARCHAR(150) NULL').catch(() => {});
-    if (!existing.includes('major_id')) await sequelize.query('ALTER TABLE academic_exam_schedules ADD COLUMN major_id VARCHAR(50) NULL').catch(() => {});
-    if (!existing.includes('major_name')) await sequelize.query('ALTER TABLE academic_exam_schedules ADD COLUMN major_name VARCHAR(150) NULL').catch(() => {});
-  } catch (colErr) {
-    console.warn('[MySQL Column Check Warning]:', colErr.message);
+    await sequelize.sync({ alter: true });
+    console.log('[MySQL] Models & tables synchronized.');
+  } catch (syncErr) {
+    console.warn('[MySQL Warning] Model synchronization warning:', syncErr.message);
   }
 
   // 2. Tự động khởi tạo dữ liệu mẫu Ca thi & QBank nếu bảng còn trống

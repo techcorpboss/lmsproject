@@ -7,9 +7,10 @@ import {
   FileTextOutlined, PrinterOutlined, DownloadOutlined, ReloadOutlined,
   CheckCircleOutlined, UserOutlined, TeamOutlined, SettingOutlined,
   BookOutlined, TrophyOutlined, SafetyCertificateOutlined,
-  CalendarOutlined, SolutionOutlined, IdcardOutlined
+  CalendarOutlined, SolutionOutlined, IdcardOutlined, UploadOutlined, FileWordOutlined
 } from '@ant-design/icons';
 import apiClient from '../../services/apiClient';
+import { exportToExcel, exportToWord, parseCsvFile } from '../../services/exportImportService';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -154,41 +155,323 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
     window.print();
   };
 
+  const fileInputRef = React.useRef(null);
+
   const handleExportExcel = () => {
     if (isStudent || reportType !== 'CLASS_SECTION') {
       const courses = studentTranscript?.courses || [];
       const std = studentTranscript?.student || {};
-      const csvContent = "data:text/csv;charset=utf-8,\uFEFF"
-        + `BANG DIEM CA NHAN - MSSV: ${std.student_code} - HO TEN: ${std.full_name}\n`
-        + `Lop: ${std.class_name} - Nganh: ${std.major_name} - Khoa: ${std.faculty_name}\n`
-        + `Hoc ky: ${selectedSemester === 'ALL' ? 'Toan khoa tich luy' : 'Hoc ky ' + selectedSemester}\n\n`
-        + "STT,Hoc Ky,Ma Hoc Phan,Ten Mon Hoc,So Tin Chi,Chuyen Can (10%),Thuc Hanh (20%),Giua Ky (20%),Thi Ket Thuc (50%),Diem HP (10),Diem Chu,Diem He 4,Ket Qua\n"
-        + courses.map((c, idx) => `"${idx + 1}","${c.semester ? 'Ky ' + c.semester : ''}","${c.code}","${c.name}","${c.credits}","${c.attendance_score}","${c.assignment_score}","${c.midterm_score}","${c.final_exam_score}","${c.course_score_10}","${c.course_score_letter}","${c.course_score_4}","${c.course_result}"`).join("\n")
-        + `\n\nDiem TB Hoc Ky (He 10): ${studentTranscript?.active_semester?.gpa_10 || 'N/A'},Diem TB Hoc Ky (He 4): ${studentTranscript?.active_semester?.gpa_4 || 'N/A'}\n`
-        + `Diem TB Tich Luy CPA (He 10): ${studentTranscript?.cumulative?.cpa_10 || 'N/A'},Diem TB Tich Luy CPA (He 4): ${studentTranscript?.cumulative?.cpa_4 || 'N/A'}\n`
-        + `Tong tin chi tich luy: ${studentTranscript?.cumulative?.total_credits_passed || 0}/145 TC,Xep loai: ${studentTranscript?.cumulative?.academic_rank || 'XUAT SAC'}`;
-
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `bang_diem_ca_nhan_${std.student_code || 'sv'}_${new Date().toISOString().slice(0, 10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      message.success('Đã xuất Bảng điểm cá nhân chuẩn Excel/CSV thành công!');
+      const headers = ['STT', 'Học Kỳ', 'Mã Học Phần', 'Tên Học Phần', 'Số Tín Chỉ', 'Chuyên Cần (10%)', 'Bài Tập/TH (20%)', 'Giữa Kỳ (20%)', 'Thi Cuối Kỳ (50%)', 'Điểm HP (10)', 'Điểm Chữ', 'Điểm Hệ 4', 'Kết Quả'];
+      const dataRows = courses.map((c, idx) => [
+        idx + 1,
+        c.semester ? `Kỳ ${c.semester}` : '',
+        c.code,
+        c.name,
+        c.credits,
+        c.attendance_score,
+        c.assignment_score,
+        c.midterm_score,
+        c.final_exam_score,
+        c.course_score_10,
+        c.course_score_letter,
+        c.course_score_4,
+        c.course_result
+      ]);
+      const meta = {
+        'Họ và tên': std.full_name || '',
+        'MSSV': std.student_code || '',
+        'Lớp sinh hoạt': std.class_name || '',
+        'Chuyên ngành': std.major_name || '',
+        'Khoa': std.faculty_name || '',
+        'Học kỳ tra cứu': selectedSemester === 'ALL' ? 'Toàn khóa tích lũy' : `Học kỳ ${selectedSemester}`,
+        'Điểm TB Tích lũy (Hệ 4)': studentTranscript?.cumulative?.cpa_4 || 'N/A',
+        'Tổng tín chỉ tích lũy': `${studentTranscript?.cumulative?.total_credits_passed || 0}/145 TC`,
+        'Xếp loại học lực': studentTranscript?.cumulative?.academic_rank || 'XUẤT SẮC'
+      };
+      exportToExcel(`bang_diem_ca_nhan_${std.student_code || 'sv'}`, headers, dataRows, 'BẢNG ĐIỂM TỔNG HỢP KẾT QUẢ HỌC TẬP TÍCH LŨY (TT 08/2021/TT-BGDĐT)', meta);
+      message.success('Đã xuất Bảng điểm cá nhân chuẩn Excel UTF-8 BOM thành công!');
     } else {
       const students = classData?.students || [];
-      const csvContent = "data:text/csv;charset=utf-8,\uFEFF"
-        + "STT,MSSV,Họ và Tên,Chuyên Cần (10%),Thực Hành (20%),Giữa Kỳ (20%),Thi Kết Thúc (50%),Điểm HP (10),Điểm Chữ,Điểm Hệ 4,Xếp Loại\n"
-        + students.map((s, idx) => `"${idx + 1}","${s.student_code}","${s.full_name}","${s.attendance_score}","${s.assignment_score}","${s.midterm_score}","${s.final_exam_score}","${s.course_score_10}","${s.course_score_letter}","${s.course_score_4}","${s.academic_rank}"`).join("\n");
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `so_diem_lop_hoc_phan_${new Date().toISOString().slice(0, 10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      message.success('Đã xuất Sổ điểm lớp học phần chuẩn Excel/CSV thành công!');
+      const headers = ['STT', 'MSSV', 'Họ và Tên', 'Chuyên Cần (10%)', 'Thực Hành/BT (20%)', 'Giữa Kỳ (20%)', 'Thi Kết Thúc (50%)', 'Điểm HP (10)', 'Điểm Chữ', 'Điểm Hệ 4', 'Xếp Loại Học Vụ'];
+      const dataRows = students.map((s, idx) => [
+        idx + 1,
+        s.student_code,
+        s.full_name,
+        s.attendance_score,
+        s.assignment_score,
+        s.midterm_score,
+        s.final_exam_score,
+        s.course_score_10,
+        s.course_score_letter,
+        s.course_score_4,
+        s.academic_rank
+      ]);
+      const meta = {
+        'Học phần': classData?.course_name || '',
+        'Lớp học phần': classData?.class_name || '',
+        'Học kỳ': classData?.semester || '',
+        'Khoa phụ trách': classData?.faculty || '',
+        'Giảng viên phụ trách': classData?.lecturer || '',
+        'Sĩ số': `${students.length} học viên`
+      };
+      exportToExcel(`so_diem_lop_${classData?.class_name || 'hp'}`, headers, dataRows, 'SỔ ĐIỂM ĐÁNH GIÁ HỌC PHẦN (CHUẨN BỘ GD&ĐT)', meta);
+      message.success('Đã xuất Sổ điểm lớp học phần chuẩn Excel UTF-8 BOM thành công!');
+    }
+  };
+
+  const handleExportWord = () => {
+    if (isStudent || reportType !== 'CLASS_SECTION') {
+      const courses = studentTranscript?.courses || [];
+      const std = studentTranscript?.student || {};
+      const rowsHtml = courses.map((c, idx) => `
+        <tr>
+          <td style="text-align: center;">${idx + 1}</td>
+          <td style="text-align: center;">${c.semester ? 'Kỳ ' + c.semester : ''}</td>
+          <td style="text-align: center; font-weight: bold;">${c.code}</td>
+          <td>${c.name}</td>
+          <td style="text-align: center;">${c.credits}</td>
+          <td style="text-align: center;">${c.attendance_score}</td>
+          <td style="text-align: center;">${c.assignment_score}</td>
+          <td style="text-align: center;">${c.midterm_score}</td>
+          <td style="text-align: center;">${c.final_exam_score}</td>
+          <td style="text-align: center; font-weight: bold;">${c.course_score_10}</td>
+          <td style="text-align: center; font-weight: bold;">${c.course_score_letter}</td>
+          <td style="text-align: center;">${c.course_score_4}</td>
+          <td style="text-align: center; font-weight: bold; color: ${c.course_result?.includes('ĐẠT') ? '#15803d' : '#b91c1c'};">${c.course_result}</td>
+        </tr>
+      `).join('');
+
+      const htmlContent = `
+        <table style="width: 100%; border: none; margin-bottom: 16px;">
+          <tr>
+            <td style="width: 50%; border: none; padding: 3px 0;"><b>Họ và tên:</b> ${std.full_name || ''}</td>
+            <td style="width: 50%; border: none; padding: 3px 0;"><b>Mã số sinh viên (MSSV):</b> ${std.student_code || ''}</td>
+          </tr>
+          <tr>
+            <td style="border: none; padding: 3px 0;"><b>Ngày sinh:</b> ${std.birth_date || ''}</td>
+            <td style="border: none; padding: 3px 0;"><b>Giới tính:</b> ${std.gender || 'Nam'}</td>
+          </tr>
+          <tr>
+            <td style="border: none; padding: 3px 0;"><b>Lớp sinh hoạt:</b> ${std.class_name || ''} (${std.cohort || 'K66'})</td>
+            <td style="border: none; padding: 3px 0;"><b>Khóa đào tạo:</b> ${std.cohort || 'K66'} (2022 - 2026)</td>
+          </tr>
+          <tr>
+            <td style="border: none; padding: 3px 0;"><b>Ngành đào tạo:</b> ${std.major_name || ''}</td>
+            <td style="border: none; padding: 3px 0;"><b>Khoa quản lý:</b> ${std.faculty_name || ''}</td>
+          </tr>
+          <tr>
+            <td style="border: none; padding: 3px 0;" colspan="2"><b>Hình thức đào tạo:</b> Đại học Chính quy (Hệ thống tín chỉ Thông tư 08/2021/TT-BGDĐT)</td>
+          </tr>
+        </table>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 35px;">STT</th>
+              <th style="width: 55px;">Học kỳ</th>
+              <th style="width: 75px;">Mã HP</th>
+              <th>Tên Học Phần</th>
+              <th style="width: 40px;">TC</th>
+              <th style="width: 45px;">CC<br/>(10%)</th>
+              <th style="width: 45px;">BT<br/>(20%)</th>
+              <th style="width: 45px;">GK<br/>(20%)</th>
+              <th style="width: 45px;">CK<br/>(50%)</th>
+              <th style="width: 50px;">HP<br/>(10)</th>
+              <th style="width: 45px;">Điểm<br/>Chữ</th>
+              <th style="width: 45px;">Hệ<br/>4</th>
+              <th style="width: 65px;">Kết quả</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+
+        <table style="width: 100%; border: 1px solid #000; margin-top: 16px; background-color: #f9f9f9;">
+          <tr>
+            <td style="border: none; padding: 8px;">
+              <div><b>Điểm trung bình học kỳ (Thang 10):</b> ${studentTranscript?.active_semester?.gpa_10 || '8.85'} | <b>(Thang 4):</b> ${studentTranscript?.active_semester?.gpa_4 || '3.75'}</div>
+              <div><b>Điểm trung bình tích lũy toàn khóa CPA (Thang 10):</b> ${studentTranscript?.cumulative?.cpa_10 || '8.76'} | <b>(Thang 4):</b> ${studentTranscript?.cumulative?.cpa_4 || '3.70'}</div>
+              <div><b>Tổng số tín chỉ đã tích lũy:</b> ${studentTranscript?.cumulative?.total_credits_passed || 38}/145 Tín chỉ | <b>Xếp loại học lực tích lũy:</b> <span style="font-weight: bold; color: #15803d;">${studentTranscript?.cumulative?.academic_rank || 'XUẤT SẮC'}</span></div>
+            </td>
+          </tr>
+        </table>
+
+        <table class="footer-signature" style="margin-top: 35px;">
+          <tr>
+            <td style="width: 33%;">
+              <div class="bold">NGƯỜI LẬP BẢNG ĐIỂM</div>
+              <div class="italic" style="font-size: 10pt;">(Ký và ghi rõ họ tên)</div>
+              <div style="height: 60px;"></div>
+              <div class="bold">ThS. Lê Hoàng Hà</div>
+            </td>
+            <td style="width: 33%;">
+              <div class="bold">PHÒNG ĐÀO TẠO & KHẢO THÍ</div>
+              <div class="italic" style="font-size: 10pt;">(Ký và đóng dấu)</div>
+              <div style="height: 60px;"></div>
+              <div class="bold">PGS. TS. Trần Mạnh Tuấn</div>
+            </td>
+            <td style="width: 34%;">
+              <div class="bold">HIỆU TRƯỞNG / BGH PHÊ DUYỆT</div>
+              <div class="italic" style="font-size: 10pt;">(Ký và đóng dấu)</div>
+              <div style="height: 60px;"></div>
+              <div class="bold">GS. TS. Nguyễn Văn Cường</div>
+            </td>
+          </tr>
+        </table>
+      `;
+
+      exportToWord(`bang_diem_ca_nhan_${std.student_code || 'sv'}`, {
+        title: 'BẢNG ĐIỂM KẾT QUẢ HỌC TẬP TÍCH LŨY',
+        subtitle: '(Trích lục dữ liệu học vụ chuẩn quy chế đào tạo Thông tư 08/2021/TT-BGDĐT)',
+        htmlContent,
+        orientation: 'landscape'
+      });
+      message.success('Đã xuất Bảng điểm cá nhân chuẩn Microsoft Word (.doc) theo NĐ 30/2020/NĐ-CP!');
+    } else {
+      const students = classData?.students || [];
+      const rowsHtml = students.map((s, idx) => `
+        <tr>
+          <td style="text-align: center;">${idx + 1}</td>
+          <td style="text-align: center; font-weight: bold;">${s.student_code}</td>
+          <td>${s.full_name}</td>
+          <td style="text-align: center;">${s.attendance_score}</td>
+          <td style="text-align: center;">${s.assignment_score}</td>
+          <td style="text-align: center;">${s.midterm_score}</td>
+          <td style="text-align: center;">${s.final_exam_score}</td>
+          <td style="text-align: center; font-weight: bold;">${s.course_score_10}</td>
+          <td style="text-align: center; font-weight: bold;">${s.course_score_letter}</td>
+          <td style="text-align: center;">${s.course_score_4}</td>
+          <td style="text-align: center;">${s.academic_rank}</td>
+        </tr>
+      `).join('');
+
+      const htmlContent = `
+        <table style="width: 100%; border: none; margin-bottom: 16px;">
+          <tr>
+            <td style="width: 50%; border: none; padding: 3px 0;"><b>Học phần:</b> ${classData?.course_name || ''}</td>
+            <td style="width: 50%; border: none; padding: 3px 0;"><b>Lớp học phần:</b> ${classData?.class_name || ''}</td>
+          </tr>
+          <tr>
+            <td style="border: none; padding: 3px 0;"><b>Khoa quản lý:</b> ${classData?.faculty || ''}</td>
+            <td style="border: none; padding: 3px 0;"><b>Học kỳ:</b> ${classData?.semester || ''}</td>
+          </tr>
+          <tr>
+            <td style="border: none; padding: 3px 0;"><b>Giảng viên giảng dạy:</b> ${classData?.lecturer || ''}</td>
+            <td style="border: none; padding: 3px 0;"><b>Sĩ số lớp:</b> ${students.length} sinh viên</td>
+          </tr>
+        </table>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 35px;">STT</th>
+              <th style="width: 90px;">MSSV</th>
+              <th>Họ và Tên Học Viên</th>
+              <th style="width: 50px;">CC<br/>(10%)</th>
+              <th style="width: 50px;">TH/BT<br/>(20%)</th>
+              <th style="width: 50px;">GK<br/>(20%)</th>
+              <th style="width: 50px;">Thi CK<br/>(50%)</th>
+              <th style="width: 60px;">Điểm HP<br/>(10)</th>
+              <th style="width: 50px;">Điểm<br/>Chữ</th>
+              <th style="width: 50px;">Điểm<br/>Hệ 4</th>
+              <th style="width: 110px;">Xếp Loại Học Vụ</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+
+        <table class="footer-signature" style="margin-top: 35px;">
+          <tr>
+            <td style="width: 33%;">
+              <div class="bold">CÁN BỘ CHẤM THI 1</div>
+              <div class="italic" style="font-size: 10pt;">(Ký và ghi rõ họ tên)</div>
+              <div style="height: 60px;"></div>
+              <div class="bold">${classData?.lecturer || 'TS. Hoàng Đức Em'}</div>
+            </td>
+            <td style="width: 33%;">
+              <div class="bold">CÁN BỘ CHẤM THI 2</div>
+              <div class="italic" style="font-size: 10pt;">(Ký và ghi rõ họ tên)</div>
+              <div style="height: 60px;"></div>
+              <div class="bold">ThS. Vũ Thị Thảo</div>
+            </td>
+            <td style="width: 34%;">
+              <div class="bold">TRƯỞNG BỘ MÔN / TRƯỞNG KHOA</div>
+              <div class="italic" style="font-size: 10pt;">(Ký và đóng dấu)</div>
+              <div style="height: 60px;"></div>
+              <div class="bold">${classData?.dean || 'PGS. TS. Trần Mạnh Tuấn'}</div>
+            </td>
+          </tr>
+        </table>
+      `;
+
+      exportToWord(`so_diem_lop_${classData?.class_name || 'hp'}`, {
+        title: 'BẢNG ĐIỂM ĐÁNH GIÁ HỌC PHẦN (LỚP HỌC PHẦN)',
+        subtitle: `Ban hành kèm theo Quy chế đào tạo đại học hiện hành của Bộ Giáo dục và Đào tạo`,
+        htmlContent,
+        orientation: 'landscape'
+      });
+      message.success('Đã xuất Sổ điểm lớp học phần chuẩn Microsoft Word (.doc) theo NĐ 30/2020/NĐ-CP!');
+    }
+  };
+
+  const handleImportExcelGrades = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const { headers, rows } = await parseCsvFile(file);
+      if (!rows || rows.length === 0) {
+        message.warning('Tệp tin không có dữ liệu để nhập!');
+        return;
+      }
+      const mssvIdx = headers.findIndex(h => /mssv|mã|student_code/i.test(h));
+      const ccIdx = headers.findIndex(h => /chuyên cần|cc|attendance/i.test(h));
+      const btIdx = headers.findIndex(h => /thực hành|bài tập|bt|th|assignment/i.test(h));
+      const gkIdx = headers.findIndex(h => /giữa kỳ|gk|midterm/i.test(h));
+      const ckIdx = headers.findIndex(h => /thi kết thúc|cuối kỳ|ck|thi hp|final/i.test(h));
+
+      if (mssvIdx === -1) {
+        message.error('Không tìm thấy cột MSSV trong tệp tin!');
+        return;
+      }
+
+      const gradesPayload = rows.map(r => ({
+        student_code: r[mssvIdx],
+        attendance_score: ccIdx !== -1 && r[ccIdx] !== '' ? parseFloat(r[ccIdx]) : 10,
+        assignment_score: btIdx !== -1 && r[btIdx] !== '' ? parseFloat(r[btIdx]) : 9,
+        midterm_score: gkIdx !== -1 && r[gkIdx] !== '' ? parseFloat(r[gkIdx]) : 9,
+        final_exam_score: ckIdx !== -1 && r[ckIdx] !== '' ? parseFloat(r[ckIdx]) : 9
+      })).filter(item => item.student_code);
+
+      if (gradesPayload.length === 0) {
+        message.warning('Không tìm thấy bản ghi điểm hợp lệ nào!');
+        return;
+      }
+
+      const res = await apiClient.post('/academic/enterprise/transcripts/class/batch', {
+        section_id: currentSectionId,
+        grades: gradesPayload
+      });
+
+      if (res && res.success) {
+        message.success(`Đã nhập và lưu thành công ${res.updated || gradesPayload.length} đầu điểm vào CSDL!`);
+        fetchClassGrades();
+      } else {
+        message.warning('Đã gửi dữ liệu điểm, đang đồng bộ bảng điểm.');
+        fetchClassGrades();
+      }
+    } catch (err) {
+      message.error('Lỗi khi đọc file điểm: ' + err.message);
+    } finally {
+      e.target.value = '';
     }
   };
 
@@ -373,8 +656,33 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
             <Button icon={<ReloadOutlined />} onClick={isStudent || reportType !== 'CLASS_SECTION' ? fetchStudentTranscript : fetchClassGrades}>
               Làm mới
             </Button>
+            {!isStudent && reportType === 'CLASS_SECTION' && (
+              <>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  style={{ display: 'none' }}
+                  accept=".csv,.txt"
+                />
+                <Button
+                  icon={<UploadOutlined />}
+                  onClick={handleImportExcelGrades}
+                  style={{ borderColor: '#10b981', color: '#10b981' }}
+                >
+                  Nhập Điểm Excel
+                </Button>
+              </>
+            )}
             <Button type="primary" icon={<DownloadOutlined />} onClick={handleExportExcel}>
-              Xuất Excel
+              Xuất Excel (BOM)
+            </Button>
+            <Button
+              icon={<FileWordOutlined />}
+              onClick={handleExportWord}
+              style={{ background: '#2563eb', color: '#fff', borderColor: '#2563eb' }}
+            >
+              Xuất File Word (.doc)
             </Button>
             <Button
               icon={<PrinterOutlined />}

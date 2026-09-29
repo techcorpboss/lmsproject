@@ -24,6 +24,8 @@ router.post('/backups/restore', controller.restoreBackup);
 // 5. Quản lý danh sách học viên
 router.get('/students', controller.getStudents);
 router.post('/students', controller.saveStudent);
+router.delete('/students/:id', controller.deleteStudent);
+router.post('/students/batch', controller.batchSaveStudents);
 
 // 6. Khung chương trình đào tạo độc lập
 router.get('/curriculum', controller.getCurriculum);

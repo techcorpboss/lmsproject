@@ -39,5 +39,6 @@ router.post('/appraisals/:id/sign', controller.signAppraisalMinutes);
 // 5. Bảng điểm chuẩn Bộ GD&ĐT (TT 08/2021)
 router.get('/transcripts/student/:studentId', controller.getStudentTranscript);
 router.get('/transcripts/class/:sectionId', controller.getClassTranscript);
+router.post('/transcripts/class/batch', controller.saveClassGradesBatch);
 
 module.exports = router;

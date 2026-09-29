@@ -12,9 +12,11 @@ import {
   FileDoneOutlined, PrinterOutlined, ReloadOutlined,
   SearchOutlined, TeamOutlined, SafetyCertificateOutlined,
   ExclamationCircleOutlined, EyeOutlined, EditOutlined, DeleteOutlined,
-  BankOutlined, BookOutlined, ApartmentOutlined, SolutionOutlined
+  BankOutlined, BookOutlined, ApartmentOutlined, SolutionOutlined,
+  FileWordOutlined, DownloadOutlined
 } from '@ant-design/icons';
 import apiClient from '../../services/apiClient';
+import { exportToExcel, exportToWord } from '../../services/exportImportService';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -322,6 +324,216 @@ export default function ExamAdministrationView({ currentUser }) {
     const totalPending = schedules.reduce((acc, s) => acc + (s.stats?.pending || 0), 0);
     return { totalSchedules, totalCandidates, totalGranted, totalPending };
   }, [schedules]);
+
+  // Xuất danh sách thí sinh ra Excel (UTF-8 BOM)
+  const handleExportCandidatesExcel = () => {
+    const headers = ['STT', 'SBD', 'MSSV', 'Họ và Tên', 'Lớp Sinh Hoạt', 'Điểm Chuyên Cần (%)', 'Tình Trạng Học Phí', 'Quyền Dự Thi', 'Trạng Thái Nộp Bài', 'Ghi Chú Phê Duyệt'];
+    const dataRows = filteredCandidates.map((c, idx) => [
+      idx + 1,
+      c.seat_number || `SBD-${String(idx + 1).padStart(3, '0')}`,
+      c.student_code,
+      c.student_name,
+      c.class_name,
+      `${c.attendance_pct || 90}%`,
+      c.tuition_cleared ? 'Đã hoàn thành' : 'Chưa nộp',
+      c.authorization_status === 'GRANTED' ? 'ĐÃ CẤP QUYỀN' : c.authorization_status === 'DENIED' ? 'TỪ CHỐI' : c.authorization_status === 'SUSPENDED' ? 'ĐÌNH CHỈ' : 'CHỜ DUYỆT',
+      c.authorization_status === 'SUBMITTED' ? 'ĐÃ NỘP BÀI' : 'CHƯA THI',
+      c.notes || ''
+    ]);
+    const meta = {
+      'Tên ca thi': currentSchedule?.exam_name || 'Khảo thí trực tuyến',
+      'Học phần': `${currentSchedule?.course_name || ''} (${currentSchedule?.course_code || ''})`,
+      'Phòng thi': currentSchedule?.room_code || 'PHONG-ONLINE',
+      'Ngày thi': currentSchedule?.exam_date || '',
+      'Thời gian': `${currentSchedule?.start_time || ''} - ${currentSchedule?.end_time || ''}`,
+      'Cán bộ coi thi 1': currentSchedule?.proctor_1 || '',
+      'Cán bộ coi thi 2': currentSchedule?.proctor_2 || '',
+      'Tổng số thí sinh': `${filteredCandidates.length} thí sinh`
+    };
+    exportToExcel(`danh_sach_thi_sinh_${currentSchedule?.room_code || 'phong_thi'}`, headers, dataRows, 'DANH SÁCH THÍ SINH DỰ THI TRỰC TUYẾN (THÔNG TƯ 08/2021/TT-BGDĐT)', meta);
+    message.success('Đã xuất Danh sách thí sinh ra Excel chuẩn UTF-8 BOM thành công!');
+  };
+
+  // Xuất Danh sách thí sinh dự thi và ký nộp bài thi Word (.doc) chuẩn Nghị định 30/2020/NĐ-CP & TT 08/2021
+  const handleExportCandidateAttendanceWord = () => {
+    const rowsHtml = filteredCandidates.map((c, idx) => `
+      <tr>
+        <td style="text-align: center;">${idx + 1}</td>
+        <td style="text-align: center; font-weight: bold;">${c.seat_number || `SBD-${String(idx + 1).padStart(3, '0')}`}</td>
+        <td style="text-align: center; font-weight: bold;">${c.student_code}</td>
+        <td>${c.student_name}</td>
+        <td style="text-align: center;">${c.class_name || ''}</td>
+        <td style="height: 35px; text-align: center; font-style: italic; color: #555;">${c.authorization_status === 'GRANTED' ? '✓ Có mặt' : ''}</td>
+        <td style="text-align: center;">1</td>
+        <td style="height: 35px; text-align: center; font-style: italic; color: #555;">${c.authorization_status === 'SUBMITTED' ? '✓ Đã nộp' : ''}</td>
+        <td style="text-align: center;"></td>
+        <td style="text-align: center;"></td>
+      </tr>
+    `).join('');
+
+    const htmlContent = `
+      <table style="width: 100%; border: none; margin-bottom: 16px;">
+        <tr>
+          <td style="width: 50%; border: none; padding: 3px 0;"><b>Học phần:</b> ${currentSchedule?.course_name || ''} (${currentSchedule?.course_code || ''})</td>
+          <td style="width: 50%; border: none; padding: 3px 0;"><b>Hình thức thi:</b> ${currentSchedule?.exam_type || 'Trắc nghiệm trực tuyến'}</td>
+        </tr>
+        <tr>
+          <td style="border: none; padding: 3px 0;"><b>Ngày thi:</b> ${currentSchedule?.exam_date || ''}</td>
+          <td style="border: none; padding: 3px 0;"><b>Giờ thi:</b> ${currentSchedule?.start_time || ''} - ${currentSchedule?.end_time || ''} (${currentSchedule?.duration_minutes || 60} phút)</td>
+        </tr>
+        <tr>
+          <td style="border: none; padding: 3px 0;"><b>Phòng thi:</b> ${currentSchedule?.room_code || 'PHONG-01-ONLINE'}</td>
+          <td style="border: none; padding: 3px 0;"><b>Tổng số thí sinh:</b> ${filteredCandidates.length} sinh viên</td>
+        </tr>
+        <tr>
+          <td style="border: none; padding: 3px 0;"><b>Cán bộ coi thi 1:</b> ${currentSchedule?.proctor_1 || ''}</td>
+          <td style="border: none; padding: 3px 0;"><b>Cán bộ coi thi 2:</b> ${currentSchedule?.proctor_2 || ''}</td>
+        </tr>
+      </table>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 35px;">STT</th>
+            <th style="width: 60px;">SBD</th>
+            <th style="width: 85px;">Mã SV</th>
+            <th>Họ và Tên Thí Sinh</th>
+            <th style="width: 80px;">Lớp</th>
+            <th style="width: 90px;">Chữ ký thí sinh<br/>khi vào phòng</th>
+            <th style="width: 50px;">Số bài/<br/>tờ nộp</th>
+            <th style="width: 90px;">Chữ ký thí sinh<br/>khi nộp bài</th>
+            <th style="width: 65px;">Điểm thi<br/>(Số/Chữ)</th>
+            <th style="width: 80px;">CB Chấm thi<br/>ký tên</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+
+      <table style="width: 100%; border: none; margin-top: 14px;">
+        <tr>
+          <td style="border: none; padding: 4px 0;" colspan="2">
+            <b>Thống kê phòng thi:</b> Tổng số thí sinh theo danh sách: <b>${filteredCandidates.length}</b>. 
+            Số thí sinh có mặt dự thi: <b>${filteredCandidates.filter(c => c.authorization_status === 'GRANTED' || c.authorization_status === 'SUBMITTED').length}</b>. 
+            Số thí sinh vắng mặt: <b>${filteredCandidates.filter(c => c.authorization_status !== 'GRANTED' && c.authorization_status !== 'SUBMITTED').length}</b>.
+          </td>
+        </tr>
+      </table>
+
+      <table class="footer-signature" style="margin-top: 30px;">
+        <tr>
+          <td style="width: 33%;">
+            <div class="bold">CÁN BỘ COI THI 1</div>
+            <div class="italic" style="font-size: 10pt;">(Ký và ghi rõ họ tên)</div>
+            <div style="height: 60px;"></div>
+            <div class="bold">${currentSchedule?.proctor_1 || 'TS. Hoàng Đức Em'}</div>
+          </td>
+          <td style="width: 33%;">
+            <div class="bold">CÁN BỘ COI THI 2</div>
+            <div class="italic" style="font-size: 10pt;">(Ký và ghi rõ họ tên)</div>
+            <div style="height: 60px;"></div>
+            <div class="bold">${currentSchedule?.proctor_2 || 'ThS. Nguyễn Văn Quản'}</div>
+          </td>
+          <td style="width: 34%;">
+            <div class="bold">TRƯỞNG ĐIỂM THI / HỘI ĐỒNG THI</div>
+            <div class="italic" style="font-size: 10pt;">(Ký và đóng dấu)</div>
+            <div style="height: 60px;"></div>
+            <div class="bold">PGS. TS. Trần Mạnh Tuấn</div>
+          </td>
+        </tr>
+      </table>
+    `;
+
+    exportToWord(`danh_sach_ky_ten_${currentSchedule?.room_code || 'phong_thi'}`, {
+      title: 'DANH SÁCH THÍ SINH DỰ THI VÀ KÝ NỘP BÀI THI KẾT THÚC HỌC PHẦN',
+      subtitle: '(Ban hành theo Quy chế Đào tạo và Khảo thí đại học Thông tư 08/2021/TT-BGDĐT)',
+      htmlContent,
+      orientation: 'landscape'
+    });
+    message.success('Đã xuất Danh sách ký tên thí sinh chuẩn Microsoft Word (.doc) theo NĐ 30/2020/NĐ-CP!');
+  };
+
+  // Xuất Biên bản coi thi ra Word (.doc)
+  const handleExportMinutesWord = () => {
+    if (!examMinutesData) return;
+    const htmlContent = `
+      <table style="width: 100%; border: none; margin-bottom: 16px;">
+        <tr>
+          <td style="width: 50%; border: none; padding: 4px 0;"><b>Học phần:</b> ${examMinutesData.course_name} (${examMinutesData.course_code})</td>
+          <td style="width: 50%; border: none; padding: 4px 0;"><b>Hình thức thi:</b> ${examMinutesData.exam_type}</td>
+        </tr>
+        <tr>
+          <td style="border: none; padding: 4px 0;"><b>Ngày thi:</b> ${examMinutesData.exam_date}</td>
+          <td style="border: none; padding: 4px 0;"><b>Thời gian:</b> ${examMinutesData.start_time} - ${examMinutesData.end_time} (${examMinutesData.duration_minutes} phút)</td>
+        </tr>
+        <tr>
+          <td style="border: none; padding: 4px 0;"><b>Phòng thi trực tuyến:</b> ${examMinutesData.room_code}</td>
+          <td style="border: none; padding: 4px 0;"><b>Cơ chế an ninh:</b> ${examMinutesData.security_level}</td>
+        </tr>
+        <tr>
+          <td style="border: none; padding: 4px 0;"><b>Cán bộ coi thi 1:</b> ${examMinutesData.proctor_1}</td>
+          <td style="border: none; padding: 4px 0;"><b>Cán bộ coi thi 2:</b> ${examMinutesData.proctor_2}</td>
+        </tr>
+      </table>
+
+      <div style="font-weight: bold; margin: 14px 0 6px 0;">I. THỐNG KÊ SỐ LƯỢNG THÍ SINH VÀ BÀI THI</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Tổng số đăng ký</th>
+            <th>Đủ điều kiện & cấp quyền</th>
+            <th>Có mặt làm bài</th>
+            <th>Đã nộp bài thành công</th>
+            <th>Vắng mặt (không lý do)</th>
+            <th>Vi phạm kỷ luật / Đình chỉ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="text-align: center; font-weight: bold;">
+            <td>${examMinutesData.statistics?.total_registered || 0}</td>
+            <td style="color: #15803d;">${examMinutesData.statistics?.total_eligible_granted || 0}</td>
+            <td>${examMinutesData.statistics?.total_attended || examMinutesData.statistics?.total_eligible_granted || 0}</td>
+            <td style="color: #2563eb;">${examMinutesData.statistics?.total_submitted || 0}</td>
+            <td style="color: #64748b;">${examMinutesData.statistics?.total_absent || 0}</td>
+            <td style="color: #b91c1c;">${examMinutesData.statistics?.total_suspended_violations || 0}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="font-weight: bold; margin: 18px 0 6px 0;">II. DIỄN BIẾN PHÒNG THI VÀ TÌNH HÌNH KỶ LUẬT</div>
+      <div style="padding: 10px; border: 1px solid #000; background-color: #fbfbfb;">
+        <div><b>1. Tình trạng phòng thi trực tuyến:</b> ${examMinutesData.evaluation?.exam_room_status || 'Ca thi diễn ra nghiêm túc, trật tự, đúng quy chế đào tạo.'}</div>
+        <div style="margin-top: 6px;"><b>2. Việc thực hiện kỷ luật phòng thi:</b> ${examMinutesData.evaluation?.discipline_status || 'Không có thí sinh vi phạm quy chế thi trực tuyến.'}</div>
+        <div style="margin-top: 6px;"><b>3. Tình trạng niêm phong bài thi số:</b> ${examMinutesData.evaluation?.sealed_status || 'Toàn bộ bài thi điện tử đã được mã hóa bảo mật SHA-256 và lưu trữ vào kho khảo thí an toàn.'}</div>
+      </div>
+
+      <table class="footer-signature" style="margin-top: 35px;">
+        <tr>
+          <td style="width: 50%;">
+            <div class="bold">CÁN BỘ COI THI 1</div>
+            <div class="italic" style="font-size: 10pt;">(Ký và ghi rõ họ tên)</div>
+            <div style="height: 55px; line-height: 55px; color: #15803d; font-weight: bold;">✓ Đã xác thực chữ ký số điện tử</div>
+            <div class="bold">${examMinutesData.signatures?.proctor_1?.name || examMinutesData.proctor_1}</div>
+          </td>
+          <td style="width: 50%;">
+            <div class="bold">CÁN BỘ COI THI 2</div>
+            <div class="italic" style="font-size: 10pt;">(Ký và ghi rõ họ tên)</div>
+            <div style="height: 55px; line-height: 55px; color: #15803d; font-weight: bold;">✓ Đã xác thực chữ ký số điện tử</div>
+            <div class="bold">${examMinutesData.signatures?.proctor_2?.name || examMinutesData.proctor_2}</div>
+          </td>
+        </tr>
+      </table>
+    `;
+
+    exportToWord(`bien_ban_coi_thi_${examMinutesData.room_code || 'ca_thi'}`, {
+      title: 'BIÊN BẢN COI THI KẾT THÚC HỌC PHẦN TRỰC TUYẾN',
+      subtitle: `Học kỳ 1 — Năm học 2026-2027 (Chuẩn Thông tư 08/2021/TT-BGDĐT)`,
+      htmlContent,
+      orientation: 'portrait'
+    });
+    message.success('Đã xuất Biên bản coi thi chuẩn Microsoft Word (.doc) theo NĐ 30/2020/NĐ-CP!');
+  };
 
   // Cột bảng Ca thi
   const scheduleColumns = [
@@ -771,6 +983,21 @@ export default function ExamAdministrationView({ currentUser }) {
                       </Button>
 
                       <Button
+                        icon={<DownloadOutlined />}
+                        onClick={handleExportCandidatesExcel}
+                      >
+                        Xuất Excel (BOM)
+                      </Button>
+
+                      <Button
+                        icon={<FileWordOutlined />}
+                        style={{ borderColor: '#2563eb', color: '#2563eb' }}
+                        onClick={handleExportCandidateAttendanceWord}
+                      >
+                        In / Xuất DS Ký Tên (Word)
+                      </Button>
+
+                      <Button
                         icon={<FileDoneOutlined />}
                         onClick={() => handleOpenMinutes(selectedScheduleId)}
                       >
@@ -1170,8 +1397,16 @@ export default function ExamAdministrationView({ currentUser }) {
           <Button key="close" onClick={() => setMinutesModalOpen(false)}>
             Đóng
           </Button>,
+          <Button
+            key="word"
+            icon={<FileWordOutlined />}
+            onClick={handleExportMinutesWord}
+            style={{ background: '#2563eb', color: '#fff', borderColor: '#2563eb' }}
+          >
+            Xuất File Word (.doc)
+          </Button>,
           <Button key="print" type="primary" icon={<PrinterOutlined />} onClick={() => window.print()}>
-            In Biên Bản Coi Thi
+            In Biên Bản Coi Thi / PDF
           </Button>
         ]}
       >

@@ -239,6 +239,100 @@ const ExamCandidateAuthorization = sequelize.define('ExamCandidateAuthorization'
   notes: { type: DataTypes.TEXT, allowNull: true }
 }, { tableName: 'exam_candidate_authorizations', underscored: true, timestamps: true });
 
+// 18. Curriculum Course Model (Khung chương trình đào tạo theo kỳ & tín chỉ)
+const CurriculumCourse = sequelize.define('CurriculumCourse', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  semester: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1 },
+  code: { type: DataTypes.STRING(50), allowNull: false },
+  name: { type: DataTypes.STRING(255), allowNull: false },
+  description: { type: DataTypes.TEXT },
+  credits: { type: DataTypes.INTEGER, defaultValue: 3 },
+  is_compulsory: { type: DataTypes.BOOLEAN, defaultValue: true },
+  prerequisite_codes: { type: DataTypes.STRING(255) },
+  faculty_id: { type: DataTypes.STRING(50), defaultValue: 'CNTT' },
+  major_id: { type: DataTypes.STRING(50), defaultValue: '7480103' },
+  status: { type: DataTypes.STRING(20), defaultValue: 'ACTIVE' }
+}, { tableName: 'curriculum_courses', underscored: true, timestamps: true });
+
+// 19. Academic Lecturer Model (Hồ sơ giảng viên & chuyên môn)
+const AcademicLecturer = sequelize.define('AcademicLecturer', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  code: { type: DataTypes.STRING(50), allowNull: false, unique: true },
+  username: { type: DataTypes.STRING(100), allowNull: false },
+  full_name: { type: DataTypes.STRING(150), allowNull: false },
+  gender: { type: DataTypes.STRING(20), defaultValue: 'Nam' },
+  birth_date: { type: DataTypes.STRING(50) },
+  title: { type: DataTypes.STRING(50), defaultValue: 'Tiến sĩ' },
+  academic_rank: { type: DataTypes.STRING(50), defaultValue: 'Không' },
+  faculty_id: { type: DataTypes.STRING(50), defaultValue: 'CNTT' },
+  faculty_name: { type: DataTypes.STRING(150), defaultValue: 'Khoa Công Nghệ Thông Tin' },
+  department: { type: DataTypes.STRING(150), defaultValue: 'Bộ môn Kỹ thuật Phần mềm' },
+  email: { type: DataTypes.STRING(150) },
+  phone: { type: DataTypes.STRING(50) },
+  specialization: { type: DataTypes.STRING(255) },
+  experience_years: { type: DataTypes.INTEGER, defaultValue: 5 },
+  assigned_courses: { type: DataTypes.JSON },
+  research_interests: { type: DataTypes.TEXT },
+  status: { type: DataTypes.STRING(50), defaultValue: 'Đang công tác' },
+  active_courses_count: { type: DataTypes.INTEGER, defaultValue: 1 }
+}, { tableName: 'academic_lecturers', underscored: true, timestamps: true });
+
+// 20. Academic Student Model (Hồ sơ sinh viên, lớp, ngành & GPA)
+const AcademicStudent = sequelize.define('AcademicStudent', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  student_code: { type: DataTypes.STRING(50), allowNull: false, unique: true },
+  full_name: { type: DataTypes.STRING(150), allowNull: false },
+  birth_date: { type: DataTypes.STRING(50) },
+  gender: { type: DataTypes.STRING(20), defaultValue: 'Nam' },
+  faculty_id: { type: DataTypes.STRING(50), defaultValue: 'CNTT' },
+  faculty_name: { type: DataTypes.STRING(150), defaultValue: 'Khoa Công Nghệ Thông Tin' },
+  major_id: { type: DataTypes.STRING(50), defaultValue: '7480103' },
+  major_name: { type: DataTypes.STRING(150), defaultValue: 'Kỹ thuật Phần mềm' },
+  cohort: { type: DataTypes.STRING(50), defaultValue: 'K66' },
+  class_name: { type: DataTypes.STRING(50), defaultValue: '66.CNTT-1' },
+  email: { type: DataTypes.STRING(150) },
+  phone: { type: DataTypes.STRING(50) },
+  gpa: { type: DataTypes.DECIMAL(4, 2), defaultValue: 3.00 },
+  cpa: { type: DataTypes.DECIMAL(4, 2), defaultValue: 3.00 },
+  credits_accumulated: { type: DataTypes.INTEGER, defaultValue: 0 },
+  academic_rank: { type: DataTypes.STRING(50), defaultValue: 'KHÁ' },
+  warning_level: { type: DataTypes.INTEGER, defaultValue: 0 },
+  status: { type: DataTypes.STRING(50), defaultValue: 'ACTIVE' },
+  training_system: { type: DataTypes.STRING(100), defaultValue: 'Đại học Chính quy (Tín chỉ TT 08/2021)' },
+  advisor: { type: DataTypes.STRING(150), defaultValue: 'TS. Hoàng Đức Em' }
+}, { tableName: 'academic_students', underscored: true, timestamps: true });
+
+// 21. System Audit Log Model (Nhật ký thao tác hệ thống)
+const SystemAuditLog = sequelize.define('SystemAuditLog', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  timestamp: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+  user: { type: DataTypes.STRING(150), allowNull: false },
+  action: { type: DataTypes.STRING(100), allowNull: false },
+  description: { type: DataTypes.TEXT },
+  ip: { type: DataTypes.STRING(50), defaultValue: '127.0.0.1' },
+  status: { type: DataTypes.STRING(50), defaultValue: 'SUCCESS' },
+  details: { type: DataTypes.JSON }
+}, { tableName: 'system_audit_logs', underscored: true, timestamps: true });
+
+// 22. Academic Section Grade Model (Sổ điểm học phần chuẩn Bộ GD&ĐT)
+const AcademicSectionGrade = sequelize.define('AcademicSectionGrade', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  section_id: { type: DataTypes.INTEGER, allowNull: false },
+  student_id: { type: DataTypes.INTEGER, allowNull: true },
+  student_code: { type: DataTypes.STRING(50), allowNull: false },
+  full_name: { type: DataTypes.STRING(150), allowNull: false },
+  attendance_score: { type: DataTypes.DECIMAL(4, 2), defaultValue: 10.00 },
+  assignment_score: { type: DataTypes.DECIMAL(4, 2), defaultValue: 8.50 },
+  midterm_score: { type: DataTypes.DECIMAL(4, 2), defaultValue: 8.00 },
+  final_exam_score: { type: DataTypes.DECIMAL(4, 2), defaultValue: 8.50 },
+  course_score_10: { type: DataTypes.DECIMAL(4, 2), defaultValue: 8.50 },
+  course_score_letter: { type: DataTypes.STRING(10), defaultValue: 'B+' },
+  course_score_4: { type: DataTypes.DECIMAL(3, 2), defaultValue: 3.50 },
+  course_result: { type: DataTypes.STRING(50), defaultValue: 'ĐẠT (PASS)' },
+  academic_rank: { type: DataTypes.STRING(50), defaultValue: 'GIỎI' },
+  notes: { type: DataTypes.STRING(255) }
+}, { tableName: 'academic_section_grades', underscored: true, timestamps: true });
+
 // Associations
 Course.hasMany(CourseSection, { foreignKey: 'course_id', as: 'sections' });
 CourseSection.belongsTo(Course, { foreignKey: 'course_id' });
@@ -289,5 +383,10 @@ module.exports = {
   ExamPaper,
   ExamPaperQuestion,
   AcademicExamSchedule,
-  ExamCandidateAuthorization
+  ExamCandidateAuthorization,
+  CurriculumCourse,
+  AcademicLecturer,
+  AcademicStudent,
+  SystemAuditLog,
+  AcademicSectionGrade
 };

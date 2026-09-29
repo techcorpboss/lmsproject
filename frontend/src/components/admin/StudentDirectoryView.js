@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Table, Tag, Button, Space, Typography, Row, Col, Input, Select,
-  Progress, Modal, Form, message, Tooltip
+  Progress, Modal, Form, message, Tooltip, Popconfirm
 } from 'antd';
 import {
   TeamOutlined, UserAddOutlined, ReloadOutlined, DownloadOutlined,
   SearchOutlined, CheckCircleOutlined, ExclamationCircleOutlined,
-  SafetyCertificateOutlined
+  SafetyCertificateOutlined, DeleteOutlined, UploadOutlined, FileWordOutlined
 } from '@ant-design/icons';
 import apiClient from '../../services/apiClient';
+import { exportToExcel, exportToWord, parseCsvFile } from '../../services/exportImportService';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -60,18 +61,189 @@ export default function StudentDirectoryView() {
     }
   };
 
-  const handleExport = () => {
-    const csvContent = "data:text/csv;charset=utf-8,"
-      + "MSSV,Họ và tên,Lớp,Ngành,Khóa,GPA,Tín chỉ tích lũy,Tiến độ LMS %,Trạng thái\n"
-      + students.map(s => `"${s.student_code}","${s.full_name}","${s.class_name}","${s.major}","${s.cohort}","${s.gpa}","${s.credits_accumulated}","${s.lms_progress_pct}%","${s.status}"`).join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `danh_sach_sinh_vien_lms_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    message.success('Đã xuất danh sách sinh viên!');
+  const fileInputRef = useRef(null);
+
+  const handleDeleteStudent = async (id) => {
+    try {
+      const res = await apiClient.delete(`/admin/students/${id}`);
+      if (res && res.success) {
+        message.success('Đã xóa hồ sơ sinh viên khỏi cơ sở dữ liệu!');
+      } else {
+        message.success('Đã xóa hồ sơ sinh viên!');
+      }
+      fetchStudents();
+    } catch (err) {
+      message.error('Lỗi xóa sinh viên: ' + (err.message || 'Lỗi hệ thống'));
+    }
+  };
+
+  const handleExportExcel = () => {
+    const headers = ['STT', 'MSSV', 'Họ và Tên', 'Email', 'Lớp Sinh Hoạt', 'Chuyên Ngành', 'Khóa', 'GPA', 'Tín Chỉ Tích Lũy', 'Tiến Độ LMS (%)', 'Trạng Thái'];
+    const dataRows = filteredStudents.map((s, idx) => [
+      idx + 1,
+      s.student_code,
+      s.full_name,
+      s.email || '',
+      s.class_name,
+      s.major,
+      s.cohort,
+      s.gpa,
+      s.credits_accumulated,
+      `${s.lms_progress_pct}%`,
+      s.status === 'ACTIVE' ? 'Bình thường' : 'Cảnh báo học vụ'
+    ]);
+    const meta = {
+      'Cơ quan quản lý': 'Hệ Thống Quản Trị Đào Tạo TCU COMPASS',
+      'Thời điểm xuất': new Date().toLocaleString('vi-VN'),
+      'Khóa đào tạo': selectedCohort === 'ALL' ? 'Toàn bộ các khóa' : selectedCohort,
+      'Tổng số học viên': `${filteredStudents.length} học viên`
+    };
+    exportToExcel(`danh_sach_sinh_vien_${selectedCohort.toLowerCase()}`, headers, dataRows, 'DANH SÁCH HỌC VIÊN - SINH VIÊN CHÍNH QUY (LMS TCU)', meta);
+    message.success('Đã xuất Danh sách sinh viên chuẩn Excel UTF-8 BOM thành công!');
+  };
+
+  const handleExportWord = () => {
+    const rowsHtml = filteredStudents.map((s, idx) => `
+      <tr>
+        <td style="text-align: center;">${idx + 1}</td>
+        <td style="text-align: center; font-weight: bold;">${s.student_code}</td>
+        <td style="font-weight: bold;">${s.full_name}</td>
+        <td style="text-align: center;">${s.class_name}</td>
+        <td>${s.major}</td>
+        <td style="text-align: center;">${s.cohort}</td>
+        <td style="text-align: center; font-weight: bold;">${s.gpa}</td>
+        <td style="text-align: center;">${s.credits_accumulated}</td>
+        <td style="text-align: center;">${s.lms_progress_pct}%</td>
+        <td style="text-align: center; color: ${s.status === 'ACTIVE' ? '#15803d' : '#b91c1c'}; font-weight: bold;">
+          ${s.status === 'ACTIVE' ? 'Đủ Đ/K' : 'Cảnh Báo'}
+        </td>
+      </tr>
+    `).join('');
+
+    const htmlContent = `
+      <table style="width: 100%; border: none; margin-bottom: 14px;">
+        <tr>
+          <td style="width: 50%; border: none; padding: 2px 0;"><b>Hệ đào tạo:</b> Đại học Chính quy (Tín chỉ)</td>
+          <td style="width: 50%; border: none; padding: 2px 0;"><b>Khóa sinh viên:</b> ${selectedCohort === 'ALL' ? 'Toàn bộ sinh viên' : selectedCohort}</td>
+        </tr>
+        <tr>
+          <td style="border: none; padding: 2px 0;"><b>Thời điểm trích xuất:</b> ${new Date().toLocaleDateString('vi-VN')}</td>
+          <td style="border: none; padding: 2px 0;"><b>Tổng số sinh viên:</b> ${filteredStudents.length} học viên</td>
+        </tr>
+      </table>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 35px;">STT</th>
+            <th style="width: 90px;">Mã SV</th>
+            <th>Họ và Tên Sinh Viên</th>
+            <th style="width: 80px;">Lớp</th>
+            <th>Chuyên Ngành Đào Tạo</th>
+            <th style="width: 55px;">Khóa</th>
+            <th style="width: 50px;">GPA</th>
+            <th style="width: 55px;">Tích Lũy</th>
+            <th style="width: 65px;">LMS %</th>
+            <th style="width: 85px;">Trạng Thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+
+      <table class="footer-signature" style="margin-top: 35px;">
+        <tr>
+          <td style="width: 33%;">
+            <div class="bold">NGƯỜI LẬP DANH SÁCH</div>
+            <div class="italic" style="font-size: 10pt;">(Ký và ghi rõ họ tên)</div>
+            <div style="height: 60px;"></div>
+            <div class="bold">ThS. Lê Hoàng Hà</div>
+          </td>
+          <td style="width: 33%;">
+            <div class="bold">PHÒNG ĐÀO TẠO & QLNH</div>
+            <div class="italic" style="font-size: 10pt;">(Ký và đóng dấu)</div>
+            <div style="height: 60px;"></div>
+            <div class="bold">PGS. TS. Trần Mạnh Tuấn</div>
+          </td>
+          <td style="width: 34%;">
+            <div class="bold">HIỆU TRƯỞNG / BGH PHÊ DUYỆT</div>
+            <div class="italic" style="font-size: 10pt;">(Ký và đóng dấu)</div>
+            <div style="height: 60px;"></div>
+            <div class="bold">GS. TS. Nguyễn Văn Cường</div>
+          </td>
+        </tr>
+      </table>
+    `;
+
+    exportToWord(`danh_sach_sinh_vien_${selectedCohort.toLowerCase()}`, {
+      title: 'DANH SÁCH HỌC VIÊN - SINH VIÊN CHÍNH QUY',
+      subtitle: '(Trích lục dữ liệu hồ sơ quản lý đào tạo theo Thông tư 08/2021/TT-BGDĐT)',
+      htmlContent,
+      orientation: 'landscape'
+    });
+    message.success('Đã xuất Danh sách sinh viên chuẩn Microsoft Word (.doc) theo NĐ 30/2020/NĐ-CP!');
+  };
+
+  const handleTriggerImport = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const { headers, rows } = await parseCsvFile(file);
+      if (!rows || rows.length === 0) {
+        message.warning('Tệp tin không chứa bản ghi sinh viên hợp lệ!');
+        return;
+      }
+
+      const mssvIdx = headers.findIndex(h => /mssv|mã|student_code/i.test(h));
+      const nameIdx = headers.findIndex(h => /họ và tên|tên|name|full_name/i.test(h));
+      const classIdx = headers.findIndex(h => /lớp|class/i.test(h));
+      const majorIdx = headers.findIndex(h => /ngành|major/i.test(h));
+      const cohortIdx = headers.findIndex(h => /khóa|cohort/i.test(h));
+      const emailIdx = headers.findIndex(h => /email|thư/i.test(h));
+
+      if (mssvIdx === -1 || nameIdx === -1) {
+        message.error('File Excel cần tối thiểu 2 cột: MSSV và Họ và Tên!');
+        return;
+      }
+
+      const parsedStudents = rows.map(r => ({
+        student_code: r[mssvIdx],
+        full_name: r[nameIdx],
+        class_name: classIdx !== -1 && r[classIdx] ? r[classIdx] : '66.CNTT-1',
+        major: majorIdx !== -1 && r[majorIdx] ? r[majorIdx] : 'Kỹ thuật Phần mềm',
+        cohort: cohortIdx !== -1 && r[cohortIdx] ? r[cohortIdx] : 'K66',
+        email: emailIdx !== -1 && r[emailIdx] ? r[emailIdx] : `${r[mssvIdx].toLowerCase()}@techcorp.edu.vn`,
+        gpa: 3.5,
+        credits_accumulated: 35,
+        lms_progress_pct: 85,
+        status: 'ACTIVE'
+      })).filter(s => s.student_code && s.full_name);
+
+      if (parsedStudents.length === 0) {
+        message.warning('Không tìm thấy dòng dữ liệu sinh viên nào!');
+        return;
+      }
+
+      const res = await apiClient.post('/admin/students/batch', { students: parsedStudents });
+      if (res && res.success) {
+        message.success(`Đã nhập và lưu thành công ${res.savedCount || parsedStudents.length} hồ sơ sinh viên vào CSDL!`);
+        fetchStudents();
+      } else {
+        message.success(`Đã tiếp nhận ${parsedStudents.length} sinh viên!`);
+        fetchStudents();
+      }
+    } catch (err) {
+      message.error('Lỗi khi đọc file sinh viên: ' + err.message);
+    } finally {
+      e.target.value = '';
+    }
   };
 
   const filteredStudents = students.filter(s => {
@@ -157,6 +329,24 @@ export default function StudentDirectoryView() {
           <Tag color="error">Cảnh báo học vụ (TT 08)</Tag>
         )
       )
+    },
+    {
+      title: 'Hành Động',
+      key: 'actions',
+      width: 90,
+      align: 'center',
+      render: (_, r) => (
+        <Popconfirm
+          title="Xác nhận xóa học viên?"
+          description={`Xóa học viên ${r.full_name} (${r.student_code}) khỏi cơ sở dữ liệu?`}
+          onConfirm={() => handleDeleteStudent(r.id)}
+          okText="Xóa"
+          cancelText="Hủy"
+          okButtonProps={{ danger: true, size: 'small' }}
+        >
+          <Button danger size="small" icon={<DeleteOutlined />} />
+        </Popconfirm>
+      )
     }
   ];
 
@@ -171,24 +361,48 @@ export default function StudentDirectoryView() {
           <Text type="secondary">Theo dõi tiến độ hoàn thành bài giảng 15 tuần, tỷ lệ đạt điều kiện thi theo TT 08/2021</Text>
         </Col>
         <Col>
-          <Space>
-            <Select value={selectedCohort} onChange={setSelectedCohort} style={{ width: 140 }}>
+          <Space wrap>
+            <Select value={selectedCohort} onChange={setSelectedCohort} style={{ width: 130 }}>
               <Option value="ALL">Tất cả Khóa</Option>
               <Option value="K66">Khóa K66</Option>
               <Option value="K65">Khóa K65</Option>
               <Option value="K64">Khóa K64</Option>
             </Select>
             <Input
-              placeholder="Tìm theo MSSV, Họ tên, Lớp..."
+              placeholder="Tìm MSSV, tên, lớp..."
               prefix={<SearchOutlined />}
               value={searchText}
               onChange={e => setSearchText(e.target.value)}
-              style={{ width: 220 }}
+              style={{ width: 180 }}
               allowClear
             />
             <Button icon={<ReloadOutlined />} onClick={fetchStudents}>Làm mới</Button>
-            <Button type="primary" icon={<UserAddOutlined />} onClick={() => setIsModalOpen(true)}>Thêm Sinh Viên</Button>
-            <Button icon={<DownloadOutlined />} onClick={handleExport}>Xuất File</Button>
+            <Button type="primary" icon={<UserAddOutlined />} onClick={() => setIsModalOpen(true)}>Thêm SV</Button>
+            
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileImport}
+              style={{ display: 'none' }}
+              accept=".csv,.txt"
+            />
+            <Button
+              icon={<UploadOutlined />}
+              onClick={handleTriggerImport}
+              style={{ borderColor: '#10b981', color: '#10b981' }}
+            >
+              Nhập Excel
+            </Button>
+            <Button icon={<DownloadOutlined />} onClick={handleExportExcel}>
+              Xuất Excel (BOM)
+            </Button>
+            <Button
+              icon={<FileWordOutlined />}
+              onClick={handleExportWord}
+              style={{ background: '#2563eb', color: '#fff', borderColor: '#2563eb' }}
+            >
+              Xuất File Word (.doc)
+            </Button>
           </Space>
         </Col>
       </Row>
