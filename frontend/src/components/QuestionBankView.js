@@ -346,24 +346,62 @@ Giải thích: Message Queue giúp đệm dữ liệu (buffer) và san phẳng l
 
     setIsSavingImport(true);
     try {
-      for (const q of questionsToSave) {
-        await apiClient.post('/exam/questions', {
-          category_id: importCategoryId || 1,
-          content: q.content,
-          question_type: q.question_type || 'SINGLE_CHOICE',
-          difficulty: q.difficulty || 'MEDIUM',
-          default_mark: q.default_mark || 1.0,
-          answers: q.answers
-        });
+      // 1. Ưu tiên sử dụng API Batch Save tối ưu tốc độ và an toàn giao dịch CSDL
+      const res = await apiClient.post('/exam/questions/batch', {
+        category_id: importCategoryId || 1,
+        questions: questionsToSave
+      });
+
+      if (res && res.success) {
+        message.success(res.message || `Đã lưu thành công ${questionsToSave.length} câu hỏi vào CSDL ngân hàng đề thi!`);
+      } else {
+        // Fallback lưu tuần tự nếu batch gặp trở ngại
+        let count = 0;
+        for (const q of questionsToSave) {
+          try {
+            await apiClient.post('/exam/questions', {
+              category_id: importCategoryId || 1,
+              content: q.content,
+              question_type: q.question_type || 'SINGLE_CHOICE',
+              difficulty: q.difficulty || 'MEDIUM',
+              default_mark: q.default_mark || 1.0,
+              answers: q.answers
+            });
+            count++;
+          } catch (itemErr) {
+            console.warn('[Save item warning]:', itemErr.message);
+          }
+        }
+        message.success(`Đã lưu thành công ${count}/${questionsToSave.length} câu hỏi vào CSDL ngân hàng đề thi!`);
       }
 
-      message.success(`Đã lưu thành công ${questionsToSave.length} câu hỏi vào CSDL ngân hàng đề thi!`);
       setIsMultiImportModalOpen(false);
       setImportPreviewQuestions([]);
       setImportStats(null);
       fetchData();
     } catch (err) {
-      message.error('Lỗi lưu CSDL: ' + (err.message || 'Lỗi server'));
+      // Nếu API batch báo lỗi, thử fallback từng câu
+      try {
+        let count = 0;
+        for (const q of questionsToSave) {
+          await apiClient.post('/exam/questions', {
+            category_id: importCategoryId || 1,
+            content: q.content,
+            question_type: q.question_type || 'SINGLE_CHOICE',
+            difficulty: q.difficulty || 'MEDIUM',
+            default_mark: q.default_mark || 1.0,
+            answers: q.answers
+          });
+          count++;
+        }
+        message.success(`Đã lưu thành công ${count} câu hỏi vào CSDL ngân hàng đề thi!`);
+        setIsMultiImportModalOpen(false);
+        setImportPreviewQuestions([]);
+        setImportStats(null);
+        fetchData();
+      } catch (fallbackErr) {
+        message.error('Lỗi lưu CSDL: ' + (fallbackErr.response?.data?.error || fallbackErr.message || 'Lỗi kết nối máy chủ'));
+      }
     } finally {
       setIsSavingImport(false);
     }

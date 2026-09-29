@@ -17,8 +17,80 @@ const {
 
 class ExamService {
 
+  // 0. Đảm bảo cấu trúc bảng QBank luôn tồn tại và đầy đủ cột trên MySQL
+  async ensureQbankSchema() {
+    try {
+      await sequelize.query(`
+        CREATE TABLE IF NOT EXISTS qbank_categories (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          parent_id INT NULL,
+          code VARCHAR(50) NULL,
+          name VARCHAR(255) NOT NULL,
+          course_code VARCHAR(50) NULL,
+          created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `).catch(() => {});
+
+      await sequelize.query(`
+        CREATE TABLE IF NOT EXISTS qbank_questions (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          category_id INT NOT NULL DEFAULT 1,
+          content TEXT NOT NULL,
+          question_type VARCHAR(50) DEFAULT 'SINGLE_CHOICE',
+          difficulty VARCHAR(50) DEFAULT 'MEDIUM',
+          default_mark DECIMAL(4,2) DEFAULT 1.00,
+          status VARCHAR(50) DEFAULT 'APPROVED',
+          created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `).catch(() => {});
+
+      await sequelize.query(`
+        CREATE TABLE IF NOT EXISTS qbank_answers (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          question_id INT NOT NULL,
+          content TEXT NOT NULL,
+          is_correct TINYINT(1) DEFAULT 0,
+          fraction DECIMAL(4,2) DEFAULT 0.00,
+          created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `).catch(() => {});
+
+      const [qCols] = await sequelize.query(`
+        SELECT COLUMN_NAME 
+        FROM INFORMATION_SCHEMA.COLUMNS 
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'qbank_questions'
+      `).catch(() => [[]]);
+      const existingQCols = (qCols || []).map(c => (c.COLUMN_NAME || c.column_name || '').toLowerCase());
+      if (existingQCols.length > 0) {
+        if (!existingQCols.includes('status')) await sequelize.query("ALTER TABLE qbank_questions ADD COLUMN status VARCHAR(50) DEFAULT 'APPROVED'").catch(() => {});
+        if (!existingQCols.includes('difficulty')) await sequelize.query("ALTER TABLE qbank_questions ADD COLUMN difficulty VARCHAR(50) DEFAULT 'MEDIUM'").catch(() => {});
+        if (!existingQCols.includes('default_mark')) await sequelize.query("ALTER TABLE qbank_questions ADD COLUMN default_mark DECIMAL(4,2) DEFAULT 1.00").catch(() => {});
+        if (!existingQCols.includes('question_type')) await sequelize.query("ALTER TABLE qbank_questions ADD COLUMN question_type VARCHAR(50) DEFAULT 'SINGLE_CHOICE'").catch(() => {});
+      }
+
+      const [cats] = await sequelize.query(`SELECT id FROM qbank_categories LIMIT 1`).catch(() => [[]]);
+      if (!cats || cats.length === 0) {
+        await sequelize.query(`
+          INSERT INTO qbank_categories (id, code, name, course_code, created_at, updated_at)
+          VALUES 
+            (1, 'CAT-GEN', 'Kiến thức Giáo dục Đại cương', 'GEN101', NOW(), NOW()),
+            (2, 'CAT-IT-BASE', 'Cơ sở ngành Công nghệ Thông tin', 'IT101', NOW(), NOW()),
+            (3, 'CAT-SW-ENG', 'Công nghệ Phần mềm & Kiến trúc Hệ thống', 'SE201', NOW(), NOW()),
+            (4, 'CAT-AI-DS', 'Trí tuệ Nhân tạo & Khoa học Dữ liệu', 'AI301', NOW(), NOW())
+          ON DUPLICATE KEY UPDATE name=VALUES(name)
+        `).catch(() => {});
+      }
+    } catch (err) {
+      console.warn('[ExamService ensureQbankSchema Warning]:', err.message);
+    }
+  }
+
   // 1. Quản lý danh mục ngân hàng câu hỏi
   async getCategories() {
+    await this.ensureQbankSchema();
     try {
       let categories = await QbankCategory.findAll({
         order: [['id', 'ASC']]
@@ -87,6 +159,101 @@ class ExamService {
       console.warn('[ExamService getQuestions fallback]', e.message);
       return [];
     }
+  }
+
+  // 2.0. Tạo câu hỏi đơn lẻ kèm đáp án an toàn
+  async createQuestion(data) {
+    await this.ensureQbankSchema();
+    const { category_id, content, question_type, difficulty, default_mark, answers } = data;
+
+    // Tìm category hợp lệ
+    let targetCatId = category_id;
+    if (targetCatId) {
+      const cat = await QbankCategory.findByPk(targetCatId).catch(() => null);
+      if (!cat) targetCatId = null;
+    }
+    if (!targetCatId) {
+      const firstCat = await QbankCategory.findOne({ order: [['id', 'ASC']] }).catch(() => null);
+      targetCatId = firstCat ? firstCat.id : 1;
+    }
+
+    const q = await QbankQuestion.create({
+      category_id: targetCatId,
+      content: content || 'Câu hỏi chưa có nội dung',
+      question_type: question_type || 'SINGLE_CHOICE',
+      difficulty: difficulty || 'MEDIUM',
+      default_mark: default_mark || 1.0,
+      status: 'APPROVED'
+    });
+
+    if (answers && Array.isArray(answers)) {
+      for (const a of answers) {
+        await QbankAnswer.create({
+          question_id: q.id,
+          content: a.content || a.text || 'Phương án',
+          is_correct: !!a.is_correct,
+          fraction: a.fraction != null ? a.fraction : (a.is_correct ? 1.0 : 0.0)
+        });
+      }
+    }
+
+    return await QbankQuestion.findByPk(q.id, {
+      include: [{ model: QbankAnswer, as: 'answers' }]
+    });
+  }
+
+  // 2.0.1. Lưu hàng loạt câu hỏi (Batch Save) tối ưu hiệu năng
+  async createQuestionsBatch(categoryId, questions) {
+    await this.ensureQbankSchema();
+    if (!questions || !Array.isArray(questions) || questions.length === 0) {
+      return { success: false, message: 'Danh sách câu hỏi cần lưu rỗng' };
+    }
+
+    // Đảm bảo category hợp lệ
+    let targetCatId = categoryId;
+    if (targetCatId) {
+      const cat = await QbankCategory.findByPk(targetCatId).catch(() => null);
+      if (!cat) targetCatId = null;
+    }
+    if (!targetCatId) {
+      const firstCat = await QbankCategory.findOne({ order: [['id', 'ASC']] }).catch(() => null);
+      targetCatId = firstCat ? firstCat.id : 1;
+    }
+
+    const createdList = [];
+    for (const q of questions) {
+      try {
+        const createdQ = await QbankQuestion.create({
+          category_id: targetCatId,
+          content: q.content || 'Câu hỏi chưa có nội dung',
+          question_type: q.question_type || 'SINGLE_CHOICE',
+          difficulty: q.difficulty || 'MEDIUM',
+          default_mark: q.default_mark || 1.0,
+          status: 'APPROVED'
+        });
+
+        if (q.answers && Array.isArray(q.answers)) {
+          for (const a of q.answers) {
+            await QbankAnswer.create({
+              question_id: createdQ.id,
+              content: a.content || a.text || 'Phương án',
+              is_correct: !!a.is_correct,
+              fraction: a.fraction != null ? a.fraction : (a.is_correct ? 1.0 : 0.0)
+            });
+          }
+        }
+        createdList.push(createdQ);
+      } catch (itemErr) {
+        console.warn('[createQuestionsBatch Item Warning]:', itemErr.message);
+      }
+    }
+
+    return {
+      success: true,
+      message: `Đã lưu thành công ${createdList.length}/${questions.length} câu hỏi vào CSDL!`,
+      saved_count: createdList.length,
+      total: questions.length
+    };
   }
 
   // 2.1. Lấy danh sách ma trận đề thi (Kèm tự động tạo mẫu chuẩn nếu chưa có)

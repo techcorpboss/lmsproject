@@ -255,6 +255,9 @@ async function startServer() {
 
   // 2. Tự động khởi tạo dữ liệu mẫu Ca thi & QBank nếu bảng còn trống
   try {
+    const examService = require('./services/examService');
+    await examService.ensureQbankSchema();
+
     const { QbankCategory, AcademicExamSchedule, ExamCandidateAuthorization, User } = require('./models');
     
     // Nạp QbankCategory nếu trống

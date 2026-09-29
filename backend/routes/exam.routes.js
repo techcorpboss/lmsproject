@@ -31,29 +31,25 @@ router.get('/questions', async (req, res) => {
 // 3. Ngân hàng câu hỏi: Tạo câu hỏi mới
 router.post('/questions', async (req, res) => {
   try {
-    const { category_id, content, question_type, difficulty, default_mark, answers } = req.body;
-    const q = await QbankQuestion.create({
-      category_id: category_id || 1,
-      content,
-      question_type: question_type || 'SINGLE_CHOICE',
-      difficulty: difficulty || 'MEDIUM',
-      default_mark: default_mark || 1.0,
-      status: 'APPROVED'
-    });
-
-    if (answers && Array.isArray(answers)) {
-      for (const a of answers) {
-        await QbankAnswer.create({
-          question_id: q.id,
-          content: a.content,
-          is_correct: !!a.is_correct,
-          fraction: a.fraction || (a.is_correct ? 1.0 : 0.0)
-        });
-      }
-    }
-
+    const q = await examService.createQuestion(req.body);
     res.json({ success: true, data: q });
   } catch (err) {
+    console.error('[POST /exam/questions Error]:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 3.1. Ngân hàng câu hỏi: Lưu hàng loạt (Batch Save)
+router.post('/questions/batch', async (req, res) => {
+  try {
+    const { category_id, questions } = req.body;
+    const result = await examService.createQuestionsBatch(category_id, questions);
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+    res.json(result);
+  } catch (err) {
+    console.error('[POST /exam/questions/batch Error]:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
