@@ -69,7 +69,10 @@ export default function BackupRestoreView() {
   };
 
   const handleDownload = (filename) => {
-    message.success(`Đang tải tệp sao lưu: ${filename} về máy tính của bạn...`);
+    message.loading(`Đang tải tệp sao lưu: ${filename}...`, 1.5);
+    const token = localStorage.getItem('lms_token');
+    const downloadUrl = `/api/admin/backups/download/${encodeURIComponent(filename)}` + (token ? `?token=${encodeURIComponent(token)}` : '');
+    window.open(downloadUrl, '_blank');
   };
 
   const columns = [

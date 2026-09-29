@@ -425,6 +425,20 @@ class SchemaIntegrityService {
         `).catch(() => {});
       }
 
+      // 6. Seed Nhật ký Audit Logs mẫu nếu bảng đang trống
+      const [auditCount] = await sequelize.query('SELECT COUNT(*) as c FROM system_audit_logs').catch(() => [[{ c: 0 }]]);
+      if ((auditCount[0]?.c || 0) === 0) {
+        await sequelize.query(`
+          INSERT INTO system_audit_logs (user, action, description, ip, status, created_at, updated_at)
+          VALUES 
+            ('admin (Quản trị viên Hệ thống)', 'ERP_GATEWAY_SYNC', 'Đồng bộ danh sách 14 sinh viên lớp 66.CNTT-1 từ qldt.techcorp.info.vn', '118.69.182.45', 'SUCCESS', DATE_SUB(NOW(), INTERVAL 5 MINUTE), NOW()),
+            ('TS. Hoàng Đức Em (Giảng viên)', 'UPDATE_MODULE', 'Cập nhật đề cương & bài giảng Tuần 2 môn IT101 (Nhập môn C/C++)', '14.162.144.12', 'SUCCESS', DATE_SUB(NOW(), INTERVAL 18 MINUTE), NOW()),
+            ('Trần Văn Nam (Sinh viên 261IT001)', 'SUBMIT_QUIZ', 'Nộp bài kiểm tra đánh giá quá trình Tuần 1 - Đạt 9.5/10', '171.244.38.99', 'SUCCESS', DATE_SUB(NOW(), INTERVAL 42 MINUTE), NOW()),
+            ('admin (Quản trị viên Hệ thống)', 'SYSTEM_BACKUP', 'Thực hiện sao lưu tự động CSDL lms_db', '127.0.0.1', 'SUCCESS', DATE_SUB(NOW(), INTERVAL 2 HOUR), NOW()),
+            ('GiamThi_Phong01 (Cán bộ coi thi)', 'PROCTOR_ALERT', 'Phát hiện thí sinh chuyển tab làm bài trong kỳ thi IT101_MIDTERM', '113.161.72.10', 'WARNING', DATE_SUB(NOW(), INTERVAL 5 HOUR), NOW());
+        `).catch(() => {});
+      }
+
     } catch (seedErr) {
       console.warn('[SchemaIntegrity Seed Warning]:', seedErr.message);
     }

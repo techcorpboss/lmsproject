@@ -20,6 +20,7 @@ router.get('/system-stats', controller.getSystemStats);
 router.get('/backups', controller.getBackups);
 router.post('/backups/create', controller.createBackup);
 router.post('/backups/restore', controller.restoreBackup);
+router.get('/backups/download/:filename', controller.downloadBackup);
 
 // 5. Quản lý danh sách học viên
 router.get('/students', controller.getStudents);
