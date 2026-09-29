@@ -520,8 +520,8 @@ function parseRawExamText(text) {
     const rawBlock = parts[i].trim();
     if (!rawBlock || rawBlock.length < 10) continue;
 
-    // Tìm các lựa chọn A, B, C, D
-    const choiceRegex = /(?:^|\n)\s*([A-D])[\.\)\:]\s*([^\n]+)/gi;
+    // Tìm các lựa chọn A, B, C, D (hỗ trợ cả xuống dòng và dàn ngang phân cách bằng tab/khoảng trắng)
+    const choiceRegex = /(?:^|[\n\r]|\s{2,}|\t+|\s+(?=[A-D][\.\)\:]))\s*([A-D])[\.\)\:]\s*([\s\S]*?)(?=(?:[\n\r]|\s{2,}|\t+|\s+(?=[A-D][\.\)\:]))\s*[A-D][\.\)\:]|(?:\n\s*(?:Đáp án|Answer|Key|Phương án đúng|Giải thích|Lời giải|Explanation))|$)/gi;
     const choices = [];
     let match;
     let firstChoiceIndex = rawBlock.length;
@@ -532,7 +532,7 @@ function parseRawExamText(text) {
       }
       choices.push({
         letter: match[1].toUpperCase(),
-        text: match[2].trim()
+        text: match[2].trim().replace(/\s+/g, ' ')
       });
     }
 
@@ -611,40 +611,138 @@ function parseRawExamText(text) {
 }
 
 /**
- * Trích xuất text từ các định dạng file: Word (.docx), XML, HTML, PDF
+ * Chuyển đổi cấu trúc XML của Word .docx thành văn bản thuần túy chuẩn xác
+ */
+function cleanDocxXmlToText(xml) {
+  if (!xml || typeof xml !== 'string') return '';
+  return xml
+    .replace(/<w:br[^>]*\/>/gi, '\n')
+    .replace(/<w:tab[^>]*\/>/gi, '    ')
+    .replace(/<\/w:p>/gi, '\n')
+    .replace(/<w:p[^>]*>/gi, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/\n\s*\n\s*\n/g, '\n\n')
+    .trim();
+}
+
+/**
+ * Trích xuất nội dung văn bản tiếng Việt thuần túy từ tệp Word nhị phân cũ (.doc / Word 97-2003 CFBF)
+ * Loại bỏ 100% các ký tự rác nhị phân (bjbj, OLE control tables, non-printable bytes)
+ */
+function extractTextFromDocBinary(buffer) {
+  if (!buffer || !Buffer.isBuffer(buffer)) return '';
+
+  // 1. Giải mã theo UTF-16LE chẵn (even offset)
+  const utf16Even = buffer.toString('utf16le');
+
+  // 2. Giải mã theo UTF-16LE lẻ (odd offset - cực kỳ phổ biến trong stream Word CFBF nhị phân)
+  const utf16Odd = buffer.length > 1 ? buffer.subarray(1).toString('utf16le') : '';
+
+  // 3. Giải mã theo UTF-8 / ANSI
+  const utf8Str = buffer.toString('utf8');
+
+  // Đánh giá bộ giải mã nào chứa nhiều từ khóa đề thi nhất
+  const countKeywords = (str) => {
+    if (!str) return 0;
+    const m = str.match(/(?:câu|bài|question|đáp án|answer|\b[A-D][\.\:\)])/gi);
+    return m ? m.length : 0;
+  };
+
+  const candidates = [utf16Even, utf16Odd, utf8Str];
+  candidates.sort((a, b) => countKeywords(b) - countKeywords(a));
+  let candidate = candidates[0] || '';
+
+  // Lọc sạch toàn bộ ký tự điều khiển nhị phân và Unicode private-use
+  let cleaned = candidate
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F\uE000-\uF8FF\uFFF0-\uFFFF]/g, ' ')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n');
+
+  // Cắt bỏ phần header metadata nhị phân (như bjbj, OLE magic tables) phía trước câu hỏi đầu tiên
+  const firstQIndex = cleaned.search(/(?:(?:câu|bài|question)\s*\d+[\.:\/\)]|\b\d+[\.:\/\)])/i);
+  if (firstQIndex !== -1) {
+    cleaned = cleaned.slice(firstQIndex);
+  } else {
+    cleaned = cleaned.replace(/bjbj[^\n]{0,80}/gi, '');
+  }
+
+  // Chuẩn hóa khoảng trắng và dòng nhưng giữ 2 khoảng trắng để phân biệt các cột phương án A-B-C-D
+  cleaned = cleaned
+    .replace(/[ \t]{4,}/g, '  ')
+    .replace(/\n\s*\n\s*\n/g, '\n\n')
+    .trim();
+
+  return cleaned;
+}
+
+/**
+ * Trích xuất text từ các định dạng file: Word (.docx, .doc), XML, HTML, PDF
  */
 function extractTextFromUploadedContent(fileContent, fileType, fileName) {
   let extractedText = '';
 
   const ext = (fileType || (fileName ? fileName.split('.').pop() : '')).toUpperCase();
 
-  if (ext === 'DOCX') {
-    try {
-      let buffer;
-      if (Buffer.isBuffer(fileContent)) {
-        buffer = fileContent;
-      } else if (typeof fileContent === 'string' && fileContent.startsWith('data:')) {
-        const base64Data = fileContent.split(';base64,').pop();
-        buffer = Buffer.from(base64Data, 'base64');
-      } else if (typeof fileContent === 'string') {
-        buffer = Buffer.from(fileContent, 'base64');
+  // Chuyển đổi an toàn sang Buffer
+  let buffer = null;
+  try {
+    if (Buffer.isBuffer(fileContent)) {
+      buffer = fileContent;
+    } else if (typeof fileContent === 'string' && fileContent.startsWith('data:')) {
+      const base64Data = fileContent.split(';base64,').pop();
+      buffer = Buffer.from(base64Data, 'base64');
+    } else if (typeof fileContent === 'string') {
+      const trimmed = fileContent.trim();
+      if (/^[A-Za-z0-9+/=]+$/.test(trimmed) && trimmed.length > 100 && trimmed.length % 4 === 0) {
+        buffer = Buffer.from(trimmed, 'base64');
+      } else {
+        buffer = Buffer.from(fileContent);
       }
-
-      const zip = new AdmZip(buffer);
-      const xml = zip.readAsText('word/document.xml');
-      // Chuyển thẻ paragraph và tab thành newline / space
-      extractedText = xml
-        .replace(/<w:p[^>]*>/gi, '\n')
-        .replace(/<w:tab\/>/gi, ' ')
-        .replace(/<w:br\/>/gi, '\n')
-        .replace(/<[^>]+>/g, '')
-        .trim();
-    } catch (err) {
-      console.warn('[Docx Parse Fallback]:', err.message);
-      extractedText = typeof fileContent === 'string' ? fileContent : '';
     }
-  } else if (ext === 'HTML' || ext === 'HTM') {
-    extractedText = (fileContent || '')
+  } catch (bufErr) {
+    console.warn('[Buffer Parse Notice]:', bufErr.message);
+  }
+
+  // Kiểm tra chữ ký Magic Bytes
+  const isZip = buffer && buffer.length >= 4 && buffer[0] === 0x50 && buffer[1] === 0x4B;
+  const isDocCfbf = buffer && buffer.length >= 8 && buffer[0] === 0xD0 && buffer[1] === 0xCF && buffer[2] === 0x11 && buffer[3] === 0xE0;
+
+  // 1. TỆP WORD HIỆN ĐẠI .DOCX (ZIP CONTAINER)
+  if (isZip || ext === 'DOCX') {
+    try {
+      if (buffer) {
+        const zip = new AdmZip(buffer);
+        const entries = zip.getEntries();
+        const docEntry = entries.find(e => /word\/document\.xml$/i.test(e.entryName));
+        if (docEntry) {
+          const xml = docEntry.getData().toString('utf8');
+          extractedText = cleanDocxXmlToText(xml);
+        }
+      }
+    } catch (err) {
+      console.warn('[Docx Parse Error, attempting binary fallback]:', err.message);
+      if (buffer) {
+        extractedText = extractTextFromDocBinary(buffer);
+      }
+    }
+  }
+
+  // 2. TỆP WORD NHỊ PHÂN CŨ .DOC (Word 97-2003 / OLE2)
+  if (!extractedText && (isDocCfbf || ext === 'DOC')) {
+    if (buffer) {
+      extractedText = extractTextFromDocBinary(buffer);
+    }
+  }
+
+  // 3. TỆP HTML / HTM
+  if (!extractedText && (ext === 'HTML' || ext === 'HTM')) {
+    const rawHtml = buffer ? buffer.toString('utf8') : (typeof fileContent === 'string' ? fileContent : '');
+    extractedText = rawHtml
       .replace(/<p[^>]*>/gi, '\n')
       .replace(/<br[^>]*>/gi, '\n')
       .replace(/<li[^>]*>/gi, '\n')
@@ -652,14 +750,21 @@ function extractTextFromUploadedContent(fileContent, fileType, fileName) {
       .replace(/<[^>]+>/g, '')
       .replace(/&nbsp;/g, ' ')
       .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'")
       .trim();
-  } else if (ext === 'XML') {
+  }
+
+  // 4. TỆP XML (IMS QTI XML HOẶC MOODLE XML)
+  if (!extractedText && ext === 'XML') {
+    const rawXml = buffer ? buffer.toString('utf8') : (typeof fileContent === 'string' ? fileContent : '');
+
     // Nếu là IMS QTI XML
-    if (fileContent.includes('<assessmentItem') || fileContent.includes('<itemBody')) {
+    if (rawXml.includes('<assessmentItem') || rawXml.includes('<itemBody')) {
       const qtiRegex = /<assessmentItem[\s\S]*?<\/assessmentItem>/g;
       let qMatch;
       const qtiParsed = [];
-      while ((qMatch = qtiRegex.exec(fileContent)) !== null) {
+      while ((qMatch = qtiRegex.exec(rawXml)) !== null) {
         const block = qMatch[0];
         const pMatch = block.match(/<qti-prompt[\s\S]*?<p>(.*?)<\/p>|<div class="qti-prompt">[\s\S]*?<p>(.*?)<\/p>/);
         const pText = pMatch ? (pMatch[1] || pMatch[2] || '').trim() : 'Câu hỏi QTI';
@@ -695,15 +800,21 @@ function extractTextFromUploadedContent(fileContent, fileType, fileName) {
     }
 
     // Moodle XML
-    extractedText = (fileContent || '')
+    extractedText = rawXml
       .replace(/<question[\s\S]*?>/gi, '\nCâu hỏi: ')
       .replace(/<text>/gi, ' ')
       .replace(/<\/text>/gi, '\n')
       .replace(/<[^>]+>/g, ' ')
       .trim();
-  } else {
-    // Plain text hoặc PDF text
-    extractedText = typeof fileContent === 'string' ? fileContent : '';
+  }
+
+  // 5. NẾU VẪN CHƯA CÓ KẾT QUẢ -> GIẢI MÃ THÀNH CHUỖI VĂN BẢN VÀ LÀM SẠCH
+  if (!extractedText) {
+    if (buffer) {
+      extractedText = extractTextFromDocBinary(buffer);
+    } else if (typeof fileContent === 'string') {
+      extractedText = fileContent;
+    }
   }
 
   return { text: extractedText };
@@ -726,21 +837,33 @@ exports.importQuestionsMultiFormat = async (req, res) => {
 
     let parsedQuestions = [];
 
-    if (raw_text && raw_text.trim()) {
-      parsedQuestions = parseRawExamText(raw_text);
-    } else if (file_content) {
+    // Ưu tiên trích xuất từ file_content (Base64/Binary)
+    if (file_content) {
       const extracted = extractTextFromUploadedContent(file_content, file_type, file_name);
-      if (extracted.directQuestions) {
+      if (extracted.directQuestions && extracted.directQuestions.length > 0) {
         parsedQuestions = extracted.directQuestions;
       } else if (extracted.text) {
         parsedQuestions = parseRawExamText(extracted.text);
       }
     }
 
+    // Nếu chưa trích xuất được và có raw_text (Dán trực tiếp văn bản)
+    if (parsedQuestions.length === 0 && raw_text && raw_text.trim()) {
+      // Kiểm tra nếu raw_text không phải chuỗi nhị phân rác
+      const hasBinaryGarbage = raw_text.includes('bjbj') || /[\x00-\x08\x0E-\x1F]/.test(raw_text.slice(0, 200));
+      if (hasBinaryGarbage) {
+        const cleanBuf = Buffer.from(raw_text, 'latin1');
+        const cleanExtracted = extractTextFromDocBinary(cleanBuf);
+        parsedQuestions = parseRawExamText(cleanExtracted);
+      } else {
+        parsedQuestions = parseRawExamText(raw_text);
+      }
+    }
+
     if (parsedQuestions.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Không tìm thấy câu hỏi hợp lệ trong tệp/văn bản tải lên. Vui lòng kiểm tra định dạng A, B, C, D.'
+        message: 'Không tìm thấy câu hỏi hợp lệ trong tệp/văn bản tải lên. Vui lòng kiểm tra định dạng câu hỏi (Câu 1..., A, B, C, D).'
       });
     }
 

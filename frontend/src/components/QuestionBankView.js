@@ -249,18 +249,19 @@ Giải thích: Message Queue giúp đệm dữ liệu (buffer) và san phẳng l
   const handleFileUpload = (file) => {
     setIsParsingImport(true);
     const fileName = file.name || '';
-    const ext = fileName.split('.').pop().toLowerCase();
+    const ext = (fileName.split('.').pop() || '').toLowerCase();
 
+    const isBinaryDoc = ['docx', 'doc', 'pdf', 'rtf', 'odt', 'bin'].includes(ext);
     const reader = new FileReader();
 
-    if (ext === 'docx') {
+    if (isBinaryDoc) {
       reader.readAsDataURL(file);
       reader.onload = async (e) => {
         try {
           const base64Data = e.target.result;
           const res = await apiClient.post('/exam/questions/import-multi', {
             file_content: base64Data,
-            file_type: 'DOCX',
+            file_type: ext.toUpperCase(),
             file_name: fileName,
             save_to_db: false
           });
@@ -268,7 +269,7 @@ Giải thích: Message Queue giúp đệm dữ liệu (buffer) và san phẳng l
             setImportPreviewQuestions(res.data);
             setImportStats(res.stats);
             setSelectedImportRowKeys(res.data.map(q => q.id));
-            message.success(`Đã trích xuất ${res.data.length} câu hỏi từ tệp Word (.docx)!`);
+            message.success(`Đã trích xuất ${res.data.length} câu hỏi từ tệp ${fileName}!`);
           }
         } catch (err) {
           message.error('Lỗi phân tích tệp Word: ' + (err.response?.data?.message || err.message));
@@ -297,7 +298,7 @@ Giải thích: Message Queue giúp đệm dữ liệu (buffer) và san phẳng l
             setImportPreviewQuestions(res.data);
             setImportStats(res.stats);
             setSelectedImportRowKeys(res.data.map(q => q.id));
-            message.success(`Đã trích xuất ${res.data.length} câu hỏi từ tệp ${ext.toUpperCase()}!`);
+            message.success(`Đã trích xuất ${res.data.length} câu hỏi từ tệp ${fileName}!`);
           }
         } catch (err) {
           message.error('Lỗi phân tích tệp: ' + (err.response?.data?.message || err.message));
@@ -808,12 +809,13 @@ Giải thích: Message Queue giúp đệm dữ liệu (buffer) và san phẳng l
           items={[
             {
               key: 'upload',
-              label: <span><UploadOutlined /> Tải Tệp Tin Lên (.docx, .pdf, .html, .xml)</span>,
+              label: <span><UploadOutlined /> Tải Tệp Tin Lên (.docx, .doc, .pdf, .txt, .xml, .html)</span>,
               children: (
                 <div style={{ marginBottom: 16 }}>
                   <Dragger
                     name="file"
                     multiple={false}
+                    accept=".docx,.doc,.txt,.rtf,.pdf,.html,.htm,.xml"
                     beforeUpload={handleFileUpload}
                     showUploadList={false}
                     style={{ padding: '24px 0', background: '#f8fafc', borderRadius: 10, border: '2px dashed #059669' }}
@@ -822,10 +824,10 @@ Giải thích: Message Queue giúp đệm dữ liệu (buffer) và san phẳng l
                       <InboxOutlined style={{ color: '#059669', fontSize: 48 }} />
                     </p>
                     <p className="ant-upload-text" style={{ fontWeight: 600 }}>
-                      Kéo thả hoặc nhấp để chọn tệp Word (.docx), PDF, HTML hoặc XML
+                      Kéo thả hoặc nhấp để chọn tệp Word (.docx, .doc), PDF, Văn bản (.txt), HTML hoặc XML
                     </p>
                     <p className="ant-upload-hint" style={{ color: '#64748b' }}>
-                      Hệ thống tự động giải nén và phân tích cấu trúc câu hỏi, các phương án A-B-C-D và đáp án.
+                      Hệ thống tự động giải nén mã nhị phân Word, làm sạch ký tự và trích xuất cấu trúc câu hỏi, đáp án A-B-C-D.
                     </p>
                   </Dragger>
                 </div>
