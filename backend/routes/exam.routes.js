@@ -61,9 +61,7 @@ router.post('/questions', async (req, res) => {
 // 4. Ma trận đề thi: Danh sách mẫu ma trận
 router.get('/templates', async (req, res) => {
   try {
-    const data = await ExamTemplate.findAll({
-      order: [['id', 'DESC']]
-    });
+    const data = await examService.getTemplates();
     res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -81,7 +79,7 @@ router.post('/templates', async (req, res) => {
   }
 });
 
-// 6. Động cơ sinh đề: Bốc đề ngẫu nhiên theo ma trận
+// 6. Động cơ sinh đề: Bốc đề ngẫu nhiên đơn lẻ theo ma trận
 router.post('/templates/:id/generate', async (req, res) => {
   try {
     const { paper_name, paper_code } = req.body;
@@ -89,6 +87,36 @@ router.post('/templates/:id/generate', async (req, res) => {
     res.json({ success: true, data: paper, message: 'Đã sinh đề thi thành công theo ma trận chuẩn Bloom!' });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 6.0. Động cơ sinh đề: Sinh chùm mã đề thi (Multi-variant) & Ma trận đối sánh đáp án
+router.post('/templates/:id/generate-multi', async (req, res) => {
+  try {
+    const result = await examService.generateMultiVariants(req.params.id, req.body);
+    res.json({ success: true, ...result, message: `Đã sinh thành công chùm ${result.variant_count} mã đề thi và ma trận đối sánh đáp án!` });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 6.0.1. Danh sách các đề thi đã xuất bản
+router.get('/papers', async (req, res) => {
+  try {
+    const data = await examService.getPapers();
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 6.0.2. Xóa đề thi
+router.delete('/papers/:id', async (req, res) => {
+  try {
+    const ok = await examService.deletePaper(req.params.id);
+    res.json({ success: ok, message: 'Đã xóa đề thi khỏi hệ thống.' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
