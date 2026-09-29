@@ -315,13 +315,7 @@ function App() {
               icon: <AuditOutlined />,
               label: 'Khung Chương trình Đào Tạo'
             }
-          ] : (userRole === 'student' ? [
-            {
-              key: 'curriculum_framework',
-              icon: <AuditOutlined />,
-              label: 'Chương Trình Đào Tạo Của Tôi'
-            }
-          ] : []))
+          ] : [])
         ]
       },
       ...(isAdmin ? [

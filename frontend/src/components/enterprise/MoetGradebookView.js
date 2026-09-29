@@ -480,7 +480,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
     {
       title: 'STT',
       key: 'stt',
-      width: 45,
+      width: 50,
       align: 'center',
       render: (_, __, idx) => idx + 1
     },
@@ -488,7 +488,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       title: 'MSSV',
       dataIndex: 'student_code',
       key: 'student_code',
-      width: 95,
+      width: 110,
       align: 'center',
       render: (c) => <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{c}</span>
     },
@@ -496,6 +496,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       title: 'Họ và Tên Học Viên',
       dataIndex: 'full_name',
       key: 'full_name',
+      width: 240,
       render: (n) => <span style={{ fontWeight: 600, whiteSpace: 'normal', wordBreak: 'keep-all' }}>{n}</span>
     },
     {
@@ -507,7 +508,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       ),
       dataIndex: 'attendance_score',
       key: 'attendance_score',
-      width: 52,
+      width: 75,
       align: 'center'
     },
     {
@@ -519,7 +520,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       ),
       dataIndex: 'assignment_score',
       key: 'assignment_score',
-      width: 58,
+      width: 80,
       align: 'center'
     },
     {
@@ -531,7 +532,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       ),
       dataIndex: 'midterm_score',
       key: 'midterm_score',
-      width: 62,
+      width: 80,
       align: 'center'
     },
     {
@@ -543,7 +544,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       ),
       dataIndex: 'final_exam_score',
       key: 'final_exam_score',
-      width: 62,
+      width: 80,
       align: 'center'
     },
     {
@@ -555,7 +556,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       ),
       dataIndex: 'course_score_10',
       key: 'course_score_10',
-      width: 68,
+      width: 90,
       align: 'center',
       render: (sc) => (
         <span style={{ fontWeight: 700, color: sc >= 8.5 ? '#16a34a' : sc < 4.0 ? '#dc2626' : '#2563eb' }}>
@@ -567,7 +568,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       title: 'Điểm chữ',
       dataIndex: 'course_score_letter',
       key: 'course_score_letter',
-      width: 52,
+      width: 75,
       align: 'center',
       render: (ltr) => <span style={{ fontWeight: 700 }}>{ltr}</span>
     },
@@ -575,7 +576,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       title: 'Hệ 4',
       dataIndex: 'course_score_4',
       key: 'course_score_4',
-      width: 48,
+      width: 70,
       align: 'center',
       render: (s) => <span style={{ fontWeight: 700 }}>{s}</span>
     },
@@ -588,7 +589,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       ),
       dataIndex: 'academic_rank',
       key: 'academic_rank',
-      width: 95,
+      width: 120,
       align: 'center',
       render: (rnk) => <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{rnk}</span>
     }
@@ -599,7 +600,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
     {
       title: 'STT',
       key: 'stt',
-      width: 42,
+      width: 48,
       align: 'center',
       render: (_, __, idx) => idx + 1
     },
@@ -607,7 +608,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       title: 'Kỳ',
       dataIndex: 'semester',
       key: 'semester',
-      width: 52,
+      width: 65,
       align: 'center',
       render: (sem) => <span style={{ whiteSpace: 'nowrap', fontWeight: 600 }}>Kỳ {sem}</span>
     }] : []),
@@ -615,7 +616,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       title: 'Mã HP',
       dataIndex: 'code',
       key: 'code',
-      width: 82,
+      width: 95,
       align: 'center',
       render: (code) => <span style={{ fontWeight: 700, whiteSpace: 'nowrap', color: '#0958d9' }}>{code}</span>
     },
@@ -623,13 +624,14 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       title: 'Tên Học Phần / Môn Học',
       dataIndex: 'name',
       key: 'name',
+      width: 280,
       render: (name) => <span style={{ fontWeight: 600, color: '#1e293b', whiteSpace: 'normal', wordBreak: 'keep-all' }}>{name}</span>
     },
     {
       title: 'Số TC',
       dataIndex: 'credits',
       key: 'credits',
-      width: 45,
+      width: 65,
       align: 'center',
       render: (cr) => <span style={{ fontWeight: 700 }}>{cr}</span>
     },
@@ -642,7 +644,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       ),
       dataIndex: 'attendance_score',
       key: 'attendance_score',
-      width: 48,
+      width: 75,
       align: 'center'
     },
     {
@@ -654,7 +656,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       ),
       dataIndex: 'assignment_score',
       key: 'assignment_score',
-      width: 54,
+      width: 80,
       align: 'center'
     },
     {
@@ -666,7 +668,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       ),
       dataIndex: 'midterm_score',
       key: 'midterm_score',
-      width: 58,
+      width: 80,
       align: 'center'
     },
     {
@@ -678,7 +680,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       ),
       dataIndex: 'final_exam_score',
       key: 'final_exam_score',
-      width: 58,
+      width: 80,
       align: 'center'
     },
     {
@@ -690,7 +692,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       ),
       dataIndex: 'course_score_10',
       key: 'course_score_10',
-      width: 65,
+      width: 90,
       align: 'center',
       render: (sc) => (
         <span style={{
@@ -705,7 +707,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       title: 'Điểm chữ',
       dataIndex: 'course_score_letter',
       key: 'course_score_letter',
-      width: 50,
+      width: 75,
       align: 'center',
       render: (ltr) => <span style={{ fontWeight: 700 }}>{ltr}</span>
     },
@@ -713,7 +715,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       title: 'Hệ 4',
       dataIndex: 'course_score_4',
       key: 'course_score_4',
-      width: 45,
+      width: 70,
       align: 'center',
       render: (s4) => <span style={{ fontWeight: 700 }}>{s4}</span>
     },
@@ -721,7 +723,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       title: 'Kết quả',
       dataIndex: 'course_result',
       key: 'course_result',
-      width: 75,
+      width: 100,
       align: 'center',
       render: (res) => (
         <span style={{ fontWeight: 700, whiteSpace: 'nowrap', color: res?.includes('ĐẠT') ? '#16a34a' : '#dc2626' }}>
@@ -1008,7 +1010,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       </style>
 
       {/* CONTAINER BẢNG ĐIỂM CHUẨN IN ẤN QUỐC GIA (PRINTABLE CONTAINER) */}
-      <Card className="moet-printable-sheet" style={{ borderRadius: 12, fontSize: `${fontSizePt}px`, background: '#ffffff' }}>
+      <Card className="moet-printable-sheet" style={{ borderRadius: 12, fontSize: `${fontSizePt}px`, background: '#ffffff', maxWidth: 1400, margin: '0 auto', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
         {/* TIÊU ĐỀ CHUẨN BỘ GIÁO DỤC VÀ ĐÀO TẠO */}
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <Row justify="space-between">

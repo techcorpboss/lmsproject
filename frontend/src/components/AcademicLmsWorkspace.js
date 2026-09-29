@@ -3689,8 +3689,8 @@ int main() {
             )
           },
 
-          // TAB 3: BÁO CÁO THỐNG KÊ & PHÂN TÍCH CHUYÊN SÂU (LEARNING ANALYTICS & AUDIT TT 08/2021)
-          {
+          // TAB 3: BÁO CÁO THỐNG KÊ & PHÂN TÍCH CHUYÊN SÂU (LEARNING ANALYTICS & AUDIT TT 08/2021 - DÀNH CHO GIẢNG VIÊN/QUẢN TRỊ)
+          ...(role !== 'STUDENT' ? [{
             key: 'analytics',
             label: (
               <Space>
@@ -3936,7 +3936,7 @@ int main() {
                 )}
               </div>
             )
-          }
+          }] : [])
         ]}
       />
 
