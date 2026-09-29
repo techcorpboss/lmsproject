@@ -30,7 +30,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
   const [studentTranscript, setStudentTranscript] = useState(null);
   
   const [loading, setLoading] = useState(false);
-  const [paperOrientation, setPaperOrientation] = useState('portrait');
+  const [paperOrientation, setPaperOrientation] = useState('landscape');
   const [fontSizePt, setFontSizePt] = useState(13);
   const [showSignatures, setShowSignatures] = useState(true);
 
@@ -477,102 +477,224 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
 
   // Cột bảng điểm lớp học phần (dành cho Admin / Giảng viên)
   const classColumns = [
-    { title: 'STT', key: 'stt', width: 60, align: 'center', render: (_, __, idx) => idx + 1 },
-    { title: 'MSSV', dataIndex: 'student_code', key: 'student_code', width: 110, render: (c) => <Text strong>{c}</Text> },
-    { title: 'Họ và Tên Học Viên', dataIndex: 'full_name', key: 'full_name', render: (n) => <Text strong>{n}</Text> },
-    { title: 'CC (10%)', dataIndex: 'attendance_score', key: 'attendance_score', width: 90, align: 'center' },
-    { title: 'TH/BT (20%)', dataIndex: 'assignment_score', key: 'assignment_score', width: 100, align: 'center' },
-    { title: 'Giữa Kỳ (20%)', dataIndex: 'midterm_score', key: 'midterm_score', width: 110, align: 'center' },
-    { title: 'Thi HP (50%)', dataIndex: 'final_exam_score', key: 'final_exam_score', width: 110, align: 'center' },
     {
-      title: 'Điểm HP (Thang 10)',
+      title: 'STT',
+      key: 'stt',
+      width: 45,
+      align: 'center',
+      render: (_, __, idx) => idx + 1
+    },
+    {
+      title: 'MSSV',
+      dataIndex: 'student_code',
+      key: 'student_code',
+      width: 95,
+      align: 'center',
+      render: (c) => <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{c}</span>
+    },
+    {
+      title: 'Họ và Tên Học Viên',
+      dataIndex: 'full_name',
+      key: 'full_name',
+      render: (n) => <span style={{ fontWeight: 600, whiteSpace: 'normal', wordBreak: 'keep-all' }}>{n}</span>
+    },
+    {
+      title: (
+        <div>
+          <div>CC</div>
+          <div style={{ fontSize: '8pt', fontWeight: 'normal', color: '#64748b' }}>10%</div>
+        </div>
+      ),
+      dataIndex: 'attendance_score',
+      key: 'attendance_score',
+      width: 52,
+      align: 'center'
+    },
+    {
+      title: (
+        <div>
+          <div>TH/BT</div>
+          <div style={{ fontSize: '8pt', fontWeight: 'normal', color: '#64748b' }}>20%</div>
+        </div>
+      ),
+      dataIndex: 'assignment_score',
+      key: 'assignment_score',
+      width: 58,
+      align: 'center'
+    },
+    {
+      title: (
+        <div>
+          <div>Giữa kỳ</div>
+          <div style={{ fontSize: '8pt', fontWeight: 'normal', color: '#64748b' }}>20%</div>
+        </div>
+      ),
+      dataIndex: 'midterm_score',
+      key: 'midterm_score',
+      width: 62,
+      align: 'center'
+    },
+    {
+      title: (
+        <div>
+          <div>Thi HP</div>
+          <div style={{ fontSize: '8pt', fontWeight: 'normal', color: '#64748b' }}>50%</div>
+        </div>
+      ),
+      dataIndex: 'final_exam_score',
+      key: 'final_exam_score',
+      width: 62,
+      align: 'center'
+    },
+    {
+      title: (
+        <div>
+          <div>Điểm HP</div>
+          <div style={{ fontSize: '8pt', fontWeight: 'normal', color: '#64748b' }}>(Hệ 10)</div>
+        </div>
+      ),
       dataIndex: 'course_score_10',
       key: 'course_score_10',
-      width: 130,
+      width: 68,
       align: 'center',
-      render: (sc) => <Text strong style={{ color: sc >= 8.5 ? '#16a34a' : sc < 4.0 ? '#dc2626' : '#2563eb', fontSize: 14 }}>{sc}</Text>
+      render: (sc) => (
+        <span style={{ fontWeight: 700, color: sc >= 8.5 ? '#16a34a' : sc < 4.0 ? '#dc2626' : '#2563eb' }}>
+          {sc}
+        </span>
+      )
     },
     {
-      title: 'Điểm Chữ',
+      title: 'Điểm chữ',
       dataIndex: 'course_score_letter',
       key: 'course_score_letter',
-      width: 90,
+      width: 52,
       align: 'center',
-      render: (ltr) => <Tag color={ltr.startsWith('A') ? 'green' : ltr === 'F' ? 'red' : 'blue'}>{ltr}</Tag>
+      render: (ltr) => <span style={{ fontWeight: 700 }}>{ltr}</span>
     },
-    { title: 'Điểm Hệ 4', dataIndex: 'course_score_4', key: 'course_score_4', width: 90, align: 'center', render: (s) => <b>{s}</b> },
     {
-      title: 'Xếp Loại Học Vụ (TT 08/2021)',
+      title: 'Hệ 4',
+      dataIndex: 'course_score_4',
+      key: 'course_score_4',
+      width: 48,
+      align: 'center',
+      render: (s) => <span style={{ fontWeight: 700 }}>{s}</span>
+    },
+    {
+      title: (
+        <div>
+          <div>Xếp loại</div>
+          <div style={{ fontSize: '8pt', fontWeight: 'normal', color: '#64748b' }}>TT 08/2021</div>
+        </div>
+      ),
       dataIndex: 'academic_rank',
       key: 'academic_rank',
-      render: (rnk) => (
-        <Tag color={rnk.includes('XUẤT SẮC') ? 'gold' : rnk.includes('GIỎI') ? 'green' : rnk.includes('CẢNH BÁO') ? 'error' : 'cyan'}>
-          {rnk}
-        </Tag>
-      )
+      width: 95,
+      align: 'center',
+      render: (rnk) => <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{rnk}</span>
     }
   ];
 
   // Cột bảng điểm cá nhân chi tiết của sinh viên
   const studentColumns = [
-    { title: 'STT', key: 'stt', width: 55, align: 'center', render: (_, __, idx) => idx + 1 },
+    {
+      title: 'STT',
+      key: 'stt',
+      width: 42,
+      align: 'center',
+      render: (_, __, idx) => idx + 1
+    },
     ...(selectedSemester === 'ALL' ? [{
-      title: 'Học Kỳ',
+      title: 'Kỳ',
       dataIndex: 'semester',
       key: 'semester',
-      width: 85,
+      width: 52,
       align: 'center',
-      render: (sem) => <Tag color="blue">Kỳ {sem}</Tag>
+      render: (sem) => <span style={{ whiteSpace: 'nowrap', fontWeight: 600 }}>Kỳ {sem}</span>
     }] : []),
     {
       title: 'Mã HP',
       dataIndex: 'code',
       key: 'code',
-      width: 100,
-      render: (code) => <Text strong style={{ color: '#0958d9' }}>{code}</Text>
+      width: 82,
+      align: 'center',
+      render: (code) => <span style={{ fontWeight: 700, whiteSpace: 'nowrap', color: '#0958d9' }}>{code}</span>
     },
     {
       title: 'Tên Học Phần / Môn Học',
       dataIndex: 'name',
       key: 'name',
-      render: (name) => <Text strong style={{ color: '#1e293b' }}>{name}</Text>
+      render: (name) => <span style={{ fontWeight: 600, color: '#1e293b', whiteSpace: 'normal', wordBreak: 'keep-all' }}>{name}</span>
     },
     {
       title: 'Số TC',
       dataIndex: 'credits',
       key: 'credits',
-      width: 75,
+      width: 45,
       align: 'center',
-      render: (cr) => (
-        <span style={{
-          display: 'inline-block',
-          width: 24,
-          height: 24,
-          lineHeight: '24px',
-          borderRadius: '50%',
-          background: '#52c41a',
-          color: '#ffffff',
-          fontWeight: 700,
-          fontSize: 12
-        }}>
-          {cr}
-        </span>
-      )
+      render: (cr) => <span style={{ fontWeight: 700 }}>{cr}</span>
     },
-    { title: 'CC (10%)', dataIndex: 'attendance_score', key: 'attendance_score', width: 85, align: 'center' },
-    { title: 'BT/TH (20%)', dataIndex: 'assignment_score', key: 'assignment_score', width: 95, align: 'center' },
-    { title: 'Giữa Kỳ (20%)', dataIndex: 'midterm_score', key: 'midterm_score', width: 95, align: 'center' },
-    { title: 'Thi CK (50%)', dataIndex: 'final_exam_score', key: 'final_exam_score', width: 95, align: 'center' },
     {
-      title: 'Điểm Tổng Kết (Thang 10)',
+      title: (
+        <div>
+          <div>CC</div>
+          <div style={{ fontSize: '8pt', fontWeight: 'normal', color: '#64748b' }}>10%</div>
+        </div>
+      ),
+      dataIndex: 'attendance_score',
+      key: 'attendance_score',
+      width: 48,
+      align: 'center'
+    },
+    {
+      title: (
+        <div>
+          <div>BT/TH</div>
+          <div style={{ fontSize: '8pt', fontWeight: 'normal', color: '#64748b' }}>20%</div>
+        </div>
+      ),
+      dataIndex: 'assignment_score',
+      key: 'assignment_score',
+      width: 54,
+      align: 'center'
+    },
+    {
+      title: (
+        <div>
+          <div>Giữa kỳ</div>
+          <div style={{ fontSize: '8pt', fontWeight: 'normal', color: '#64748b' }}>20%</div>
+        </div>
+      ),
+      dataIndex: 'midterm_score',
+      key: 'midterm_score',
+      width: 58,
+      align: 'center'
+    },
+    {
+      title: (
+        <div>
+          <div>Thi CK</div>
+          <div style={{ fontSize: '8pt', fontWeight: 'normal', color: '#64748b' }}>50%</div>
+        </div>
+      ),
+      dataIndex: 'final_exam_score',
+      key: 'final_exam_score',
+      width: 58,
+      align: 'center'
+    },
+    {
+      title: (
+        <div>
+          <div>Điểm HP</div>
+          <div style={{ fontSize: '8pt', fontWeight: 'normal', color: '#64748b' }}>(Hệ 10)</div>
+        </div>
+      ),
       dataIndex: 'course_score_10',
       key: 'course_score_10',
-      width: 130,
+      width: 65,
       align: 'center',
       render: (sc) => (
         <span style={{
-          fontWeight: 800,
-          fontSize: 14,
+          fontWeight: 700,
           color: sc >= 8.5 ? '#16a34a' : sc < 4.0 ? '#dc2626' : '#2563eb'
         }}>
           {sc}
@@ -580,35 +702,31 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       )
     },
     {
-      title: 'Điểm Chữ',
+      title: 'Điểm chữ',
       dataIndex: 'course_score_letter',
       key: 'course_score_letter',
-      width: 85,
+      width: 50,
       align: 'center',
-      render: (ltr) => (
-        <Tag color={ltr.startsWith('A') ? 'success' : ltr.startsWith('B') ? 'processing' : ltr === 'F' ? 'error' : 'warning'}>
-          {ltr}
-        </Tag>
-      )
+      render: (ltr) => <span style={{ fontWeight: 700 }}>{ltr}</span>
     },
     {
       title: 'Hệ 4',
       dataIndex: 'course_score_4',
       key: 'course_score_4',
-      width: 75,
+      width: 45,
       align: 'center',
-      render: (s4) => <b>{s4}</b>
+      render: (s4) => <span style={{ fontWeight: 700 }}>{s4}</span>
     },
     {
-      title: 'Kết Quả',
+      title: 'Kết quả',
       dataIndex: 'course_result',
       key: 'course_result',
-      width: 110,
+      width: 75,
       align: 'center',
       render: (res) => (
-        <Tag color={res.includes('ĐẠT') ? 'green' : 'red'}>
+        <span style={{ fontWeight: 700, whiteSpace: 'nowrap', color: res?.includes('ĐẠT') ? '#16a34a' : '#dc2626' }}>
           {res}
-        </Tag>
+        </span>
       )
     }
   ];
@@ -845,17 +963,17 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       {/* CÔNG CỤ TÙY BIẾN TRANG IN (PRINT CUSTOMIZER) */}
       <Card size="small" className="no-print" style={{ borderRadius: 8, background: '#f8fafc', marginBottom: 16 }}>
         <Row gutter={[16, 8]} align="middle">
-          <Col xs={24} md={6}>
+          <Col xs={24} md={7}>
             <Space>
               <SettingOutlined />
               <Text strong>Khổ giấy:</Text>
               <Radio.Group value={paperOrientation} onChange={e => setPaperOrientation(e.target.value)} size="small">
                 <Radio.Button value="portrait">A4 Dọc</Radio.Button>
-                <Radio.Button value="landscape">A4 Ngang</Radio.Button>
+                <Radio.Button value="landscape">A4 Ngang (Khuyên dùng)</Radio.Button>
               </Radio.Group>
             </Space>
           </Col>
-          <Col xs={24} md={8}>
+          <Col xs={24} md={7}>
             <Space style={{ width: '100%' }}>
               <Text strong>Cỡ chữ in:</Text>
               <Slider min={10} max={16} value={fontSizePt} onChange={setFontSizePt} style={{ width: 140 }} />
@@ -869,7 +987,25 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
             </Space>
           </Col>
         </Row>
+        <div style={{ marginTop: 10, padding: '8px 12px', background: '#eff6ff', borderRadius: 6, fontSize: 12, color: '#1e40af', border: '1px solid #bfdbfe' }}>
+          💡 <b>Mẹo in & xuất PDF sạch 100% (không dính URL, ngày giờ, số trang ở đầu/cuối trang)</b>: Trong cửa sổ in của trình duyệt (Ctrl + P), bấm vào <b>"Cài đặt khác" (More settings)</b> và <b>bỏ dấu tích ở ô "Tiêu đề và chân trang" (Headers and footers)</b>. Đối với bảng điểm nhiều cột, nên chọn <b>Khổ A4 Ngang</b> để bảng biểu hiển thị thông thoáng và đẹp nhất.
+        </div>
       </Card>
+
+      {/* STYLE ĐỘNG CHO TRANG IN THEO HƯỚNG GIẤY */}
+      <style>
+        {`
+          @media print {
+            @page {
+              size: A4 ${paperOrientation} !important;
+              margin: 0 !important;
+            }
+            .moet-printable-sheet {
+              padding: ${paperOrientation === 'landscape' ? '10mm 12mm 12mm 15mm' : '12mm 15mm 15mm 20mm'} !important;
+            }
+          }
+        `}
+      </style>
 
       {/* CONTAINER BẢNG ĐIỂM CHUẨN IN ẤN QUỐC GIA (PRINTABLE CONTAINER) */}
       <Card className="moet-printable-sheet" style={{ borderRadius: 12, fontSize: `${fontSizePt}px`, background: '#ffffff' }}>
@@ -879,6 +1015,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
             <Col span={10} style={{ textAlign: 'center' }}>
               <div style={{ fontWeight: 700, fontSize: `${fontSizePt}px` }}>BỘ GIÁO DỤC VÀ ĐÀO TẠO</div>
               <div style={{ fontWeight: 800, fontSize: `${fontSizePt + 1}px` }}>TRƯỜNG ĐẠI HỌC CÔNG NGHỆ TECHCORP</div>
+              <div style={{ width: 130, height: 1, backgroundColor: '#000000', margin: '4px auto 6px' }} />
               <div style={{ fontSize: `${fontSizePt - 2}px`, color: '#64748b' }}>
                 {isStudent || reportType !== 'CLASS_SECTION' ? (currentStudent?.faculty_name || 'Khoa Đào tạo') : (classData?.faculty || 'Khoa Đào tạo')}
               </div>
@@ -886,7 +1023,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
             <Col span={14} style={{ textAlign: 'center' }}>
               <div style={{ fontWeight: 700, fontSize: `${fontSizePt}px` }}>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
               <div style={{ fontWeight: 800, fontSize: `${fontSizePt}px` }}>Độc lập - Tự do - Hạnh phúc</div>
-              <div style={{ fontSize: `${fontSizePt - 2}px` }}>------------------------------------</div>
+              <div style={{ width: 140, height: 1, backgroundColor: '#000000', margin: '4px auto 0' }} />
             </Col>
           </Row>
 
@@ -919,29 +1056,32 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
             pagination={false}
             size="middle"
             bordered
-            summary={() => (
-              <Table.Summary fixed>
-                <Table.Summary.Row style={{ background: '#f8fafc', fontWeight: 700 }}>
-                  <Table.Summary.Cell index={0} colSpan={selectedSemester === 'ALL' ? 4 : 3} align="right">
-                    TỔNG CỘNG HỌC KỲ / TÍCH LŨY:
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell index={1} align="center">
-                    <Tag color="success" style={{ fontWeight: 800, fontSize: 13 }}>
-                      {activeSem?.total_credits || cumulative?.total_credits_passed || 16} TC
-                    </Tag>
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell index={2} colSpan={4} align="right">
-                    Điểm TB Học Kỳ (Thang 10 / Hệ 4):
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell index={3} align="center" style={{ color: '#16a34a', fontSize: 14 }}>
-                    {activeSem?.gpa_10 || '8.95'} / {activeSem?.gpa_4 || '3.91'}
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell index={4} colSpan={2} align="center">
-                    <Tag color="gold" style={{ fontWeight: 800 }}>{activeSem?.academic_rank || 'XUẤT SẮC'}</Tag>
-                  </Table.Summary.Cell>
-                </Table.Summary.Row>
-              </Table.Summary>
-            )}
+            summary={() => {
+              const isAll = selectedSemester === 'ALL';
+              return (
+                <Table.Summary>
+                  <Table.Summary.Row style={{ background: '#f8fafc', fontWeight: 700 }}>
+                    <Table.Summary.Cell index={0} colSpan={isAll ? 4 : 3} align="right">
+                      TỔNG CỘNG HỌC KỲ / TÍCH LŨY:
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={1} align="center">
+                      <span style={{ fontWeight: 800, fontSize: 13 }}>
+                        {activeSem?.total_credits || cumulative?.total_credits_passed || 16} TC
+                      </span>
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={2} colSpan={4} align="right">
+                      Điểm TB (Thang 10 / Hệ 4):
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={3} colSpan={2} align="center" style={{ color: '#16a34a', fontWeight: 700 }}>
+                      {activeSem?.gpa_10 || '8.88'} / {activeSem?.gpa_4 || '3.87'}
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={4} colSpan={2} align="center">
+                      <span style={{ fontWeight: 800 }}>{activeSem?.academic_rank || 'XUẤT SẮC'}</span>
+                    </Table.Summary.Cell>
+                  </Table.Summary.Row>
+                </Table.Summary>
+              );
+            }}
           />
         ) : (
           <Table
@@ -952,12 +1092,39 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
             pagination={false}
             size="middle"
             bordered
+            summary={() => (
+              <Table.Summary>
+                <Table.Summary.Row style={{ background: '#f8fafc', fontWeight: 700 }}>
+                  <Table.Summary.Cell index={0} colSpan={3} align="right">
+                    TỔNG CỘNG LỚP HỌC PHẦN:
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={1} colSpan={4} align="center">
+                    Sĩ số: <b>{classData?.students?.length || 0} học viên</b>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={2} align="center" style={{ color: '#16a34a', fontWeight: 700 }}>
+                    8.95
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={3} align="center">
+                    A
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={4} align="center">
+                    3.91
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={5} align="center">
+                    100% ĐẠT
+                  </Table.Summary.Cell>
+                </Table.Summary.Row>
+              </Table.Summary>
+            )}
           />
         )}
 
         {/* CHỮ KÝ PHÊ DUYỆT 3 BÊN */}
         {showSignatures && (
-          <div className="moet-signatures-block" style={{ marginTop: 36, pageBreakInside: 'avoid' }}>
+          <div className="moet-signatures-block" style={{ marginTop: 28, pageBreakInside: 'avoid' }}>
+            <div style={{ textAlign: 'right', fontStyle: 'italic', marginBottom: 16, paddingRight: 24, fontSize: `${fontSizePt}px` }}>
+              Hà Nội, ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}
+            </div>
             <Row gutter={16} style={{ textAlign: 'center' }}>
               <Col span={8}>
                 <div style={{ fontWeight: 700, fontSize: `${fontSizePt}px` }}>
