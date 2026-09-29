@@ -16,7 +16,7 @@ import apiClient from '../services/apiClient';
 
 const { Title, Text, Paragraph } = Typography;
 
-export default function OnlineExamRoom({ currentUser }) {
+export default function OnlineExamRoom({ currentUser, onNavigate }) {
   const [examStatus, setExamStatus] = useState('LOBBY'); // 'LOBBY', 'IN_EXAM', 'SUBMITTED', 'SUSPENDED'
   const [examData, setExamData] = useState(null);
   const [timeLeft, setTimeLeft] = useState(60 * 60); // 60 phút
@@ -427,6 +427,92 @@ export default function OnlineExamRoom({ currentUser }) {
   // VIEW 1: EXAM LOBBY (PHÒNG CHỜ & KIỂM TRA THIẾT BỊ / XÁC THỰC CẤP QUYỀN)
   // =========================================================================
   if (examStatus === 'LOBBY') {
+    // Nếu là Giảng viên hoặc Quản trị viên -> Định tuyến đúng về phân hệ Giám thị Coi thi
+    const isTeacherOrAdmin = currentUser?.role === 'teacher' || currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
+    if (isTeacherOrAdmin) {
+      return (
+        <div style={{ maxWidth: 900, margin: '40px auto', padding: '0 16px' }}>
+          <Card
+            style={{
+              borderRadius: 16,
+              border: '1px solid #bfdbfe',
+              background: 'linear-gradient(180deg, #eff6ff 0%, #ffffff 100%)',
+              boxShadow: '0 10px 25px -5px rgba(37, 99, 235, 0.1)'
+            }}
+            styles={{ body: { padding: '36px 32px' } }}
+          >
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+              <div
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 40,
+                  background: '#dbeafe',
+                  color: '#2563eb',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px',
+                  fontSize: 36
+                }}
+              >
+                <SafetyCertificateOutlined />
+              </div>
+              <Title level={3} style={{ color: '#1e3a8a', margin: '0 0 8px' }}>
+                XÁC THỰC VAI TRÒ: {currentUser?.role === 'teacher' ? 'GIẢNG VIÊN / CÁN BỘ COI THI' : 'HỘI ĐỒNG KHẢO THÍ / ADMIN'}
+              </Title>
+              <Text strong style={{ fontSize: 15, color: '#2563eb' }}>
+                {currentUser?.full_name || 'TS. Hoàng Đức Em'} — {currentUser?.faculty_name || 'Khoa Công Nghệ Thông Tin'}
+              </Text>
+            </div>
+
+            <Alert
+              type="info"
+              showIcon
+              message="ĐỊNH TUYẾN NGHIỆP VỤ KHẢO THÍ ĐẠI HỌC (THÔNG TƯ 08/2021/TT-BGDĐT)"
+              description={
+                <div style={{ fontSize: 13, lineHeight: 1.7, marginTop: 4 }}>
+                  <p style={{ margin: '4px 0' }}>
+                    • Màn hình này là <b>Phòng Thi Trực Tuyến dành riêng cho Thí sinh / Học viên</b> điểm danh, kích hoạt webcam AI và làm bài thi kết thúc học phần.
+                  </p>
+                  <p style={{ margin: '4px 0' }}>
+                    • Với cương vị <b>Giảng viên / Cán bộ Coi thi</b> trực thuộc Khoa & Bộ môn, nhiệm vụ của quý Thầy/Cô là <b>Giám sát phòng thi, Điểm danh thí sinh, Nhận diện cảnh báo AI gian lận và Lập biên bản ca thi</b> tại phân hệ Giám Thị.
+                  </p>
+                </div>
+              }
+              style={{ marginBottom: 24, borderRadius: 10 }}
+            />
+
+            <Row gutter={[16, 16]} justify="center">
+              <Col xs={24} sm={12}>
+                <Button
+                  type="primary"
+                  block
+                  size="large"
+                  icon={<VideoCameraOutlined />}
+                  onClick={() => onNavigate && onNavigate('live_proctoring')}
+                  style={{ background: '#2563eb', borderColor: '#2563eb', height: 48, fontWeight: 600, borderRadius: 8 }}
+                >
+                  Đến Phòng Điều Hành Giám Thị AI Live
+                </Button>
+              </Col>
+              <Col xs={24} sm={12}>
+                <Button
+                  block
+                  size="large"
+                  icon={<BookOutlined />}
+                  onClick={() => onNavigate && onNavigate('lms_workspace')}
+                  style={{ height: 48, fontWeight: 600, borderRadius: 8 }}
+                >
+                  Về Quản Lý Giảng Dạy LMS (15 Tuần)
+                </Button>
+              </Col>
+            </Row>
+          </Card>
+        </div>
+      );
+    }
+
     const candidate = examData?.candidate;
     const schedule = examData?.schedule;
     const isGranted = examData?.can_enter === true;

@@ -77,6 +77,19 @@ function App() {
     return { ...user, role };
   };
 
+  const userRole = ((currentUser?.username === 'superadmin' || currentUser?.username === 'boss.techcorp' || currentUser?.email?.toLowerCase().includes('superadmin') || currentUser?.full_name?.toLowerCase().includes('superadmin')) ? 'superadmin' : (currentUser?.role || '')).toLowerCase();
+  const isSuperAdmin = userRole === 'superadmin';
+  const isAdmin = userRole === 'admin' || isSuperAdmin;
+  const isTeacher = userRole === 'teacher';
+  const isTeacherOrAdmin = isTeacher || isAdmin;
+
+  // Tự động chuyển đổi nếu Giảng viên đang ở URL phòng thi của thí sinh
+  useEffect(() => {
+    if (isTeacher && activeMenuKey === 'exam_room') {
+      setActiveMenuKey('lms_workspace');
+    }
+  }, [isTeacher, activeMenuKey]);
+
   // Khôi phục phiên đăng nhập hoặc nhận SSO từ URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -208,7 +221,7 @@ function App() {
     const isSuper = r === 'superadmin' || currentUser?.username === 'superadmin' || currentUser?.username === 'boss.techcorp';
     if (isSuper) return <Tag color="purple" style={{ borderRadius: 12, padding: '2px 10px', fontWeight: 700, border: '1px solid #7c3aed' }}>👑 CHỦ DỰ ÁN (SUPERADMIN)</Tag>;
     if (r === 'student') return <Tag color="blue" style={{ borderRadius: 12, padding: '2px 10px', fontWeight: 600 }}>🎓 SINH VIÊN</Tag>;
-    if (r === 'teacher') return <Tag color="green" style={{ borderRadius: 12, padding: '2px 10px', fontWeight: 600 }}>👨‍🏫 GIẢNG VIÊN</Tag>;
+    if (r === 'teacher') return <Tag color="green" style={{ borderRadius: 12, padding: '2px 10px', fontWeight: 600 }}>👨‍🏫 GIẢNG VIÊN BỘ MÔN</Tag>;
     return <Tag color="gold" style={{ borderRadius: 12, padding: '2px 10px', fontWeight: 600 }}>⚡ QUẢN TRỊ VIÊN</Tag>;
   };
 
@@ -262,17 +275,17 @@ function App() {
       {
         key: 'sub_academic',
         icon: <BookOutlined style={{ color: '#1677ff' }} />,
-        label: 'Phân Hệ Đào Tạo & LMS',
+        label: isTeacher ? 'Giảng Dạy & Lớp Học Phần' : (isAdmin ? 'Phân Hệ Đào Tạo & LMS' : 'Học Tập & Lớp Học Phần'),
         children: [
           {
             key: 'lms_workspace',
             icon: <BookOutlined />,
-            label: isTeacherOrAdmin ? 'Soạn & Quản Lý 15 Tuần' : 'Lớp Học Phần (15 Tuần)'
+            label: isTeacher ? 'Soạn Bài Giảng 15 Tuần (LMS)' : (isAdmin ? 'Soạn & Quản Lý 15 Tuần' : 'Lớp Học Phần (15 Tuần)')
           },
           {
             key: 'lesson_qa_assignments',
             icon: <CommentOutlined style={{ color: '#6366f1' }} />,
-            label: 'Diễn Đàn Q&A & Bài Tập Tự Luận'
+            label: isTeacher ? 'Diễn Đàn Q&A & Đánh Giá Bài Tập' : 'Diễn Đàn Q&A & Bài Tập'
           },
           {
             key: 'scorm_xapi_center',
@@ -294,7 +307,7 @@ function App() {
           {
             key: 'moet_gradebook',
             icon: <FileTextOutlined />,
-            label: isTeacherOrAdmin ? 'Sổ Điểm & Bảng Điểm In' : 'Bảng Điểm Cá Nhân'
+            label: isTeacher ? 'Sổ Điểm Học Phần & Bảng Điểm In' : (isAdmin ? 'Sổ Điểm & Bảng Điểm In' : 'Bảng Điểm Cá Nhân')
           },
           ...(isAdmin ? [
             {
@@ -302,7 +315,7 @@ function App() {
               icon: <AuditOutlined />,
               label: 'Khung Chương trình Đào Tạo'
             }
-          ] : (currentUser.role === 'student' ? [
+          ] : (userRole === 'student' ? [
             {
               key: 'curriculum_framework',
               icon: <AuditOutlined />,
@@ -333,13 +346,23 @@ function App() {
       {
         key: 'sub_ai_testing',
         icon: <RobotOutlined style={{ color: '#722ed1' }} />,
-        label: 'AI & Khảo Thí Điện Tử',
+        label: isTeacher ? 'Chuyên Môn Bộ Môn & Khảo Thí' : 'AI & Khảo Thí Điện Tử',
         children: [
           ...(isTeacherOrAdmin ? [
             {
               key: 'ai_studio',
               icon: <RobotOutlined style={{ color: '#722ed1' }} />,
-              label: 'AI Teaching Studio'
+              label: 'AI Teaching & Exam Studio'
+            },
+            {
+              key: 'question_bank',
+              icon: <DatabaseOutlined />,
+              label: isTeacher ? 'Ngân Hàng Câu Hỏi Bộ Môn' : 'Ngân Hàng Câu Hỏi'
+            },
+            {
+              key: 'exam_generator',
+              icon: <ThunderboltOutlined />,
+              label: isTeacher ? 'Động Cơ Ma Trận & Sinh Đề' : 'Động Cơ Ma Trận Sinh Đề'
             },
             {
               key: 'exam_appraisal',
@@ -354,26 +377,17 @@ function App() {
               }
             ] : []),
             {
-              key: 'question_bank',
-              icon: <DatabaseOutlined />,
-              label: 'Ngân Hàng Câu Hỏi'
-            },
-            {
-              key: 'exam_generator',
-              icon: <ThunderboltOutlined />,
-              label: 'Động Cơ Ma Trận Sinh Đề'
-            },
-            {
               key: 'live_proctoring',
               icon: <VideoCameraOutlined style={{ color: '#ff4d4f' }} />,
-              label: 'Giám Thị AI Webcam Live'
+              label: isTeacher ? 'Phòng Điều Hành Coi Thi & Giám Thị AI' : 'Giám Thị AI Webcam Live'
             }
-          ] : []),
-          {
-            key: 'exam_room',
-            icon: <EditOutlined style={{ color: '#fa8c16' }} />,
-            label: 'Phòng Thi Trực Tuyến'
-          }
+          ] : [
+            {
+              key: 'exam_room',
+              icon: <EditOutlined style={{ color: '#fa8c16' }} />,
+              label: 'Phòng Thi Trực Tuyến (Làm Bài Thi)'
+            }
+          ])
         ]
       }
     ];
@@ -532,9 +546,20 @@ function App() {
               <Tag color="geekblue" icon={<ApartmentOutlined />} style={{ borderRadius: 6, padding: '3px 8px' }}>
                 Học kỳ 1 • 2026-2027
               </Tag>
-              <Tag color="cyan" style={{ borderRadius: 6, padding: '3px 8px' }}>
-                {currentUser?.faculty_name || 'Toàn trường'} {currentUser?.class_name ? `• ${currentUser.class_name}` : ''}
-              </Tag>
+              {isTeacher ? (
+                <>
+                  <Tag color="cyan" style={{ borderRadius: 6, padding: '3px 10px', fontWeight: 600 }}>
+                    🏛️ {currentUser?.faculty_name || 'Khoa Công Nghệ Thông Tin'}
+                  </Tag>
+                  <Tag color="purple" style={{ borderRadius: 6, padding: '3px 10px', fontWeight: 600 }}>
+                    🏢 {currentUser?.department_name || currentUser?.major_name || 'Bộ Môn Kỹ Thuật Phần Mềm'}
+                  </Tag>
+                </>
+              ) : (
+                <Tag color="cyan" style={{ borderRadius: 6, padding: '3px 8px' }}>
+                  {currentUser?.faculty_name || 'Toàn trường'} {currentUser?.class_name ? `• ${currentUser.class_name}` : ''}
+                </Tag>
+              )}
             </Space>
           </Space>
 
@@ -667,7 +692,7 @@ function App() {
 
           {/* Màn hình 10: Phòng thi trực tuyến */}
           {activeMenuKey === 'exam_room' && (
-            <OnlineExamRoom currentUser={currentUser} />
+            <OnlineExamRoom currentUser={currentUser} onNavigate={(key) => setActiveMenuKey(key)} />
           )}
 
           {/* Màn hình 11: Quản lý tài khoản (Admin) */}
