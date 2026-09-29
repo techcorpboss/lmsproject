@@ -4,6 +4,7 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const { User, Course, CourseSection, QuizAssessment, AcademicStudent, CurriculumCourse, SystemAuditLog, AcademicLecturer, sequelize } = require('../models');
+const { Op } = require('sequelize');
 
 // 1. Dữ liệu Nhật ký Audit Logs mẫu và thời gian thực
 let auditLogsStore = [
@@ -153,7 +154,13 @@ exports.getUsers = async (req, res) => {
   try {
     let dbUsers = [];
     try {
-      dbUsers = await User.findAll({ attributes: ['id', 'username', 'email', 'full_name', 'role', 'created_at'] });
+      dbUsers = await User.findAll({
+        attributes: ['id', 'username', 'email', 'full_name', 'role', 'created_at'],
+        where: {
+          role: { [Op.ne]: 'superadmin' },
+          username: { [Op.notIn]: ['superadmin', 'boss.techcorp'] }
+        }
+      });
     } catch (e) {}
 
     if (!dbUsers || dbUsers.length === 0) {

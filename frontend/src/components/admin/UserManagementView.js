@@ -24,10 +24,16 @@ export default function UserManagementView() {
     try {
       const res = await apiClient.get('/admin/users');
       if (res && res.success) {
-        setUsers(res.data);
+        // Luôn bảo đảm ẩn tài khoản superadmin / chủ dự án khỏi danh sách quản lý user
+        const filtered = (res.data || []).filter(u =>
+          u.role !== 'superadmin' &&
+          u.username !== 'superadmin' &&
+          u.username !== 'boss.techcorp'
+        );
+        setUsers(filtered);
       }
     } catch (e) {
-      // Fallback data
+      // Fallback data (đã loại bỏ superadmin)
       setUsers([
         { id: 1, username: 'admin', email: 'admin@techcorp.info.vn', full_name: 'Quản trị viên Hệ thống (Admin)', role: 'admin', status: 'ACTIVE', created_at: new Date().toISOString() },
         { id: 2, username: 'teacher', email: 'giangvien@techcorp.info.vn', full_name: 'TS. Nguyễn Văn An (Giảng viên)', role: 'teacher', status: 'ACTIVE', created_at: new Date().toISOString() },

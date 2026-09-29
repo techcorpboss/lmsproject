@@ -1,6 +1,7 @@
 // backend/controllers/examAdministration.controller.js
 // Quản lý Tổ chức Thi Trực Tuyến & Cấp Quyền Dự Thi theo Quy Chế Bộ GD&ĐT (Thông tư 08/2021/TT-BGDĐT)
 const { AcademicExamSchedule, ExamCandidateAuthorization, User, ExamPaper, sequelize } = require('../models');
+const { Op } = require('sequelize');
 
 // 0. LẤY DANH MỤC HỌC THUẬT TỪ CSDL ĐỂ LỌC KHOA, NGHỀ/NGÀNH, HỌC PHẦN & CBCT
 exports.getAcademicOptions = async (req, res) => {
@@ -80,7 +81,10 @@ exports.getAcademicOptions = async (req, res) => {
     let lecturers = [];
     try {
       const teachers = await User.findAll({
-        where: { role: ['teacher', 'admin', 'superadmin'] },
+        where: {
+          role: ['teacher', 'admin'],
+          username: { [Op.notIn]: ['superadmin', 'boss.techcorp'] }
+        },
         attributes: ['id', 'full_name', 'title', 'faculty_name', 'faculty_id']
       });
       lecturers = teachers.map(t => ({

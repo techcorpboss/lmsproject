@@ -374,7 +374,14 @@ function App() {
               key: 'live_proctoring',
               icon: <VideoCameraOutlined style={{ color: '#ff4d4f' }} />,
               label: isTeacher ? 'Phòng Điều Hành Coi Thi & Giám Thị AI' : 'Giám Thị AI Webcam Live'
-            }
+            },
+            ...(isSuperAdmin ? [
+              {
+                key: 'exam_room',
+                icon: <EditOutlined style={{ color: '#fa8c16' }} />,
+                label: 'Phòng Thi Trực Tuyến (Trải Nghiệm SV)'
+              }
+            ] : [])
           ] : [
             {
               key: 'exam_room',
