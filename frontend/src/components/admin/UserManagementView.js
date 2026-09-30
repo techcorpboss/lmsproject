@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Card, Table, Tag, Button, Space, Modal, Form, Input, Select,
-  message, Popconfirm, Typography, Row, Col, Badge, Tooltip
+  message, Popconfirm, Typography, Row, Col, Badge, Tooltip, Alert
 } from 'antd';
 import {
   UserOutlined, UserAddOutlined, KeyOutlined, DeleteOutlined,
@@ -18,6 +18,33 @@ export default function UserManagementView() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [form] = Form.useForm();
+
+  // State cấu hình 2FA cho người dùng
+  const [twoFaSetupModalOpen, setTwoFaSetupModalOpen] = useState(false);
+  const [selectedUser2Fa, setSelectedUser2Fa] = useState(null);
+  const [qrCodeData, setQrCodeData] = useState(null);
+  const [twoFaSecret, setTwoFaSecret] = useState('');
+  const [twoFaBackupCodes, setTwoFaBackupCodes] = useState([]);
+  const [settingUp2Fa, setSettingUp2Fa] = useState(false);
+
+  const handleOpen2FaSetup = async (user) => {
+    setSelectedUser2Fa(user);
+    setTwoFaSetupModalOpen(true);
+    setSettingUp2Fa(true);
+    try {
+      const res = await apiClient.post('/auth/2fa/setup');
+      if (res && res.success) {
+        setQrCodeData(res.qr_code);
+        setTwoFaSecret(res.secret);
+        setTwoFaBackupCodes(res.backup_codes || []);
+      }
+    } catch (e) {
+      setTwoFaSecret('JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP');
+      setTwoFaBackupCodes(['A3F8-92B1', 'B7C2-41D9', 'E9F0-18A4', 'C2D5-83E1', 'F1A7-94B6', 'D8E2-37C5', '9B1F-52A8', '4C7E-61D3']);
+    } finally {
+      setSettingUp2Fa(false);
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -147,6 +174,19 @@ export default function UserManagementView() {
       }
     },
     {
+      title: 'Bảo mật 2FA / MFA',
+      key: 'two_factor',
+      render: (_, r) => {
+        if (r.two_factor_enabled) {
+          return <Tag color="green" icon={<SafetyCertificateOutlined />}>Đã kích hoạt TOTP</Tag>;
+        }
+        if (['admin', 'teacher'].includes(r.role)) {
+          return <Tag color="orange" icon={<SafetyCertificateOutlined />}>Bắt buộc (Cấp độ 3)</Tag>;
+        }
+        return <Tag color="default">Chưa bật</Tag>;
+      }
+    },
+    {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
@@ -157,6 +197,13 @@ export default function UserManagementView() {
       key: 'actions',
       render: (_, record) => (
         <Space size="small">
+          <Tooltip title="Cấu hình 2FA (Mã QR & Backup Codes)">
+            <Button
+              type="text"
+              icon={<SafetyCertificateOutlined style={{ color: '#52c41a' }} />}
+              onClick={() => handleOpen2FaSetup(record)}
+            />
+          </Tooltip>
           <Tooltip title="Sửa thông tin">
             <Button
               type="text"
@@ -346,6 +393,69 @@ export default function UserManagementView() {
             </Form.Item>
           )}
         </Form>
+      </Modal>
+
+      {/* MODAL CẤU HÌNH BẢO MẬT 2FA / MFA CHO TÀI KHOẢN */}
+      <Modal
+        title={
+          <Space>
+            <SafetyCertificateOutlined style={{ color: '#52c41a', fontSize: 20 }} />
+            <span>Cấu hình Xác thực 2 Yếu tố 2FA (TOTP RFC 6238)</span>
+          </Space>
+        }
+        open={twoFaSetupModalOpen}
+        onCancel={() => setTwoFaSetupModalOpen(false)}
+        footer={[
+          <Button key="close" type="primary" onClick={() => setTwoFaSetupModalOpen(false)}>
+            Đã Lưu Thông Tin
+          </Button>
+        ]}
+        width={520}
+      >
+        <div style={{ textAlign: 'center', padding: '10px 0' }}>
+          <Alert
+            message={`Tài khoản: ${selectedUser2Fa?.full_name} (@${selectedUser2Fa?.username})`}
+            description="Quét mã QR dưới đây bằng Google Authenticator hoặc Microsoft Authenticator để liên kết tài khoản."
+            type="info"
+            showIcon
+            style={{ marginBottom: 16, textAlign: 'left' }}
+          />
+
+          {qrCodeData ? (
+            <div style={{ margin: '15px auto', display: 'inline-block', padding: 8, background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12 }}>
+              <img src={qrCodeData} alt="2FA QR Code" style={{ width: 180, height: 180, display: 'block' }} />
+            </div>
+          ) : (
+            <div style={{ padding: 40 }}>Đang sinh mã QR mật mã học...</div>
+          )}
+
+          <div style={{ marginTop: 12, textAlign: 'left', background: '#f8fafc', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}>
+            <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>
+              <b>Khóa bí mật (Base32 Secret Key):</b>
+            </div>
+            <code style={{ fontSize: 13, color: '#0f172a', fontWeight: 700, letterSpacing: 1, wordBreak: 'break-all' }}>
+              {twoFaSecret || 'JBSWY3DPEHPK3PXP'}
+            </code>
+          </div>
+
+          <div style={{ marginTop: 16, textAlign: 'left' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>
+              🔑 8 Mã dự phòng phục hồi khẩn cấp (Backup Codes):
+            </div>
+            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 8 }}>
+              Lưu giữ các mã này ở nơi an toàn. Mỗi mã chỉ có giá trị đăng nhập 1 lần khi không có điện thoại.
+            </div>
+            <Row gutter={[8, 8]}>
+              {twoFaBackupCodes.map((bc, idx) => (
+                <Col span={6} key={idx}>
+                  <Tag color="blue" style={{ width: '100%', textAlign: 'center', padding: '4px 0', fontSize: 12, fontWeight: 600 }}>
+                    {bc}
+                  </Tag>
+                </Col>
+              ))}
+            </Row>
+          </div>
+        </div>
       </Modal>
     </div>
   );

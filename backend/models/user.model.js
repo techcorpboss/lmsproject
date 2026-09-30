@@ -38,7 +38,15 @@ const User = sequelize.define('User', {
   title: { type: DataTypes.STRING(50) },
   student_code: { type: DataTypes.STRING(50) },
   class_name: { type: DataTypes.STRING(50) },
-  cohort: { type: DataTypes.STRING(50) }
+  cohort: { type: DataTypes.STRING(50) },
+  two_factor_enabled: { type: DataTypes.BOOLEAN, defaultValue: false },
+  two_factor_secret: { type: DataTypes.STRING(255), allowNull: true },
+  two_factor_backup_codes: { type: DataTypes.JSON, allowNull: true },
+  two_factor_enforced: { type: DataTypes.BOOLEAN, defaultValue: false },
+  failed_login_attempts: { type: DataTypes.INTEGER, defaultValue: 0 },
+  locked_until: { type: DataTypes.DATE, allowNull: true },
+  last_login_at: { type: DataTypes.DATE, allowNull: true },
+  last_login_ip: { type: DataTypes.STRING(50), allowNull: true }
 }, {
   tableName: 'users',
   timestamps: true, // Tự động quản lý createdAt và updatedAt

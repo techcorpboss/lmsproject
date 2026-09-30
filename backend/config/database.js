@@ -19,6 +19,12 @@ for (const envFile of envCandidates) {
 }
 
 function getResolvedDbPassword() {
+  if (process.platform === 'win32') {
+    return (process.env.DB_PASSWORD && process.env.DB_PASSWORD !== 'Thong1976')
+      ? process.env.DB_PASSWORD
+      : 'root123@';
+  }
+
   const envPass = process.env.DB_PASSWORD;
   if (envPass) {
     return envPass;

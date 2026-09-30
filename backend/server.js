@@ -29,13 +29,16 @@ const io = new Server(server, {
 });
 app.set('io', io);
 
-// Middleware
+// Middleware & Security Hardening
+const { securityHeadersMiddleware, wafInspectorMiddleware } = require('./middleware/security');
+app.use(securityHeadersMiddleware);
 app.use(cors({
   origin: '*',
   credentials: true
 }));
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+app.use(wafInspectorMiddleware);
 
 // Static directory for uploaded learning resources, videos, slides, and files
 const path = require('path');

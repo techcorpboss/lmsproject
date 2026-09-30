@@ -22,7 +22,16 @@ const User = sequelize.define('User', {
   major_id: { type: DataTypes.STRING(50) },
   major_name: { type: DataTypes.STRING(150) },
   phone: { type: DataTypes.STRING(50) },
-  status: { type: DataTypes.STRING(20), defaultValue: 'ACTIVE' }
+  status: { type: DataTypes.STRING(20), defaultValue: 'ACTIVE' },
+  // Phase 1: 2FA/MFA RFC 6238 TOTP & PDPD Security Hardening
+  two_factor_enabled: { type: DataTypes.BOOLEAN, defaultValue: false },
+  two_factor_secret: { type: DataTypes.STRING(255), allowNull: true },
+  two_factor_backup_codes: { type: DataTypes.JSON, allowNull: true },
+  two_factor_enforced: { type: DataTypes.BOOLEAN, defaultValue: false },
+  failed_login_attempts: { type: DataTypes.INTEGER, defaultValue: 0 },
+  locked_until: { type: DataTypes.DATE, allowNull: true },
+  last_login_at: { type: DataTypes.DATE, allowNull: true },
+  last_login_ip: { type: DataTypes.STRING(50), allowNull: true }
 }, { tableName: 'users', underscored: true, timestamps: true });
 
 // 2. Course Model
@@ -256,6 +265,11 @@ const CurriculumCourse = sequelize.define('CurriculumCourse', {
   faculty_id: { type: DataTypes.STRING(50), defaultValue: 'CNTT' },
   major_id: { type: DataTypes.STRING(50), defaultValue: '7480103' },
   status: { type: DataTypes.STRING(20), defaultValue: 'ACTIVE' },
+  // TT 08/2021 Điều 12: Kiểm soát đào tạo trực tuyến tối đa 30% CTĐT
+  teaching_mode: { type: DataTypes.STRING(50), defaultValue: 'TRUC_TIEP' }, // TRUC_TIEP, TRUC_TUYEN, KET_HOP
+  online_credits: { type: DataTypes.DECIMAL(3, 1), defaultValue: 0.0 },
+  online_hours: { type: DataTypes.INTEGER, defaultValue: 0 },
+  total_hours: { type: DataTypes.INTEGER, defaultValue: 45 },
   is_deleted: { type: DataTypes.BOOLEAN, defaultValue: false },
   deleted_at: { type: DataTypes.DATE, allowNull: true }
 }, { tableName: 'curriculum_courses', underscored: true, timestamps: true });
@@ -292,6 +306,7 @@ const AcademicStudent = sequelize.define('AcademicStudent', {
   full_name: { type: DataTypes.STRING(150), allowNull: false },
   birth_date: { type: DataTypes.STRING(50) },
   gender: { type: DataTypes.STRING(20), defaultValue: 'Nam' },
+  citizen_id: { type: DataTypes.STRING(255), allowNull: true }, // Field-level encrypted AES-256-GCM (NĐ 13/2023 PDPD)
   faculty_id: { type: DataTypes.STRING(50), defaultValue: 'CNTT' },
   faculty_name: { type: DataTypes.STRING(150), defaultValue: 'Khoa Công Nghệ Thông Tin' },
   major_id: { type: DataTypes.STRING(50), defaultValue: '7480103' },
@@ -299,7 +314,9 @@ const AcademicStudent = sequelize.define('AcademicStudent', {
   cohort: { type: DataTypes.STRING(50), defaultValue: 'K66' },
   class_name: { type: DataTypes.STRING(50), defaultValue: '66.CNTT-1' },
   email: { type: DataTypes.STRING(150) },
-  phone: { type: DataTypes.STRING(50) },
+  phone: { type: DataTypes.STRING(255) }, // Field-level encrypted
+  address: { type: DataTypes.STRING(500) }, // Field-level encrypted
+  emergency_contact: { type: DataTypes.STRING(255) }, // Field-level encrypted
   gpa: { type: DataTypes.DECIMAL(4, 2), defaultValue: 3.00 },
   cpa: { type: DataTypes.DECIMAL(4, 2), defaultValue: 3.00 },
   credits_accumulated: { type: DataTypes.INTEGER, defaultValue: 0 },

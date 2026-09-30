@@ -21,6 +21,13 @@ export default function LoginPage({ onLoginSuccess }) {
   const [activeAccountTab, setActiveAccountTab] = useState('ALL');
   const [form] = Form.useForm();
 
+  // State xác thực 2FA/MFA (TOTP RFC 6238)
+  const [twoFaModalOpen, setTwoFaModalOpen] = useState(false);
+  const [twoFaLoading, setTwoFaLoading] = useState(false);
+  const [tempToken, setTempToken] = useState(null);
+  const [twoFaCode, setTwoFaCode] = useState('');
+  const [twoFaUser, setTwoFaUser] = useState(null);
+
   // Tải danh bạ tài khoản thực từ CSDL MySQL để tiện tra cứu & demo
   useEffect(() => {
     fetchSystemAccounts();
@@ -49,6 +56,20 @@ export default function LoginPage({ onLoginSuccess }) {
         password: values.password
       });
 
+      // 1. Nếu tài khoản yêu cầu bước 2 (2FA/MFA)
+      if (res && res.require_2fa) {
+        setTempToken(res.temp_token);
+        setTwoFaUser({
+          username: res.username,
+          full_name: res.full_name,
+          role: res.role
+        });
+        setTwoFaModalOpen(true);
+        message.info('Tài khoản được bảo mật 2FA. Vui lòng nhập mã từ Google Authenticator hoặc mã dự phòng.');
+        return;
+      }
+
+      // 2. Đăng nhập thành công trực tiếp
       if (res && res.success && res.token && res.user) {
         localStorage.setItem('lms_token', res.token);
         localStorage.setItem('lms_user', JSON.stringify(res.user));
@@ -63,6 +84,39 @@ export default function LoginPage({ onLoginSuccess }) {
       message.error(err.message || 'Tài khoản hoặc mật khẩu không chính xác.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Xác thực mã 2FA TOTP hoặc Mã dự phòng
+  const handleVerify2Fa = async () => {
+    if (!twoFaCode || !twoFaCode.trim()) {
+      message.warning('Vui lòng nhập mã OTP 6 chữ số hoặc mã phục hồi.');
+      return;
+    }
+
+    setTwoFaLoading(true);
+    try {
+      const res = await apiClient.post('/auth/2fa/verify', {
+        temp_token: tempToken,
+        code: twoFaCode.trim()
+      });
+
+      if (res && res.success && res.token && res.user) {
+        localStorage.setItem('lms_token', res.token);
+        localStorage.setItem('lms_user', JSON.stringify(res.user));
+        message.success(`Xác thực 2FA thành công! Chào mừng ${res.user.full_name}`);
+        setTwoFaModalOpen(false);
+        setTwoFaCode('');
+        if (onLoginSuccess) {
+          onLoginSuccess(res.user);
+        }
+      } else {
+        message.error(res?.message || 'Mã xác thực 2FA không chính xác.');
+      }
+    } catch (err) {
+      message.error(err.message || 'Mã xác thực 2FA không hợp lệ hoặc đã hết hạn.');
+    } finally {
+      setTwoFaLoading(false);
     }
   };
 
@@ -402,6 +456,88 @@ export default function LoginPage({ onLoginSuccess }) {
               </div>
             );
           })}
+        </div>
+      </Modal>
+
+      {/* MODAL XÁC THỰC ĐA YẾU TỐ 2FA/MFA (TOTP RFC 6238) */}
+      <Modal
+        title={
+          <Space>
+            <SafetyCertificateOutlined style={{ color: '#1677ff', fontSize: 20 }} />
+            <span>Xác thực Hai Yếu Tố 2FA / MFA (Cấp độ 3)</span>
+          </Space>
+        }
+        open={twoFaModalOpen}
+        onCancel={() => {
+          setTwoFaModalOpen(false);
+          setTwoFaCode('');
+        }}
+        footer={null}
+        width={480}
+        destroyOnClose
+      >
+        <div style={{ padding: '10px 0' }}>
+          <Alert
+            message={`Xác thực tài khoản: ${twoFaUser?.full_name || twoFaUser?.username}`}
+            description="Tài khoản này được bảo vệ bởi tiêu chuẩn an toàn thông tin Nghị định 85/2016 Cấp độ 3. Vui lòng mở ứng dụng Google Authenticator hoặc Microsoft Authenticator trên điện thoại để lấy mã 6 chữ số."
+            type="info"
+            showIcon
+            style={{ marginBottom: 20 }}
+          />
+
+          <div style={{ marginBottom: 15 }}>
+            <label style={{ display: 'block', fontWeight: 600, marginBottom: 8, color: '#1e293b' }}>
+              Mã xác thực TOTP hoặc Mã dự phòng:
+            </label>
+            <Input
+              size="large"
+              prefix={<KeyOutlined style={{ color: '#64748b' }} />}
+              placeholder="Nhập 6 số OTP (hoặc mã dự phòng XXXX-XXXX)"
+              value={twoFaCode}
+              onChange={(e) => setTwoFaCode(e.target.value)}
+              onPressEnter={handleVerify2Fa}
+              maxLength={12}
+              style={{
+                fontSize: 18,
+                textAlign: 'center',
+                letterSpacing: 4,
+                fontWeight: 700,
+                borderRadius: 8
+              }}
+              autoFocus
+            />
+          </div>
+
+          <div style={{ background: '#f8fafc', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0', marginBottom: 20 }}>
+            <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.6 }}>
+              💡 <b>Gợi ý bảo mật:</b>
+              <ul style={{ margin: '4px 0 0 18px', padding: 0 }}>
+                <li>Mã OTP gồm 6 chữ số tự động làm mới mỗi 30 giây.</li>
+                <li>Nếu mất điện thoại, có thể sử dụng 1 trong 8 mã dự phòng (Backup Code).</li>
+                <li>Hệ thống áp dụng WAF chống Brute-force: khóa tạm nếu nhập sai quá 5 lần.</li>
+              </ul>
+            </div>
+          </div>
+
+          <Space orientation="horizontal" style={{ width: '100%', justifyContent: 'flex-end' }}>
+            <Button
+              onClick={() => {
+                setTwoFaModalOpen(false);
+                setTwoFaCode('');
+              }}
+            >
+              Hủy bỏ
+            </Button>
+            <Button
+              type="primary"
+              icon={<CheckCircleOutlined />}
+              loading={twoFaLoading}
+              onClick={handleVerify2Fa}
+              style={{ background: '#1677ff', minWidth: 140 }}
+            >
+              Xác nhận Đăng nhập
+            </Button>
+          </Space>
         </div>
       </Modal>
     </div>

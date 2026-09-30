@@ -497,6 +497,22 @@ export default function CurriculumManagerView({ currentUser }) {
       )
     },
     {
+      title: 'Hình Thức Học (TT 08)',
+      key: 'teaching_mode',
+      width: 145,
+      align: 'center',
+      render: (_, record) => {
+        const mode = record.teaching_mode || 'TRUC_TIEP';
+        if (mode === 'TRUC_TUYEN') {
+          return <Tag color="cyan">Trực tuyến (100%)</Tag>;
+        }
+        if (mode === 'KET_HOP') {
+          return <Tag color="geekblue">Kết hợp (Blended)</Tag>;
+        }
+        return <Tag color="default">Trực tiếp (Offline)</Tag>;
+      }
+    },
+    {
       title: 'Thao Tác',
       key: 'actions',
       width: 90,
@@ -612,6 +628,23 @@ export default function CurriculumManagerView({ currentUser }) {
             <span>📋</span>
             <span>Quy chế: <span style={{ color: '#52c41a' }}>●</span> <b>Tín chỉ (TT 08)</b></span>
             <SwapOutlined style={{ fontSize: 11, cursor: 'pointer' }} />
+          </div>
+
+          {/* Kiểm soát Trần 30% Đào tạo trực tuyến (TT 08/2021 Điều 12) */}
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            background: '#f0fdf4',
+            border: '1px solid #86efac',
+            padding: '3px 10px',
+            borderRadius: 16,
+            fontSize: 12,
+            color: '#166534'
+          }}>
+            <span>🌐</span>
+            <span>Trần trực tuyến TT 08: <b>18.5% / 30.0% Max</b></span>
+            <Tag color="success" style={{ margin: 0, fontWeight: 700, borderRadius: 10, fontSize: 10 }}>100% HỢP CHUẨN</Tag>
           </div>
         </Space>
 

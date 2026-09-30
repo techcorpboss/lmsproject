@@ -284,12 +284,30 @@ class SchemaIntegrityService {
         { name: 'deleted_at', type: 'DATETIME NULL' }
       ]);
 
+      await this.ensureTableColumns('users', [
+        { name: 'two_factor_enabled', type: 'TINYINT(1) DEFAULT 0' },
+        { name: 'two_factor_secret', type: 'VARCHAR(255) NULL' },
+        { name: 'two_factor_backup_codes', type: 'JSON NULL' },
+        { name: 'two_factor_enforced', type: 'TINYINT(1) DEFAULT 0' },
+        { name: 'failed_login_attempts', type: 'INT DEFAULT 0' },
+        { name: 'locked_until', type: 'DATETIME NULL' },
+        { name: 'last_login_at', type: 'DATETIME NULL' },
+        { name: 'last_login_ip', type: 'VARCHAR(50) NULL' }
+      ]);
+
       await this.ensureTableColumns('academic_students', [
+        { name: 'citizen_id', type: 'VARCHAR(255) NULL' },
+        { name: 'address', type: 'VARCHAR(500) NULL' },
+        { name: 'emergency_contact', type: 'VARCHAR(255) NULL' },
         { name: 'is_deleted', type: 'TINYINT(1) DEFAULT 0' },
         { name: 'deleted_at', type: 'DATETIME NULL' }
       ]);
 
       await this.ensureTableColumns('curriculum_courses', [
+        { name: 'teaching_mode', type: "VARCHAR(50) DEFAULT 'TRUC_TIEP'" },
+        { name: 'online_credits', type: 'DECIMAL(3,1) DEFAULT 0.0' },
+        { name: 'online_hours', type: 'INT DEFAULT 0' },
+        { name: 'total_hours', type: 'INT DEFAULT 45' },
         { name: 'is_deleted', type: 'TINYINT(1) DEFAULT 0' },
         { name: 'deleted_at', type: 'DATETIME NULL' }
       ]);
