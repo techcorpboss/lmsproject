@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "TCU LMS",
+  "name": "TCU COMPASS - Hệ Thống Quản Trị Đào Tạo & E-Learning Chuẩn Quốc Gia",
+  "description": "Hệ thống Quản lý Đào tạo, Khảo thí Trực tuyến & Học tập Số Chuẩn Bộ GD&ĐT và Quốc tế",
   "icons": [
     {
       "src": "favicon.ico",
@@ -10,16 +11,20 @@
     {
       "src": "logo192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
       "src": "logo512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "orientation": "any",
+  "theme_color": "#002b66",
+  "background_color": "#ffffff",
+  "categories": ["education", "productivity"]
 }

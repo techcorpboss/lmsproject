@@ -11,7 +11,8 @@ import {
   RobotOutlined, AuditOutlined, FileTextOutlined, CloudSyncOutlined,
   HistoryOutlined, CheckCircleOutlined, ExclamationCircleOutlined,
   BankOutlined, SolutionOutlined, SettingOutlined, CrownOutlined,
-  CommentOutlined, RocketOutlined, PlaySquareOutlined, LinkOutlined
+  CommentOutlined, RocketOutlined, PlaySquareOutlined, LinkOutlined,
+  TrophyOutlined
 } from '@ant-design/icons';
 import apiClient from './services/apiClient';
 import LoginPage from './components/LoginPage';
@@ -34,6 +35,8 @@ import ScormXapiCenterView from './components/enterprise/ScormXapiCenterView';
 import LtiToolsHubView from './components/enterprise/LtiToolsHubView';
 import LessonQaAndAssignmentView from './components/enterprise/LessonQaAndAssignmentView';
 import ExamAdministrationView from './components/enterprise/ExamAdministrationView';
+import OpenBadgesShowcase from './components/enterprise/OpenBadgesShowcase';
+
 
 // Admin Views
 import UserManagementView from './components/admin/UserManagementView';
@@ -43,8 +46,11 @@ import ErpSyncHubView from './components/admin/ErpSyncHubView';
 import BackupRestoreView from './components/admin/BackupRestoreView';
 import SystemMonitorView from './components/admin/SystemMonitorView';
 import AuditLogView from './components/admin/AuditLogView';
+import AccessibilityToolbar from './components/common/AccessibilityToolbar';
+import PwaInstallPrompt from './components/common/PwaInstallPrompt';
 
 import './App.css';
+
 
 const { Header, Content, Footer, Sider } = Layout;
 const { Title, Text } = Typography;
@@ -309,6 +315,11 @@ function App() {
             icon: <FileTextOutlined />,
             label: isTeacher ? 'Sổ Điểm Học Phần & Bảng Điểm In' : (isAdmin ? 'Sổ Điểm & Bảng Điểm In' : 'Bảng Điểm Cá Nhân')
           },
+          {
+            key: 'open_badges',
+            icon: <TrophyOutlined style={{ color: '#eab308' }} />,
+            label: 'Huy Hiệu & Chứng Chỉ Số (Open Badges)'
+          },
           ...(isAdmin ? [
             {
               key: 'curriculum_framework',
@@ -317,6 +328,7 @@ function App() {
             }
           ] : [])
         ]
+
       },
       ...(isAdmin ? [
         {
@@ -671,6 +683,12 @@ function App() {
             <MoetGradebookView currentUser={currentUser} selectedSectionId={selectedSectionId} />
           )}
 
+          {/* Màn hình 5.1: Huy hiệu & Chứng chỉ số Open Badges v3.0 */}
+          {activeMenuKey === 'open_badges' && (
+            <OpenBadgesShowcase currentUser={currentUser} />
+          )}
+
+
           {/* Màn hình 6: Khung đào tạo độc lập */}
           {activeMenuKey === 'curriculum_framework' && (
             <CurriculumManagerView currentUser={currentUser} />
@@ -738,6 +756,12 @@ function App() {
           </Space>
         </Footer>
       </Layout>
+
+      {/* BỘ CÔNG CỤ TRỢ NĂNG TOÀN CẦU W3C WCAG 2.1 LEVEL AA */}
+      <AccessibilityToolbar />
+
+      {/* BANNER THÔNG MINH CÀI ĐẶT PWA & BẬT THÔNG BÁO ĐẨY */}
+      <PwaInstallPrompt currentUser={currentUser} />
     </Layout>
   );
 }
