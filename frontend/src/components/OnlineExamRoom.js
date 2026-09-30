@@ -822,17 +822,40 @@ export default function OnlineExamRoom({ currentUser, onNavigate }) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                   <Space>
                     <Tag color={isSebVerified ? 'green' : 'orange'}>
-                      {isSebVerified ? 'Đã chạy trên Safe Exam Browser (SEB)' : 'Web Kiosk Lockdown (Trình duyệt chuẩn)'}
+                      {isSebVerified ? 'ĐÃ KHÓA HỆ THỐNG QUA SAFE EXAM BROWSER (SEB)' : 'Web Kiosk Lockdown (Trình duyệt chuẩn)'}
                     </Tag>
                     <Text type="secondary" style={{ fontSize: 12 }}>Độ trễ mạng: {networkPing}ms (Rất tốt)</Text>
                   </Space>
-                  <Button
-                    icon={<DownloadOutlined />}
-                    size="small"
-                    onClick={() => window.open('/api/exam/seb/config', '_blank')}
-                  >
-                    Tải Cấu Hình Safe Exam Browser (.seb)
-                  </Button>
+                  <Space>
+                    <Button
+                      size="small"
+                      icon={<SafetyCertificateOutlined />}
+                      onClick={async () => {
+                        try {
+                          const res = await apiClient.get('/exam/seb/verify');
+                          if (res && res.success && res.data?.isSebBrowser) {
+                            setIsSebVerified(true);
+                            message.success('Đã xác thực môi trường Safe Exam Browser!');
+                          } else {
+                            message.warning('Bạn đang mở bằng trình duyệt thông thường. Hãy tải file .seb và mở bằng Safe Exam Browser để khóa hệ thống.');
+                          }
+                        } catch (e) {
+                          message.info('Đang hoạt động ở chế độ Web Kiosk Lockdown mô phỏng.');
+                        }
+                      }}
+                    >
+                      Kiểm Tra SEB
+                    </Button>
+                    <Button
+                      type="primary"
+                      icon={<DownloadOutlined />}
+                      size="small"
+                      style={{ background: '#7c3aed', borderColor: '#7c3aed' }}
+                      onClick={() => window.open(`/api/exam/seb/download/${selectedScheduleId || 1}`, '_blank')}
+                    >
+                      Tải Cấu Hình Safe Exam Browser (.seb)
+                    </Button>
+                  </Space>
                 </div>
               </Card>
 

@@ -41,4 +41,31 @@ router.post('/erp/config', controller.updateErpConfig);
 router.get('/erp/ping', controller.pingErp);
 router.post('/erp/pull', controller.pullFromErp);
 
+// 8. Động cơ bộ đệm Caching hiệu năng cao (Redis & In-Memory Fallback)
+const cacheService = require('../services/cacheService');
+
+router.get('/cache/stats', (req, res) => {
+  try {
+    const stats = cacheService.getStats();
+    res.json({ success: true, stats });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Lỗi lấy thống kê Cache: ' + err.message });
+  }
+});
+
+router.post('/cache/clear', async (req, res) => {
+  try {
+    const { prefix } = req.body || {};
+    if (prefix) {
+      await cacheService.clearPrefix(prefix);
+      return res.json({ success: true, message: `Đã xóa sạch bộ đệm với tiền tố: ${prefix}` });
+    }
+    await cacheService.flush();
+    res.json({ success: true, message: 'Đã giải phóng toàn bộ bộ nhớ đệm Cache thành công!' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Lỗi xóa bộ đệm: ' + err.message });
+  }
+});
+
 module.exports = router;
+

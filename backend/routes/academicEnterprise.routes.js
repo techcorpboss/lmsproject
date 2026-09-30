@@ -118,4 +118,69 @@ router.put('/students/:id/pdpd-update', protect, authorize('superadmin', 'admin'
   }
 });
 
+// -------------------------------------------------------------
+// 8. CHỮ KÝ SỐ PKI BẢNG ĐIỂM (TT 41/2017/TT-BTTTT & TT 08/2021)
+// -------------------------------------------------------------
+const digitalSignatureService = require('../services/digitalSignatureService');
+
+// Ký số bảng điểm học phần (Giảng viên / Trưởng khoa)
+router.post('/gradebook/sign', async (req, res) => {
+  try {
+    const { gradebookData, signerInfo } = req.body;
+    if (!gradebookData || !gradebookData.grades) {
+      return res.status(400).json({ success: false, message: 'Thiếu dữ liệu bảng điểm học phần.' });
+    }
+
+    const signer = signerInfo || {
+      id: req.user ? req.user.id : 'GV-2027',
+      name: req.user ? req.user.name : 'Giảng viên Phụ trách',
+      title: 'Giảng viên chính',
+      role: 'LECTURER',
+      email: req.user ? req.user.email : 'giangvien@techcorp.edu.vn',
+      department: 'Khoa Công nghệ Thông tin'
+    };
+
+    const signatureEnvelope = digitalSignatureService.signGradebook(gradebookData, signer);
+
+    res.json({
+      success: true,
+      message: 'Ký số điện tử bảng điểm học phần thành công theo Thông tư 41/2017/TT-BTTTT.',
+      signatureEnvelope
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Lỗi ký số bảng điểm: ' + err.message });
+  }
+});
+
+// Lấy chữ ký số đã lưu của lớp học phần
+router.get('/gradebook/signature/:sectionId', async (req, res) => {
+  try {
+    const signature = digitalSignatureService.getStoredSignature(req.params.sectionId);
+    if (!signature) {
+      return res.status(404).json({ success: false, message: 'Chưa có chữ ký số cho lớp học phần này.' });
+    }
+    res.json({ success: true, signatureEnvelope: signature });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Lỗi truy xuất chữ ký số: ' + err.message });
+  }
+});
+
+// Thẩm tra xác minh chữ ký số và phát hiện can thiệp điểm số trái phép
+router.post('/gradebook/verify', async (req, res) => {
+  try {
+    const { gradebookData, signatureEnvelope } = req.body;
+    if (!gradebookData || !signatureEnvelope) {
+      return res.status(400).json({ success: false, message: 'Thiếu dữ liệu bảng điểm hoặc phong bì chữ ký để thẩm tra.' });
+    }
+
+    const verification = digitalSignatureService.verifyGradebookSignature(gradebookData, signatureEnvelope);
+    res.json({
+      success: verification.isValid,
+      ...verification
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Lỗi thẩm tra chữ ký số: ' + err.message });
+  }
+});
+
 module.exports = router;

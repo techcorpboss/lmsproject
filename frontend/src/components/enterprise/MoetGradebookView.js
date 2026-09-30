@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Card, Table, Tag, Button, Space, Typography, Row, Col, Select,
-  Radio, Divider, message, Switch, Slider, Alert, Avatar, Statistic
+  Radio, Divider, message, Switch, Slider, Alert, Avatar, Statistic, Modal
 } from 'antd';
 import {
   FileTextOutlined, PrinterOutlined, DownloadOutlined, ReloadOutlined,
@@ -33,6 +33,10 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
   const [paperOrientation, setPaperOrientation] = useState('landscape');
   const [fontSizePt, setFontSizePt] = useState(13);
   const [showSignatures, setShowSignatures] = useState(true);
+  const [signatureEnvelope, setSignatureEnvelope] = useState(null);
+  const [isSigning, setIsSigning] = useState(false);
+  const [verifyModalVisible, setVerifyModalVisible] = useState(false);
+  const [verificationResult, setVerificationResult] = useState(null);
 
   // Đồng bộ khi prop selectedSectionId thay đổi
   useEffect(() => {
@@ -40,6 +44,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       setCurrentSectionId(selectedSectionId);
     }
   }, [selectedSectionId]);
+
 
   // Tải dữ liệu lớp học phần (dành cho Admin/Giảng viên)
   const fetchClassGrades = async () => {
@@ -143,13 +148,107 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
     }
   };
 
+  const fetchSignature = async (secId) => {
+    try {
+      const res = await apiClient.get(`/academic/enterprise/gradebook/signature/${secId}`);
+      if (res && res.success && res.signatureEnvelope) {
+        setSignatureEnvelope(res.signatureEnvelope);
+      } else {
+        setSignatureEnvelope(null);
+      }
+    } catch {
+      setSignatureEnvelope(null);
+    }
+  };
+
+  const handleSignGradebook = async () => {
+    setIsSigning(true);
+    try {
+      const gradebookPayload = {
+        section_id: currentSectionId,
+        course_code: classData?.course_code || 'IT101',
+        course_name: classData?.course_name || 'Nhập môn Lập trình C/C++',
+        semester: classData?.semester || 'Học kỳ 1 - 2026-2027',
+        grades: (classData?.students || []).map(s => ({
+          student_id: s.student_id,
+          student_code: s.student_code,
+          full_name: s.full_name,
+          attendance_score: s.attendance_score,
+          midterm_score: s.midterm_score,
+          final_score: s.final_exam_score,
+          total_score_10: s.course_score_10,
+          letter_grade: s.course_score_letter
+        }))
+      };
+
+      const signerInfo = {
+        id: currentUser?.id || 'GV-2027',
+        name: currentUser?.name || currentUser?.full_name || classData?.lecturer || 'TS. Hoàng Đức Em',
+        title: 'Giảng viên Phụ trách Học phần',
+        role: currentUser?.role || 'LECTURER',
+        email: currentUser?.email || 'giangvien@techcorp.edu.vn',
+        department: classData?.faculty || 'Khoa Công nghệ Thông tin'
+      };
+
+      const res = await apiClient.post('/academic/enterprise/gradebook/sign', {
+        gradebookData: gradebookPayload,
+        signerInfo
+      });
+
+      if (res && res.success && res.signatureEnvelope) {
+        setSignatureEnvelope(res.signatureEnvelope);
+        message.success('Ký số điện tử bảng điểm thành công (Chuẩn TT 41/2017/TT-BTTTT & TT 08/2021)!');
+      } else {
+        message.error(res?.message || 'Ký số bảng điểm thất bại');
+      }
+    } catch (err) {
+      message.error('Lỗi khi ký số: ' + (err.message || 'Không thể kết nối máy chủ'));
+    } finally {
+      setIsSigning(false);
+    }
+  };
+
+  const handleVerifySignature = async () => {
+    if (!signatureEnvelope) return;
+    try {
+      const gradebookPayload = {
+        section_id: currentSectionId,
+        course_code: classData?.course_code || 'IT101',
+        course_name: classData?.course_name || 'Nhập môn Lập trình C/C++',
+        semester: classData?.semester || 'Học kỳ 1 - 2026-2027',
+        grades: (classData?.students || []).map(s => ({
+          student_id: s.student_id,
+          student_code: s.student_code,
+          full_name: s.full_name,
+          attendance_score: s.attendance_score,
+          midterm_score: s.midterm_score,
+          final_score: s.final_exam_score,
+          total_score_10: s.course_score_10,
+          letter_grade: s.course_score_letter
+        }))
+      };
+
+      const res = await apiClient.post('/academic/enterprise/gradebook/verify', {
+        gradebookData: gradebookPayload,
+        signatureEnvelope
+      });
+
+      setVerificationResult(res);
+      setVerifyModalVisible(true);
+    } catch (err) {
+      message.error('Lỗi thẩm tra chữ ký số: ' + err.message);
+    }
+  };
+
   useEffect(() => {
     if (isStudent || reportType !== 'CLASS_SECTION') {
       fetchStudentTranscript();
     } else {
       fetchClassGrades();
+      fetchSignature(currentSectionId);
     }
   }, [reportType, selectedSemester, selectedStudentId, currentUser, currentSectionId]);
+
 
   const handlePrint = () => {
     window.print();
@@ -794,9 +893,39 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
                 </Button>
               </>
             )}
+
+            {/* NÚT KÝ SỐ PKI VÀ THẨM TRA TOÀN VẸN BẢNG ĐIỂM (TT 41/2017) */}
+            {!isStudent && reportType === 'CLASS_SECTION' && (
+              <>
+                <Button
+                  icon={<SafetyCertificateOutlined />}
+                  loading={isSigning}
+                  onClick={handleSignGradebook}
+                  style={{
+                    background: signatureEnvelope ? '#ecfdf5' : '#7c3aed',
+                    color: signatureEnvelope ? '#065f46' : '#ffffff',
+                    borderColor: signatureEnvelope ? '#10b981' : '#7c3aed',
+                    fontWeight: 600
+                  }}
+                >
+                  {signatureEnvelope ? '✅ Đã Ký Số Bảng Điểm (PKI)' : 'Ký Số Bảng Điểm (TT 41/2017)'}
+                </Button>
+                {signatureEnvelope && (
+                  <Button
+                    icon={<CheckCircleOutlined />}
+                    onClick={handleVerifySignature}
+                    style={{ borderColor: '#0284c7', color: '#0284c7', fontWeight: 600 }}
+                  >
+                    Thẩm Tra Chữ Ký Số
+                  </Button>
+                )}
+              </>
+            )}
+
             <Button type="primary" icon={<DownloadOutlined />} onClick={handleExportExcel}>
               Xuất File Excel (.xlsx)
             </Button>
+
             <Button
               icon={<FileWordOutlined />}
               onClick={handleExportWord}
@@ -1132,9 +1261,40 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
                 <div style={{ fontWeight: 700, fontSize: `${fontSizePt}px` }}>
                   {isStudent || reportType !== 'CLASS_SECTION' ? 'CỐ VẤN HỌC TẬP' : 'GIẢNG VIÊN PHỤ TRÁCH'}
                 </div>
-                <div style={{ fontSize: `${fontSizePt - 2}px`, fontStyle: 'italic', marginBottom: 55 }}>
+                <div style={{ fontSize: `${fontSizePt - 2}px`, fontStyle: 'italic', marginBottom: 15 }}>
                   (Ký và ghi rõ họ tên)
                 </div>
+
+                {/* CON DẤU CHỮ KÝ SỐ ĐIỆN TỬ PKI (NẾU ĐÃ KÝ) */}
+                {signatureEnvelope && (
+                  <div style={{
+                    display: 'inline-block',
+                    border: '2px solid #059669',
+                    borderRadius: 8,
+                    padding: '8px 12px',
+                    background: '#f0fdf4',
+                    textAlign: 'left',
+                    marginBottom: 12,
+                    boxShadow: '0 2px 8px rgba(5, 150, 105, 0.15)'
+                  }}>
+                    <div style={{ color: '#059669', fontWeight: 800, fontSize: '11px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <SafetyCertificateOutlined /> ĐÃ KÝ SỐ ĐIỆN TỬ HỢP LỆ
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#065f46', marginTop: 2 }}>
+                      Người ký: <b>{signatureEnvelope.signer?.name}</b>
+                    </div>
+                    <div style={{ fontSize: '9px', color: '#047857' }}>
+                      Chuẩn: {signatureEnvelope.algorithm} ({signatureEnvelope.key_length} bits)
+                    </div>
+                    <div style={{ fontSize: '8px', color: '#0f766e', fontFamily: 'monospace' }}>
+                      Ký lúc: {new Date(signatureEnvelope.signed_at).toLocaleString('vi-VN')}
+                    </div>
+                    <div style={{ fontSize: '8px', color: '#64748b', fontFamily: 'monospace' }}>
+                      Băm SHA-256: {signatureEnvelope.digest_sha256?.substring(0, 16)}...
+                    </div>
+                  </div>
+                )}
+
                 <div style={{ fontWeight: 700 }}>
                   {isStudent || reportType !== 'CLASS_SECTION' ? (currentStudent?.advisor || 'TS. Hoàng Đức Em') : (classData?.lecturer || 'TS. Hoàng Đức Em')}
                 </div>
@@ -1161,6 +1321,62 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
           </div>
         )}
       </Card>
+
+      {/* MODAL THẨM TRA TÍNH TOÀN VẸN VÀ CHỨNG THƯ CHỮ KÝ SỐ */}
+      <Modal
+        title={
+          <Space>
+            <SafetyCertificateOutlined style={{ color: verificationResult?.isValid ? '#10b981' : '#ef4444', fontSize: 20 }} />
+            <span>Kết Quả Thẩm Tra Chữ Ký Số Bảng Điểm (PKI Verification)</span>
+          </Space>
+        }
+        open={verifyModalVisible}
+        onOk={() => setVerifyModalVisible(false)}
+        onCancel={() => setVerifyModalVisible(false)}
+        footer={[
+          <Button key="close" type="primary" onClick={() => setVerifyModalVisible(false)}>
+            Đóng Cửa Sổ
+          </Button>
+        ]}
+        width={680}
+      >
+        {verificationResult && (
+          <div>
+            <Alert
+              type={verificationResult.isValid ? 'success' : 'error'}
+              showIcon
+              message={
+                <b style={{ fontSize: 15 }}>
+                  {verificationResult.isValid
+                    ? 'BẢNG ĐIỂM TOÀN VẸN TUYỆT ĐỐI - CHỮ KÝ SỐ HỢP LỆ THEO PHÁP LUẬT'
+                    : 'CẢNH BÁO: PHÁT HIỆN CAN THIỆP ĐIỂM SỐ HOẶC CHỮ KÝ KHÔNG HỢP LỆ'}
+                </b>
+              }
+              description={verificationResult.message || verificationResult.error}
+              style={{ marginBottom: 16 }}
+            />
+
+            <Card size="small" style={{ background: '#f8fafc', borderRadius: 8 }}>
+              <div style={{ fontSize: 13, lineHeight: '24px' }}>
+                <div><b>📜 Pháp lý áp dụng:</b> Thông tư 41/2017/TT-BTTTT & Thông tư 08/2021/TT-BGDĐT</div>
+                <div><b>🔐 Thuật toán mật mã:</b> RSA-SHA256 (Khóa công khai 2048-bit)</div>
+                <div><b>👨‍🏫 Người ký số:</b> {signatureEnvelope?.signer?.name} ({signatureEnvelope?.signer?.title})</div>
+                <div><b>🏛️ Đơn vị / Khoa:</b> {signatureEnvelope?.signer?.department}</div>
+                <div><b>🏢 Cơ quan chứng thực CA:</b> {signatureEnvelope?.certificate?.issuer}</div>
+                <div><b>🔢 Số Seri chứng thư:</b> <code>{signatureEnvelope?.certificate?.serial_number}</code></div>
+                <div><b>⏰ Thời điểm ký chính xác:</b> {signatureEnvelope?.signed_at ? new Date(signatureEnvelope.signed_at).toLocaleString('vi-VN') : 'N/A'}</div>
+                <div style={{ wordBreak: 'break-all', marginTop: 8 }}>
+                  <b>🔑 Mã băm toàn vẹn SHA-256:</b>
+                  <div style={{ background: '#e2e8f0', padding: '4px 8px', borderRadius: 4, fontFamily: 'monospace', fontSize: 11 }}>
+                    {signatureEnvelope?.digest_sha256}
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
+

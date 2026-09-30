@@ -9,6 +9,7 @@ import {
   SafetyCertificateOutlined, EyeOutlined, CheckOutlined
 } from '@ant-design/icons';
 import apiClient from '../services/apiClient';
+import VirtualClassroomModal from './enterprise/VirtualClassroomModal';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -18,6 +19,8 @@ export default function ElearningCatalog({ currentUser }) {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [curriculum, setCurriculum] = useState(null);
   const [activeLesson, setActiveLesson] = useState(null);
+  const [isVirtualClassroomOpen, setIsVirtualClassroomOpen] = useState(false);
+
 
   // Quiz state
   const [isQuizModalVisible, setIsQuizModalVisible] = useState(false);
@@ -265,12 +268,21 @@ export default function ElearningCatalog({ currentUser }) {
           <Space>
             <Tag color="blue">{selectedCourse.category}</Tag>
             <Tag color="cyan"><ClockCircleOutlined /> {selectedCourse.duration_hours} giờ đào tạo</Tag>
+            <Button
+              type="primary"
+              style={{ background: '#2563eb', borderColor: '#2563eb' }}
+              icon={<VideoCameraOutlined />}
+              onClick={() => setIsVirtualClassroomOpen(true)}
+            >
+              Vào Lớp Học Trực Tuyến (Virtual Classroom)
+            </Button>
             {selectedCourse.is_passed && (
               <Button type="primary" style={{ background: '#52c41a', borderColor: '#52c41a' }} icon={<SafetyCertificateOutlined />} onClick={() => handleViewCertificate(selectedCourse.id)}>
                 Xem Chứng chỉ Số
               </Button>
             )}
           </Space>
+
         </Row>
 
         <Title level={3} style={{ marginTop: 0 }}>{selectedCourse.course_name}</Title>
@@ -507,9 +519,20 @@ export default function ElearningCatalog({ currentUser }) {
             </div>
           )}
         </Modal>
+
+        {/* LỚP HỌC TRỰC TUYẾN THỜI GIAN THỰC (VIRTUAL CLASSROOM HUB) */}
+        <VirtualClassroomModal
+          visible={isVirtualClassroomOpen}
+          onClose={() => setIsVirtualClassroomOpen(false)}
+          courseId={selectedCourse?.id || 1}
+          courseName={selectedCourse?.course_name || 'Học phần LMS'}
+          weekIndex={1}
+          currentUser={currentUser}
+        />
       </div>
     );
   }
+
 
   // --- RENDER 2: COURSE CATALOG (Danh mục tất cả khóa học) ---
   return (

@@ -1378,3 +1378,57 @@ exports.auditExamSyllabusAlignment = async (req, res) => {
   }
 };
 
+// =========================================================================
+// 5. CẤU HÌNH & XÁC THỰC SAFE EXAM BROWSER (SEB) KIOSK LOCKDOWN
+// =========================================================================
+const sebConfigService = require('../services/sebConfigService');
+
+/**
+ * Xuất tệp cấu hình .seb (XML Plist) hoặc thông tin cấu hình cho ca thi
+ */
+exports.generateSebConfigFile = async (req, res) => {
+  try {
+    const scheduleId = req.params.scheduleId || req.query.scheduleId || req.query.examId || 'EXAM-2027';
+    const format = req.query.format || (req.path.includes('/download') ? 'download' : 'json');
+
+    const sebResult = sebConfigService.generateSebConfigFile({
+      id: scheduleId,
+      title: req.query.title || 'Kỳ thi Trực tuyến Khóa Trình duyệt Chuẩn Quốc gia'
+    }, {
+      baseUrl: `${req.protocol}://${req.get('host')}`
+    });
+
+    if (format === 'download' || req.query.download === '1' || req.query.download === 'true') {
+      res.setHeader('Content-Type', 'application/seb');
+      res.setHeader('Content-Disposition', `attachment; filename="${sebResult.fileName}"`);
+      return res.send(sebResult.xmlContent);
+    }
+
+    return res.json({
+      success: true,
+      message: 'Tạo cấu hình Safe Exam Browser (.seb) thành công',
+      data: sebResult
+    });
+  } catch (err) {
+    console.error('[SEB Config Error]:', err);
+    res.status(500).json({ success: false, message: 'Lỗi tạo cấu hình SEB: ' + err.message });
+  }
+};
+
+/**
+ * Thẩm tra Client có đang chạy trong môi trường Safe Exam Browser hay không
+ */
+exports.verifySebClient = async (req, res) => {
+  try {
+    const verification = sebConfigService.verifySebRequest(req);
+    return res.json({
+      success: true,
+      data: verification
+    });
+  } catch (err) {
+    console.error('[SEB Verify Error]:', err);
+    res.status(500).json({ success: false, message: 'Lỗi xác thực SEB: ' + err.message });
+  }
+};
+
+

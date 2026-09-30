@@ -67,4 +67,60 @@ router.get('/courses/:id/certificate', async (req, res) => {
   }
 });
 
+// -------------------------------------------------------------
+// VIRTUAL CLASSROOM HUB (WebRTC / Jitsi / BigBlueButton)
+// -------------------------------------------------------------
+const virtualClassroomService = require('../services/virtualClassroomService');
+
+// POST /api/elearning/virtual-classroom/room (Tạo hoặc truy xuất phòng học trực tuyến)
+router.post('/virtual-classroom/room', async (req, res) => {
+  try {
+    const { courseId, courseName, weekIndex, sectionId, title } = req.body;
+    if (!courseId) {
+      return res.status(400).json({ success: false, message: 'Thiếu Course ID để khởi tạo phòng học.' });
+    }
+
+    const room = virtualClassroomService.createOrGetRoom({
+      courseId,
+      courseName,
+      weekIndex: weekIndex || 1,
+      sectionId,
+      title,
+      instructorId: req.user ? req.user.id : null,
+      instructorName: req.user ? req.user.name : 'Giảng viên'
+    });
+
+    res.json({ success: true, room });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Lỗi khởi tạo phòng học trực tuyến: ' + err.message });
+  }
+});
+
+// GET /api/elearning/virtual-classroom/access/:roomId (Lấy thông tin quyền truy cập & điểm danh)
+router.get('/virtual-classroom/access/:roomId', async (req, res) => {
+  try {
+    const user = req.user || {
+      id: 'GUEST_' + Date.now(),
+      name: 'Khách tham dự',
+      role: 'STUDENT'
+    };
+
+    const accessConfig = virtualClassroomService.getRoomAccessConfig(req.params.roomId, user);
+    res.json({ success: true, ...accessConfig });
+  } catch (err) {
+    res.status(404).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/elearning/virtual-classroom/attendance/:roomId (Báo cáo điểm danh và thời lượng)
+router.get('/virtual-classroom/attendance/:roomId', async (req, res) => {
+  try {
+    const report = virtualClassroomService.getAttendanceReport(req.params.roomId);
+    res.json({ success: true, report });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 module.exports = router;
+

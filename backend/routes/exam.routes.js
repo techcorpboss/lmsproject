@@ -267,7 +267,10 @@ router.post('/qti/import', examAdvanced.importQtiPackage);
 
 // 10. Cấu hình & Xác thực Safe Exam Browser (SEB) / Kiosk Mode
 router.get('/seb/config', examAdvanced.generateSebConfigFile);
+router.get('/seb/config/:scheduleId', examAdvanced.generateSebConfigFile);
+router.get('/seb/download/:scheduleId', examAdvanced.generateSebConfigFile);
 router.get('/seb/verify', examAdvanced.verifySebClient);
+router.post('/seb/verify', examAdvanced.verifySebClient);
 
 // 11. Giám thị thời gian thực: Báo cáo vi phạm, AI snapshot & Danh sách vi phạm
 router.post('/proctor/violation-log', examAdvanced.reportProctoringIncident);
