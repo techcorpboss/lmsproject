@@ -1,0 +1,78 @@
+{
+  "submissions": [
+    {
+      "submissionId": "SET_1791553865724_ba1iiu",
+      "courseCode": "IT101",
+      "courseName": "Nhập Môn Lập Trình C/C++",
+      "lecturerId": "GV001",
+      "lecturerName": "TS. Hoàng Đức Em",
+      "ratings": {
+        "pedagogical_clarity": 5,
+        "professionalism_punctuality": 5,
+        "materials_usefulness": 4,
+        "fairness_transparency": 5,
+        "inspiration_motivation": 5
+      },
+      "averageRating": 4.8,
+      "generalFeedback": "Thầy giảng rất dễ hiểu và truyền cảm hứng tuyệt vời!",
+      "submittedAt": "2026-10-09T13:51:05.724Z"
+    },
+    {
+      "submissionId": "SET_1791553887197_jph9bq",
+      "courseCode": "IT101",
+      "courseName": "Nhập Môn Lập Trình C/C++",
+      "lecturerId": "GV001",
+      "lecturerName": "TS. Hoàng Đức Em",
+      "ratings": {
+        "pedagogical_clarity": 5,
+        "professionalism_punctuality": 5,
+        "materials_usefulness": 4,
+        "fairness_transparency": 5,
+        "inspiration_motivation": 5
+      },
+      "averageRating": 4.8,
+      "generalFeedback": "Thầy giảng rất dễ hiểu và truyền cảm hứng tuyệt vời!",
+      "submittedAt": "2026-10-09T13:51:27.197Z"
+    },
+    {
+      "submissionId": "SET_1791553904590_uusoc8",
+      "courseCode": "IT101",
+      "courseName": "Nhập Môn Lập Trình C/C++",
+      "lecturerId": "GV001",
+      "lecturerName": "TS. Hoàng Đức Em",
+      "ratings": {
+        "pedagogical_clarity": 5,
+        "professionalism_punctuality": 5,
+        "materials_usefulness": 4,
+        "fairness_transparency": 5,
+        "inspiration_motivation": 5
+      },
+      "averageRating": 4.8,
+      "generalFeedback": "Thầy giảng rất dễ hiểu và truyền cảm hứng tuyệt vời!",
+      "submittedAt": "2026-10-09T13:51:44.590Z"
+    },
+    {
+      "submissionId": "SET_1791553913537_va4qxb",
+      "courseCode": "IT101",
+      "courseName": "Học phần",
+      "lecturerId": "GV-DEFAULT",
+      "lecturerName": "Giảng viên",
+      "ratings": {
+        "pedagogical_clarity": 5
+      },
+      "averageRating": 5,
+      "generalFeedback": "",
+      "submittedAt": "2026-10-09T13:51:53.537Z"
+    }
+  ],
+  "studentStatus": {
+    "1_IT101": {
+      "completed": true,
+      "completedAt": "2026-10-09T13:51:44.590Z"
+    },
+    "999_IT101": {
+      "completed": true,
+      "completedAt": "2026-10-09T13:51:53.537Z"
+    }
+  }
+}

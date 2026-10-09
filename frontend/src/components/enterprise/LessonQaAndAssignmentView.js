@@ -14,6 +14,7 @@ import {
   FileDoneOutlined, PaperClipOutlined, StarFilled
 } from '@ant-design/icons';
 import apiClient from '../../services/apiClient';
+import AcademicContentRenderer, { FormulaAndCodeToolbar } from '../common/AcademicContentRenderer';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -633,7 +634,7 @@ export default function LessonQaAndAssignmentView({ currentUser }) {
                 </div>
 
                 <div style={{ marginTop: 12, background: '#f8fafc', padding: 14, borderRadius: 8, fontSize: 13, color: '#1e293b' }}>
-                  {thread.content}
+                  <AcademicContentRenderer content={thread.content} />
                 </div>
 
                 <div style={{ marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -714,8 +715,8 @@ export default function LessonQaAndAssignmentView({ currentUser }) {
                               </Button>
                             )}
                           </div>
-                          <div style={{ marginTop: 6, fontSize: 13, color: '#334155', whiteSpace: 'pre-line' }}>
-                            {rep.content}
+                          <div style={{ marginTop: 6, fontSize: 13, color: '#334155' }}>
+                            <AcademicContentRenderer content={rep.content} />
                           </div>
                         </div>
                       )}
@@ -959,10 +960,22 @@ export default function LessonQaAndAssignmentView({ currentUser }) {
 
           <Form.Item
             name="content"
-            label="Nội Dung Chi Tiết Câu Hỏi / Vướng Mắc"
+            label={
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                <span>Nội Dung Chi Tiết Câu Hỏi / Vướng Mắc</span>
+              </div>
+            }
             rules={[{ required: true, message: 'Vui lòng mô tả chi tiết vướng mắc' }]}
           >
-            <Input.TextArea rows={4} placeholder="Mô tả cụ thể bài toán, đoạn code hoặc lý thuyết bạn cần thầy cô và các bạn hỗ trợ..." />
+            <div>
+              <FormulaAndCodeToolbar
+                onInsert={(snippet) => {
+                  const current = questionForm.getFieldValue('content') || '';
+                  questionForm.setFieldsValue({ content: current + snippet });
+                }}
+              />
+              <Input.TextArea rows={5} placeholder="Mô tả cụ thể bài toán, công thức toán học $$...$$ hoặc đoạn mã code ```cpp ... ``` bạn cần trao đổi..." />
+            </div>
           </Form.Item>
 
           <Form.Item
@@ -995,10 +1008,10 @@ export default function LessonQaAndAssignmentView({ currentUser }) {
         open={isReplyModalOpen}
         onCancel={() => setIsReplyModalOpen(false)}
         footer={null}
-        width={600}
+        width={650}
       >
         <div style={{ background: '#f8fafc', padding: 12, borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
-          <b>Câu hỏi gốc:</b> {activeThreadForReply?.content}
+          <b>Câu hỏi gốc:</b> <AcademicContentRenderer content={activeThreadForReply?.content} />
         </div>
         <Form form={replyForm} layout="vertical" onFinish={handleSendReply}>
           <Form.Item
@@ -1006,7 +1019,15 @@ export default function LessonQaAndAssignmentView({ currentUser }) {
             label="Nội Dung Câu Trả Lời & Hướng Dẫn"
             rules={[{ required: true, message: 'Vui lòng nhập nội dung câu trả lời' }]}
           >
-            <Input.TextArea rows={4} placeholder="Nhập câu trả lời, giải pháp hoặc đoạn code hướng dẫn..." />
+            <div>
+              <FormulaAndCodeToolbar
+                onInsert={(snippet) => {
+                  const current = replyForm.getFieldValue('content') || '';
+                  replyForm.setFieldsValue({ content: current + snippet });
+                }}
+              />
+              <Input.TextArea rows={5} placeholder="Nhập câu trả lời, công thức giải thích $$...$$ hoặc đoạn code hướng dẫn ```cpp ... ```..." />
+            </div>
           </Form.Item>
 
           <div style={{ textAlign: 'right', marginTop: 16 }}>

@@ -183,4 +183,51 @@ router.post('/gradebook/verify', async (req, res) => {
   }
 });
 
+// -------------------------------------------------------------
+// 9. KHẢO SÁT ĐÁNH GIÁ GIẢNG VIÊN (SET) & CỔNG CHẶN ĐIỂM THI (GATEKEEPER)
+// -------------------------------------------------------------
+const courseEvaluationService = require('../services/courseEvaluationService');
+
+// Lấy mẫu khảo sát giảng dạy cho học phần
+router.get('/evaluations/form', (req, res) => {
+  try {
+    const { courseCode, lecturerName } = req.query;
+    const form = courseEvaluationService.getSurveyForm(courseCode || 'IT101', lecturerName);
+    res.json({ success: true, data: form });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Kiểm tra trạng thái khảo sát của sinh viên
+router.get('/evaluations/status/:studentId', (req, res) => {
+  try {
+    const { courseCode } = req.query;
+    const hasCompleted = courseEvaluationService.hasStudentCompleted(req.params.studentId, courseCode);
+    res.json({ success: true, hasCompleted, courseCode });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Nộp phiếu khảo sát ẩn danh (Mở khóa điểm thi)
+router.post('/evaluations/submit', (req, res) => {
+  try {
+    const result = courseEvaluationService.submitSurvey(req.body);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+// Thống kê kết quả khảo sát cho Giảng viên & Phòng Đảm bảo Chất lượng
+router.get('/evaluations/stats/:courseCode', (req, res) => {
+  try {
+    const stats = courseEvaluationService.getStatistics(req.params.courseCode);
+    res.json({ success: true, data: stats });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 module.exports = router;

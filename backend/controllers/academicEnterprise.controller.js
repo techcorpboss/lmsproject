@@ -4,6 +4,7 @@ const { User, Course, CourseSection, AcademicLecturer, AcademicSectionGrade, seq
 const aiService = require('../services/aiService');
 const pedagogyEngine = require('../services/pedagogyEngine');
 const { studentDetailedTranscripts, sectionClassTranscripts } = require('./transcriptData');
+const courseEvaluationService = require('../services/courseEvaluationService');
 
 // ==================== 1. CÁC DANH MỤC CƠ SỞ CHUẨN ĐẠI HỌC ====================
 
@@ -1195,6 +1196,27 @@ exports.getStudentTranscript = async (req, res) => {
       };
     }
 
+    // Áp dụng Cổng chặn Khảo sát Đánh giá Giảng viên (SET Gatekeeper)
+    const processedCourses = filteredCourses.map(course => {
+      const courseCode = course.code || course.course_code;
+      const isEvaluated = 
+        courseEvaluationService.hasStudentCompleted(studentId, courseCode) ||
+        courseEvaluationService.hasStudentCompleted(transcript.student_id, courseCode) ||
+        (transcript.student_code && courseEvaluationService.hasStudentCompleted(transcript.student_code, courseCode));
+      return {
+        ...course,
+        code: courseCode,
+        course_code: courseCode,
+        evaluation_required: true,
+        is_evaluated: isEvaluated,
+        is_locked_by_survey: !isEvaluated,
+        display_final_score: isEvaluated ? course.final_exam_score : '🔒 Cần khảo sát',
+        display_course_score_10: isEvaluated ? course.course_score_10 : '🔒 Cần khảo sát',
+        display_letter_grade: isEvaluated ? course.course_score_letter : '🔒',
+        display_course_score_4: isEvaluated ? course.course_score_4 : '🔒'
+      };
+    });
+
     res.json({
       success: true,
       data: {
@@ -1225,7 +1247,7 @@ exports.getStudentTranscript = async (req, res) => {
           academic_rank: s.academic_rank
         })),
         active_semester: activeSemesterInfo,
-        courses: filteredCourses,
+        courses: processedCourses,
         cumulative: transcript.cumulative,
         printed_at: new Date().toISOString()
       }

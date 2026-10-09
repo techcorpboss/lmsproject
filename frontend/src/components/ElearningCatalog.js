@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons';
 import apiClient from '../services/apiClient';
 import VirtualClassroomModal from './enterprise/VirtualClassroomModal';
+import InteractiveVideoPlayer from './common/InteractiveVideoPlayer';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -350,15 +351,13 @@ export default function ElearningCatalog({ currentUser }) {
               }
             >
               {activeLesson?.lesson_type === 'video' && (
-                <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: 8, background: '#000', marginBottom: 16 }}>
-                  <iframe
-                    title={activeLesson.title}
-                    src={activeLesson.media_url?.includes('youtube.com') || activeLesson.media_url?.includes('youtu.be') ? activeLesson.media_url : 'https://www.youtube.com/embed/dQw4w9WgXcQ'}
-                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                </div>
+                <InteractiveVideoPlayer
+                  lessonId={activeLesson.id || 1}
+                  mediaUrl={activeLesson.media_url}
+                  lessonTitle={activeLesson.title}
+                  isTeacher={currentUser?.role === 'teacher' || currentUser?.role === 'admin' || currentUser?.role === 'superadmin'}
+                  currentUser={currentUser}
+                />
               )}
 
               {activeLesson?.lesson_type === 'document' && (

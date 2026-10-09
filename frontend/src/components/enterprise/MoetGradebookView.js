@@ -7,10 +7,12 @@ import {
   FileTextOutlined, PrinterOutlined, DownloadOutlined, ReloadOutlined,
   CheckCircleOutlined, UserOutlined, TeamOutlined, SettingOutlined,
   BookOutlined, TrophyOutlined, SafetyCertificateOutlined,
-  CalendarOutlined, SolutionOutlined, IdcardOutlined, UploadOutlined, FileWordOutlined
+  CalendarOutlined, SolutionOutlined, IdcardOutlined, UploadOutlined, FileWordOutlined,
+  LockOutlined, UnlockOutlined, StarFilled, Tooltip
 } from '@ant-design/icons';
 import apiClient from '../../services/apiClient';
 import { exportToExcel, exportToWord, parseCsvFile } from '../../services/exportImportService';
+import StudentEvaluationModal from './StudentEvaluationModal';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -37,6 +39,25 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
   const [isSigning, setIsSigning] = useState(false);
   const [verifyModalVisible, setVerifyModalVisible] = useState(false);
   const [verificationResult, setVerificationResult] = useState(null);
+
+  // Trạng thái Khảo sát Đánh giá Giảng viên (SET Gatekeeper)
+  const [evaluationModalOpen, setEvaluationModalOpen] = useState(false);
+  const [evaluatingCourse, setEvaluatingCourse] = useState(null);
+
+  const handleOpenEvaluationModal = (course) => {
+    setEvaluatingCourse({
+      course_code: course.code || course.course_code,
+      course_name: course.name || course.course_name,
+      lecturer_id: 'GV001',
+      lecturer_name: 'TS. Hoàng Đức Em'
+    });
+    setEvaluationModalOpen(true);
+  };
+
+  const handleEvaluationSuccess = () => {
+    fetchStudentTranscript();
+    message.success('Điểm thi học phần đã được mở khóa thành công!');
+  };
 
   // Đồng bộ khi prop selectedSectionId thay đổi
   useEffect(() => {
@@ -779,8 +800,27 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       ),
       dataIndex: 'final_exam_score',
       key: 'final_exam_score',
-      width: 80,
-      align: 'center'
+      width: 85,
+      align: 'center',
+      render: (sc, record) => {
+        if (record.is_locked_by_survey) {
+          return (
+            <Tooltip title="Cần làm Khảo sát Giảng dạy để mở khóa điểm">
+              <Button
+                type="link"
+                size="small"
+                danger
+                icon={<LockOutlined />}
+                style={{ padding: 0, fontWeight: 700 }}
+                onClick={() => handleOpenEvaluationModal(record)}
+              >
+                Khóa
+              </Button>
+            </Tooltip>
+          );
+        }
+        return sc;
+      }
     },
     {
       title: (
@@ -791,16 +831,30 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       ),
       dataIndex: 'course_score_10',
       key: 'course_score_10',
-      width: 90,
+      width: 95,
       align: 'center',
-      render: (sc) => (
-        <span style={{
-          fontWeight: 700,
-          color: sc >= 8.5 ? '#16a34a' : sc < 4.0 ? '#dc2626' : '#2563eb'
-        }}>
-          {sc}
-        </span>
-      )
+      render: (sc, record) => {
+        if (record.is_locked_by_survey) {
+          return (
+            <Tag
+              color="warning"
+              icon={<LockOutlined />}
+              style={{ cursor: 'pointer', margin: 0 }}
+              onClick={() => handleOpenEvaluationModal(record)}
+            >
+              Chờ khảo sát
+            </Tag>
+          );
+        }
+        return (
+          <span style={{
+            fontWeight: 700,
+            color: sc >= 8.5 ? '#16a34a' : sc < 4.0 ? '#dc2626' : '#2563eb'
+          }}>
+            {sc}
+          </span>
+        );
+      }
     },
     {
       title: 'Điểm chữ',
@@ -808,7 +862,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       key: 'course_score_letter',
       width: 75,
       align: 'center',
-      render: (ltr) => <span style={{ fontWeight: 700 }}>{ltr}</span>
+      render: (ltr, record) => record.is_locked_by_survey ? <span style={{ color: '#94a3b8' }}>🔒</span> : <span style={{ fontWeight: 700 }}>{ltr}</span>
     },
     {
       title: 'Hệ 4',
@@ -816,7 +870,7 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       key: 'course_score_4',
       width: 70,
       align: 'center',
-      render: (s4) => <span style={{ fontWeight: 700 }}>{s4}</span>
+      render: (s4, record) => record.is_locked_by_survey ? <span style={{ color: '#94a3b8' }}>🔒</span> : <span style={{ fontWeight: 700 }}>{s4}</span>
     },
     {
       title: 'Kết quả',
@@ -824,11 +878,40 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       key: 'course_result',
       width: 100,
       align: 'center',
-      render: (res) => (
-        <span style={{ fontWeight: 700, whiteSpace: 'nowrap', color: res?.includes('ĐẠT') ? '#16a34a' : '#dc2626' }}>
-          {res}
-        </span>
-      )
+      render: (res, record) => {
+        if (record.is_locked_by_survey) return <Tag color="default">Bảo lưu</Tag>;
+        return (
+          <span style={{ fontWeight: 700, whiteSpace: 'nowrap', color: res?.includes('ĐẠT') ? '#16a34a' : '#dc2626' }}>
+            {res}
+          </span>
+        );
+      }
+    },
+    {
+      title: 'Khảo sát (SET)',
+      key: 'evaluation_action',
+      width: 135,
+      align: 'center',
+      render: (_, record) => {
+        if (record.is_evaluated) {
+          return (
+            <Tag color="success" icon={<CheckCircleOutlined />}>
+              Đã đánh giá
+            </Tag>
+          );
+        }
+        return (
+          <Button
+            type="primary"
+            size="small"
+            style={{ background: '#f59e0b', borderColor: '#f59e0b', fontSize: 11 }}
+            icon={<StarFilled />}
+            onClick={() => handleOpenEvaluationModal(record)}
+          >
+            Đánh giá ngay
+          </Button>
+        );
+      }
     }
   ];
 
@@ -1138,6 +1221,24 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
         `}
       </style>
 
+      {/* CẢNH BÁO KHÓA SỔ ĐIỂM CHỜ KHẢO SÁT GIẢNG DẠY */}
+      {isStudent && (studentTranscript?.courses || []).some(c => c.is_locked_by_survey) && (
+        <Alert
+          message={<b>QUY ĐỊNH KHẢO THÍ: CẦN HOÀN THÀNH KHẢO SÁT ĐÁNG GIÁ GIẢNG DẠY ĐỂ XEM ĐIỂM THI</b>}
+          description={
+            <div>
+              <span>
+                Theo <b>Thông tư 08/2021/TT-BGDĐT</b> và chuẩn Đảm bảo Chất lượng, điểm thi kết thúc học phần của các môn học chưa khảo sát đang được tạm ẩn. Vui lòng bấm vào nút <b>"Đánh giá ngay"</b> tại dòng môn học tương ứng để hoàn thành phiếu khảo sát ẩn danh và mở khóa điểm tức thì.
+              </span>
+            </div>
+          }
+          type="warning"
+          showIcon
+          icon={<LockOutlined style={{ color: '#d97706' }} />}
+          style={{ maxWidth: 1400, margin: '0 auto 16px auto', borderRadius: 8, border: '1px solid #fde68a' }}
+        />
+      )}
+
       {/* CONTAINER BẢNG ĐIỂM CHUẨN IN ẤN QUỐC GIA (PRINTABLE CONTAINER) */}
       <Card className="moet-printable-sheet" style={{ borderRadius: 12, fontSize: `${fontSizePt}px`, background: '#ffffff', maxWidth: 1400, margin: '0 auto', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
         {/* TIÊU ĐỀ CHUẨN BỘ GIÁO DỤC VÀ ĐÀO TẠO */}
@@ -1376,6 +1477,16 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
           </div>
         )}
       </Modal>
+
+      {/* MODAL KHẢO SÁT Ý KIẾN SINH VIÊN (SET) */}
+      <StudentEvaluationModal
+        open={evaluationModalOpen}
+        onClose={() => setEvaluationModalOpen(false)}
+        course={evaluatingCourse}
+        studentId={currentStudent?.student_id || currentUser?.id || '1'}
+        studentName={currentStudent?.full_name || currentUser?.full_name}
+        onSuccess={handleEvaluationSuccess}
+      />
     </div>
   );
 }

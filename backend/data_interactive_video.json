@@ -1,0 +1,174 @@
+{
+  "1": [
+    {
+      "id": "cp_1_1",
+      "timestamp_seconds": 15,
+      "timestamp_display": "00:15",
+      "title": "Kiểm tra nhanh: Bản chất con trỏ trong C++",
+      "question": "Trong ngôn ngữ C/C++, toán tử nào sau đây dùng để lấy địa chỉ ô nhớ của một biến?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Toán tử sao (*)"
+        },
+        {
+          "key": "B",
+          "text": "Toán tử và (&)"
+        },
+        {
+          "key": "C",
+          "text": "Toán tử mũi tên (->)"
+        },
+        {
+          "key": "D",
+          "text": "Toán tử hai dấu chấm (::)"
+        }
+      ],
+      "correct_answer": "B",
+      "points": 10,
+      "explanation": "Toán tử '&' (Address-of operator) được sử dụng để trích xuất địa chỉ bộ nhớ vật lý của một biến. Toán tử '*' dùng để truy xuất giá trị tại địa chỉ mà con trỏ trỏ tới (dereference)."
+    },
+    {
+      "id": "cp_1_2",
+      "timestamp_seconds": 45,
+      "timestamp_display": "00:45",
+      "title": "Khái niệm Cấp phát động",
+      "question": "Hành động nào sau đây sẽ gây ra lỗi Memory Leak (rò rỉ bộ nhớ) trong C++?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Cấp phát biến tĩnh trong hàm main()"
+        },
+        {
+          "key": "B",
+          "text": "Dùng từ khóa new cấp phát vùng nhớ trên Heap nhưng quên gọi delete trước khi kết thúc chương trình"
+        },
+        {
+          "key": "C",
+          "text": "Khai báo con trỏ NULL"
+        },
+        {
+          "key": "D",
+          "text": "Gọi hàm free() sau khi dùng malloc()"
+        }
+      ],
+      "correct_answer": "B",
+      "points": 10,
+      "explanation": "Vùng nhớ Heap được cấp phát bởi 'new' phải được giải phóng tường minh bằng 'delete'. Nếu không giải phóng, hệ điều hành không thể thu hồi vùng nhớ đó cho đến khi tiến trình kết thúc hoàn toàn."
+    },
+    {
+      "id": "cp_1_1791553865721",
+      "timestamp_seconds": 60,
+      "timestamp_display": "01:00",
+      "title": "Kiểm tra giải phóng mảng con trỏ",
+      "question": "Cú pháp giải phóng mảng cấp phát động đúng là gì?",
+      "options": [
+        {
+          "key": "A",
+          "text": "delete arr;"
+        },
+        {
+          "key": "B",
+          "text": "delete[] arr;"
+        },
+        {
+          "key": "C",
+          "text": "free(arr);"
+        },
+        {
+          "key": "D",
+          "text": "remove(arr);"
+        }
+      ],
+      "correct_answer": "B",
+      "points": 10,
+      "explanation": "Dùng new[] thì phải dùng delete[]!"
+    },
+    {
+      "id": "cp_1_1791553887193",
+      "timestamp_seconds": 60,
+      "timestamp_display": "01:00",
+      "title": "Kiểm tra giải phóng mảng con trỏ",
+      "question": "Cú pháp giải phóng mảng cấp phát động đúng là gì?",
+      "options": [
+        {
+          "key": "A",
+          "text": "delete arr;"
+        },
+        {
+          "key": "B",
+          "text": "delete[] arr;"
+        },
+        {
+          "key": "C",
+          "text": "free(arr);"
+        },
+        {
+          "key": "D",
+          "text": "remove(arr);"
+        }
+      ],
+      "correct_answer": "B",
+      "points": 10,
+      "explanation": "Dùng new[] thì phải dùng delete[]!"
+    },
+    {
+      "id": "cp_1_1791553904588",
+      "timestamp_seconds": 60,
+      "timestamp_display": "01:00",
+      "title": "Kiểm tra giải phóng mảng con trỏ",
+      "question": "Cú pháp giải phóng mảng cấp phát động đúng là gì?",
+      "options": [
+        {
+          "key": "A",
+          "text": "delete arr;"
+        },
+        {
+          "key": "B",
+          "text": "delete[] arr;"
+        },
+        {
+          "key": "C",
+          "text": "free(arr);"
+        },
+        {
+          "key": "D",
+          "text": "remove(arr);"
+        }
+      ],
+      "correct_answer": "B",
+      "points": 10,
+      "explanation": "Dùng new[] thì phải dùng delete[]!"
+    }
+  ],
+  "2": [
+    {
+      "id": "cp_2_1",
+      "timestamp_seconds": 25,
+      "timestamp_display": "00:25",
+      "title": "Tính đóng gói trong OOP",
+      "question": "Từ khóa phạm vi truy cập nào giúp ẩn giấu dữ liệu thành viên trong Class để chỉ các phương thức nội bộ mới truy xuất được?",
+      "options": [
+        {
+          "key": "A",
+          "text": "public"
+        },
+        {
+          "key": "B",
+          "text": "protected"
+        },
+        {
+          "key": "C",
+          "text": "private"
+        },
+        {
+          "key": "D",
+          "text": "internal"
+        }
+      ],
+      "correct_answer": "C",
+      "points": 10,
+      "explanation": "Trong C++, thuộc tính khai báo 'private' chỉ có thể truy xuất từ chính các hàm thành viên bên trong lớp đó, đảm bảo tính đóng gói (Encapsulation)."
+    }
+  ]
+}

@@ -122,5 +122,62 @@ router.get('/virtual-classroom/attendance/:roomId', async (req, res) => {
   }
 });
 
+// -------------------------------------------------------------
+// H5P INTERACTIVE VIDEO CHECKPOINTS & IN-VIDEO QUIZZES
+// -------------------------------------------------------------
+const interactiveVideoService = require('../services/interactiveVideoService');
+
+// GET /api/elearning/lessons/:lessonId/checkpoints (Lấy danh sách điểm dừng câu hỏi)
+router.get('/lessons/:lessonId/checkpoints', (req, res) => {
+  try {
+    const checkpoints = interactiveVideoService.getCheckpointsByLesson(req.params.lessonId);
+    res.json({ success: true, data: checkpoints });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Lỗi lấy danh sách điểm dừng: ' + err.message });
+  }
+});
+
+// POST /api/elearning/lessons/:lessonId/checkpoints (Thêm / Sửa điểm dừng - Giảng viên)
+router.post('/lessons/:lessonId/checkpoints', (req, res) => {
+  try {
+    const updated = interactiveVideoService.saveCheckpoint(req.params.lessonId, req.body);
+    res.json({ success: true, message: 'Đã lưu điểm dừng câu hỏi thành công!', data: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Lỗi lưu điểm dừng câu hỏi: ' + err.message });
+  }
+});
+
+// DELETE /api/elearning/lessons/:lessonId/checkpoints/:checkpointId (Xóa điểm dừng - Giảng viên)
+router.delete('/lessons/:lessonId/checkpoints/:checkpointId', (req, res) => {
+  try {
+    const updated = interactiveVideoService.deleteCheckpoint(req.params.lessonId, req.params.checkpointId);
+    res.json({ success: true, message: 'Đã xóa điểm dừng câu hỏi!', data: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Lỗi xóa điểm dừng: ' + err.message });
+  }
+});
+
+// POST /api/elearning/lessons/:lessonId/checkpoint-submit (Nộp câu trả lời dừng video - Sinh viên)
+router.post('/lessons/:lessonId/checkpoint-submit', (req, res) => {
+  try {
+    const studentId = req.user ? req.user.id : 'SV_DEFAULT';
+    const result = interactiveVideoService.submitAnswer(req.params.lessonId, studentId, req.body);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/elearning/lessons/:lessonId/interactive-progress (Tiến độ xem & điểm tương tác)
+router.get('/lessons/:lessonId/interactive-progress', (req, res) => {
+  try {
+    const studentId = req.user ? req.user.id : 'SV_DEFAULT';
+    const progress = interactiveVideoService.getStudentProgress(req.params.lessonId, studentId);
+    res.json({ success: true, data: progress });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Lỗi lấy tiến độ video: ' + err.message });
+  }
+});
+
 module.exports = router;
 
