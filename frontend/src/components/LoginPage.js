@@ -154,14 +154,21 @@ export default function LoginPage({ onLoginSuccess }) {
     } catch (err) {
       // Fallback đăng nhập qua tài khoản admin chính thức nếu ERP chưa liên kết
       message.info('Đang chuyển hướng xác thực mặc định hệ thống...');
-      handleLogin({ username: 'superadmin', password: 'SuperAdmin@2026' });
+      handleLogin({ username: 'admin', password: 'Admin@2026' });
     } finally {
       setLoading(false);
     }
   };
 
-  // Lọc tài khoản theo tab
-  const filteredAccounts = systemAccounts.filter(acc => {
+  // Lọc danh bạ tài khoản hiển thị: ẩn vai trò superadmin / chủ dự án
+  const visibleAccounts = systemAccounts.filter(acc =>
+    acc.role !== 'superadmin' &&
+    acc.username !== 'superadmin' &&
+    acc.username !== 'boss.techcorp'
+  );
+
+  // Lọc tài khoản theo tab (để lại Admin, Giảng viên và Sinh viên)
+  const filteredAccounts = visibleAccounts.filter(acc => {
     if (activeAccountTab === 'ALL') return true;
     return acc.role === activeAccountTab;
   });
@@ -259,7 +266,7 @@ export default function LoginPage({ onLoginSuccess }) {
             >
               <Input
                 prefix={<UserOutlined style={{ color: '#94a3b8' }} />}
-                placeholder="superadmin, admin, em.hd, sv_cntt..."
+                placeholder="admin, em.hd, sv_cntt..."
                 style={{ borderRadius: 8 }}
                 autoComplete="username"
               />
@@ -390,8 +397,7 @@ export default function LoginPage({ onLoginSuccess }) {
           onChange={setActiveAccountTab}
           size="small"
           items={[
-            { key: 'ALL', label: `Tất cả (${systemAccounts.length})` },
-            { key: 'superadmin', label: '👑 SuperAdmin (Chủ dự án)' },
+            { key: 'ALL', label: `Tất cả (${visibleAccounts.length})` },
             { key: 'admin', label: '⚡ Quản trị viên (Admin)' },
             { key: 'teacher', label: '👨‍🏫 Giảng viên các Khoa' },
             { key: 'student', label: '🎓 Sinh viên các Lớp' }

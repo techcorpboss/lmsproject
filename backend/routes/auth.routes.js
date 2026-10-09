@@ -4,17 +4,22 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const { Op } = require('sequelize');
 const { User, sequelize, SystemAuditLog } = require('../models');
 const { protect, JWT_SECRET, ERP_SSO_SECRET } = require('../middleware/auth');
 const totpService = require('../services/totpService');
 const { authRateLimiter } = require('../middleware/security');
 
 // GET /api/auth/system-accounts
-// Lấy danh sách tài khoản thực tế từ CSDL MySQL (SuperAdmin, Admin, Giảng viên, Sinh viên)
+// Lấy danh sách tài khoản thực tế từ CSDL MySQL (Admin, Giảng viên, Sinh viên) - Ẩn superadmin
 router.get('/system-accounts', async (req, res) => {
   try {
     const users = await User.findAll({
-      where: { status: 'ACTIVE' },
+      where: {
+        status: 'ACTIVE',
+        role: { [Op.ne]: 'superadmin' },
+        username: { [Op.notIn]: ['superadmin', 'boss.techcorp'] }
+      },
       attributes: [
         'id', 'username', 'full_name', 'email', 'role',
         'faculty_id', 'faculty_name', 'department', 'title', 'academic_rank',
@@ -22,7 +27,7 @@ router.get('/system-accounts', async (req, res) => {
         'two_factor_enabled', 'two_factor_enforced'
       ],
       order: [
-        [sequelize.literal("CASE role WHEN 'superadmin' THEN 1 WHEN 'admin' THEN 2 WHEN 'teacher' THEN 3 WHEN 'student' THEN 4 ELSE 5 END"), 'ASC'],
+        [sequelize.literal("CASE role WHEN 'admin' THEN 1 WHEN 'teacher' THEN 2 WHEN 'student' THEN 3 ELSE 4 END"), 'ASC'],
         ['id', 'ASC']
       ]
     });
@@ -42,7 +47,11 @@ router.get('/system-accounts', async (req, res) => {
 router.get('/sample-accounts', async (req, res) => {
   try {
     const users = await User.findAll({
-      where: { status: 'ACTIVE' },
+      where: {
+        status: 'ACTIVE',
+        role: { [Op.ne]: 'superadmin' },
+        username: { [Op.notIn]: ['superadmin', 'boss.techcorp'] }
+      },
       attributes: [
         'id', 'username', 'full_name', 'email', 'role',
         'faculty_id', 'faculty_name', 'department', 'title', 'academic_rank',
@@ -50,7 +59,7 @@ router.get('/sample-accounts', async (req, res) => {
         'two_factor_enabled', 'two_factor_enforced'
       ],
       order: [
-        [sequelize.literal("CASE role WHEN 'superadmin' THEN 1 WHEN 'admin' THEN 2 WHEN 'teacher' THEN 3 WHEN 'student' THEN 4 ELSE 5 END"), 'ASC'],
+        [sequelize.literal("CASE role WHEN 'admin' THEN 1 WHEN 'teacher' THEN 2 WHEN 'student' THEN 3 ELSE 4 END"), 'ASC'],
         ['id', 'ASC']
       ]
     });

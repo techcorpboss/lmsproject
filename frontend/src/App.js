@@ -197,12 +197,6 @@ function App() {
       },
       { type: 'divider' },
       {
-        key: 'switch_superadmin',
-        icon: <CrownOutlined style={{ color: '#7c3aed' }} />,
-        label: '👑 Chuyển sang Chủ dự án (SuperAdmin)',
-        onClick: () => handleSwitchAccount('superadmin')
-      },
-      {
         key: 'switch_admin',
         icon: <SwapOutlined style={{ color: '#d97706' }} />,
         label: '⚡ Chuyển sang Quản trị viên (Admin)',
@@ -478,6 +472,16 @@ function App() {
             key: 'audit_logs',
             icon: <HistoryOutlined style={{ color: '#52c41a' }} />,
             label: 'Nhật Ký Audit Logs'
+          },
+          {
+            key: 'executive_bi',
+            icon: <DashboardOutlined style={{ color: '#a855f7' }} />,
+            label: 'Executive BI Dashboard (Chiến Lược)'
+          },
+          {
+            key: 'uat_assessment',
+            icon: <TrophyOutlined style={{ color: '#f59e0b' }} />,
+            label: 'Nghiệm Thu UAT Chuẩn Bộ (>95%)'
           }
         ]
       });
