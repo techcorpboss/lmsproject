@@ -11,7 +11,7 @@ import {
   UploadOutlined, SafetyCertificateOutlined, EyeOutlined, PlusOutlined,
   SendOutlined, SearchOutlined, CheckOutlined, AuditOutlined,
   TrophyOutlined, ExclamationCircleOutlined, ReloadOutlined,
-  FileDoneOutlined, PaperClipOutlined, StarFilled
+  FileDoneOutlined, PaperClipOutlined, StarFilled, TeamOutlined, ThunderboltOutlined
 } from '@ant-design/icons';
 import apiClient from '../../services/apiClient';
 import AcademicContentRenderer, { FormulaAndCodeToolbar } from '../common/AcademicContentRenderer';
@@ -1019,6 +1019,8 @@ export default function LessonQaAndAssignmentView({ currentUser }) {
               ]}
             />
           </Card>
+        </Tabs.TabPane>
+
         {/* TAB 3: DOUBLE-BLIND PEER REVIEW */}
         <Tabs.TabPane
           tab={

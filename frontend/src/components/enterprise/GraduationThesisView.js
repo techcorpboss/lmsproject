@@ -505,7 +505,8 @@ export default function GraduationThesisView({ currentUser }) {
                   <Col span={8}>
                     <Form.Item name="rev1_pres" label="Thuyết trình" initialValue={8.5} rules={[{ required: true }]}>
                       <Input type="number" step="0.1" min="0" max="10" />
-                    </Col>
+                    </Form.Item>
+                  </Col>
                   <Col span={8}>
                     <Form.Item name="rev1_qa" label="Chất vấn" initialValue={9.0} rules={[{ required: true }]}>
                       <Input type="number" step="0.1" min="0" max="10" />
@@ -526,7 +527,8 @@ export default function GraduationThesisView({ currentUser }) {
                   <Col span={8}>
                     <Form.Item name="rev2_pres" label="Thuyết trình" initialValue={9.0} rules={[{ required: true }]}>
                       <Input type="number" step="0.1" min="0" max="10" />
-                    </Col>
+                    </Form.Item>
+                  </Col>
                   <Col span={8}>
                     <Form.Item name="rev2_qa" label="Chất vấn" initialValue={9.5} rules={[{ required: true }]}>
                       <Input type="number" step="0.1" min="0" max="10" />
