@@ -22,24 +22,60 @@ const SECTION_METADATA = {
   },
   2: {
     id: 2,
-    code: 'IT201_66.CNTT-2_HK1',
+    code: 'IT201_66.CNTT-1_HK1',
     course_code: 'IT201',
-    course_name: 'Cơ sở Dữ liệu',
+    course_name: 'Cơ sở Dữ liệu (Database Systems)',
     name: 'Cơ sở Dữ liệu (IT201)',
     faculty_id: 'CNTT',
     faculty_name: 'Khoa Công Nghệ Thông Tin',
     major_id: 'CNPM',
     major_name: 'Kỹ thuật Phần mềm',
-    class_name: '66.CNTT-2',
+    class_name: '66.CNTT-1',
     cohort: 'K66',
     credits: 3,
-    current_enrolled: 40,
+    current_enrolled: 42,
     room_name: 'P.402 (Nhà A3)',
     lecturer_name: 'TS. Hoàng Đức Em',
     degree_level: 'ĐẠI HỌC CHÍNH QUY'
   },
   3: {
     id: 3,
+    code: 'ENG101_66.CNTT-1_HK1',
+    course_code: 'ENG101',
+    course_name: 'Tiếng Anh Học Thuật 1 (General English B1)',
+    name: 'Tiếng Anh Học Thuật 1 (ENG101)',
+    faculty_id: 'NN',
+    faculty_name: 'Khoa Ngoại Ngữ & Đào tạo Chung',
+    major_id: 'CNPM',
+    major_name: 'Kỹ thuật Phần mềm',
+    class_name: '66.CNTT-1',
+    cohort: 'K66',
+    credits: 3,
+    current_enrolled: 42,
+    room_name: 'P.301 (Nhà C)',
+    lecturer_name: 'TS. Phạm Thu Hương',
+    degree_level: 'ĐẠI HỌC CHÍNH QUY'
+  },
+  4: {
+    id: 4,
+    code: 'MAT101_66.CNTT-1_HK1',
+    course_code: 'MAT101',
+    course_name: 'Giải Tích 1 (Toán Cao Cấp 1)',
+    name: 'Giải Tích 1 (MAT101)',
+    faculty_id: 'CNTT',
+    faculty_name: 'Khoa Công Nghệ Thông Tin & Cơ Bản',
+    major_id: 'CNPM',
+    major_name: 'Kỹ thuật Phần mềm',
+    class_name: '66.CNTT-1',
+    cohort: 'K66',
+    credits: 3,
+    current_enrolled: 42,
+    room_name: 'Giảng đường A3-101',
+    lecturer_name: 'TS. Trần Văn Bình',
+    degree_level: 'ĐẠI HỌC CHÍNH QUY'
+  },
+  5: {
+    id: 5,
     code: 'IT301_65.CNTT-1_HK1',
     course_code: 'IT301',
     course_name: 'Cấu trúc Dữ liệu & Giải thuật',
@@ -56,8 +92,8 @@ const SECTION_METADATA = {
     lecturer_name: 'TS. Nguyễn Văn An',
     degree_level: 'ĐẠI HỌC CHÍNH QUY'
   },
-  4: {
-    id: 4,
+  6: {
+    id: 6,
     code: 'BA101_66.QTKD-1_HK1',
     course_code: 'BA101',
     course_name: 'Kinh Tế Vi Mô (Microeconomics)',
@@ -74,8 +110,8 @@ const SECTION_METADATA = {
     lecturer_name: 'TS. Nguyễn Thị Hồng',
     degree_level: 'ĐẠI HỌC CHÍNH QUY'
   },
-  5: {
-    id: 5,
+  7: {
+    id: 7,
     code: 'BA102_66.QTKD-1_HK1',
     course_code: 'BA102',
     course_name: 'Quản Trị Học Đại Cương',
@@ -92,26 +128,8 @@ const SECTION_METADATA = {
     lecturer_name: 'ThS. Vũ Nam',
     degree_level: 'ĐẠI HỌC CHÍNH QUY'
   },
-  6: {
-    id: 6,
-    code: 'ENG101_66.NNA-1_HK1',
-    course_code: 'ENG101',
-    course_name: 'Tiếng Anh Học Thuật 1 (General English B1)',
-    name: 'Tiếng Anh Học Thuật 1 (ENG101)',
-    faculty_id: 'NN',
-    faculty_name: 'Khoa Ngoại Ngữ',
-    major_id: 'NNA',
-    major_name: 'Ngôn ngữ Anh',
-    class_name: '66.NNA-1',
-    cohort: 'K66',
-    credits: 4,
-    current_enrolled: 35,
-    room_name: 'P.301 (Nhà C)',
-    lecturer_name: 'TS. Phạm Thu Hương',
-    degree_level: 'ĐẠI HỌC CHÍNH QUY'
-  },
-  7: {
-    id: 7,
+  8: {
+    id: 8,
     code: 'EE101_66.DDT-1_HK1',
     course_code: 'EE101',
     course_name: 'Kỹ Thuật Mạch Điện Tử & IoT',
@@ -128,8 +146,8 @@ const SECTION_METADATA = {
     lecturer_name: 'TS. Bùi Quốc Thái',
     degree_level: 'ĐẠI HỌC KỸ SƯ'
   },
-  8: {
-    id: 8,
+  9: {
+    id: 9,
     code: 'TOU101_66.DL-1_HK1',
     course_code: 'TOU101',
     course_name: 'Tổng Quan Du Lịch & Dịch Vụ Lữ Hành',
@@ -151,7 +169,43 @@ const SECTION_METADATA = {
 const generateStandard15Weeks = (courseCode = 'IT101', sectionId = 1) => {
   let weekTitles = [];
 
-  if (courseCode === 'BA101') {
+  if (courseCode === 'IT201') {
+    weekTitles = [
+      { title: 'Tổng quan Hệ Quản trị CSDL & Mô hình Thực thể Liên kết (ER/EER Diagram)', desc: 'Thực thể, thuộc tính, mối kết hợp 1-1, 1-N, N-N, chuyển đổi sang lược đồ quan hệ.' },
+      { title: 'Mô hình Quan hệ (Relational Model), Ràng buộc Toàn vẹn & Đại số Quan hệ', desc: 'Bộ, thuộc tính, khóa chính, khóa ngoại, phép chọn, phép chiếu, kết nối, tích Descartes.' },
+      { title: 'Ngôn ngữ Truy vấn Dữ liệu SQL Cơ bản (DDL & DML: CREATE, INSERT, SELECT)', desc: 'Tạo bảng, chỉ mục, khóa chính, khóa ngoại, thêm sửa xóa dữ liệu và mệnh đề WHERE.' },
+      { title: 'Truy vấn SQL Nâng cao: Gom nhóm GROUP BY, Điều kiện HAVING & Aggregate Functions', desc: 'Hàm tổng hợp COUNT, SUM, AVG, MAX, MIN và lọc nhóm dữ liệu theo tiêu chí.' },
+      { title: 'Kỹ thuật Kết nối Bảng trong SQL (INNER JOIN, LEFT/RIGHT JOIN, FULL OUTER JOIN)', desc: 'Liên kết dữ liệu đa bảng, tự kết nối (Self-join) và tối ưu hóa thứ tự join.' },
+      { title: 'Truy vấn Lồng (Subqueries), Phép Toán Tập Hợp (UNION, INTERSECT, EXCEPT)', desc: 'Subquery vô hướng, subquery tương quan (Correlated Subquery) và từ khóa EXISTS.' },
+      { title: 'Khung nhìn (Views), Bảng Ảo & Phân Quyền Bảo Mật Dữ Liệu', desc: 'Tạo view bảo vệ dữ liệu nhạy cảm, view cập nhật được và cấp quyền GRANT/REVOKE.' },
+      { title: 'Kiểm tra Đánh giá Quá trình Giữa Kỳ (Midterm SQL Assessment)', desc: 'Thi thực hành viết câu lệnh truy vấn SQL trên hệ quản trị CSDL MySQL / PostgreSQL.' },
+      { title: 'Lý thuyết Phụ thuộc Hàm & Khóa Ứng viên (Functional Dependencies & Keys)', desc: 'Bao đóng của tập thuộc tính, hệ tiên đề Armstrong và tìm phủ cực tiểu.' },
+      { title: 'Chuẩn Hóa Dữ Liệu: Dạng Chuẩn 1NF, 2NF và 3NF (Normalization)', desc: 'Quy tắc phân rã bảng loại bỏ dư thừa dữ liệu, dị thường cập nhật và mất mát thông tin.' },
+      { title: 'Dạng Chuẩn Boyce-Codd (BCNF) & Bảo toàn Phụ thuộc Hàm', desc: 'So sánh 3NF và BCNF, thuật toán phân rã BCNF và bài toán đánh đổi phụ thuộc hàm.' },
+      { title: 'Thủ tục Lưu trữ (Stored Procedures), Hàm (Functions) & Triggers', desc: 'Lập trình thủ tục trên DBMS, con trỏ (Cursor), xử lý ngoại lệ và Trigger kiểm soát dữ liệu.' },
+      { title: 'Quản lý Giao dịch (Transactions) & Tính chất ACID', desc: 'Atomicity, Consistency, Isolation, Durability, mức cô lập giao dịch và giải quyết Deadlock.' },
+      { title: 'Tối ưu Hóa Truy vấn SQL & Chỉ mục (Indexing B-Tree / Hash)', desc: 'Phân tích Explain Plan, tối ưu hóa câu lệnh truy vấn lớn và đánh chỉ mục hiệu quả.' },
+      { title: 'Tổng kết Học phần & Hướng Dẫn Ôn Thi Kết Thúc Học Phần', desc: 'Hệ thống hóa kiến thức thiết kế CSDL, giải đáp bài tập lớn và điều kiện dự thi.' }
+    ];
+  } else if (courseCode === 'MAT101') {
+    weekTitles = [
+      { title: 'Giới hạn Dãy số, Giới hạn Hàm số & Tính Liên tục của Hàm Một Biến', desc: 'Định nghĩa giới hạn, các dạng vô định, quy tắc L\'Hôpital và tính liên tục tại một điểm.' },
+      { title: 'Đạo hàm & Vi phân Hàm Một Biến: Ý nghĩa Hình học và Vật lý', desc: 'Quy tắc tính đạo hàm, đạo hàm hàm hợp, vi phân cấp 1 và công thức xấp xỉ tuyến tính.' },
+      { title: 'Các Định lý Giá trị Trung bình (Rolle, Lagrange, Cauchy) & Công thức Taylor', desc: 'Định lý giá trị trung bình, khai triển Maclaurin của e^x, sin(x), cos(x), ln(1+x).' },
+      { title: 'Ứng dụng Đạo hàm Khảo sát Hàm số & Bài toán Cực trị Tối ưu', desc: 'Khoảng đơn điệu, cực trị, điểm uốn, tiệm cận và ứng dụng tối ưu hóa kỹ thuật.' },
+      { title: 'Nguyên hàm & Tích phân Bất định: Phương pháp Đổi biến số', desc: 'Bảng nguyên hàm cơ bản, đổi biến số loại 1 và loại 2, tích phân các hàm hữu tỉ.' },
+      { title: 'Phương pháp Tích phân Từng phần & Tích phân Hàm Lượng giác', desc: 'Công thức tích phân từng phần, quy tắc đặt u và dv, tích phân hàm lượng giác hữu tỉ.' },
+      { title: 'Tích phân Xác định: Định nghĩa Riemann & Công thức Newton-Leibniz', desc: 'Tổng tích phân Riemann, tính chất tích phân xác định và kỹ thuật tính tích phân.' },
+      { title: 'Kiểm tra Đánh giá Quá trình Giữa Kỳ (Midterm Calculus Exam)', desc: 'Thi trực tuyến trắc nghiệm & tự luận giải tích hàm một biến tính điểm quá trình.' },
+      { title: 'Ứng dụng Hình học của Tích phân: Tính Diện tích Hình phẳng & Thể tích', desc: 'Diện tích miền phẳng, thể tích khối tròn xoay quanh trục Ox/Oy và độ dài cung đường cong.' },
+      { title: 'Tích phân Suy rộng Loại 1 (Khoảng vô hạn) & Tiêu chuẩn Hội tụ', desc: 'Định nghĩa tích phân suy rộng, tiêu chuẩn so sánh và khảo sát sự hội tụ của p-integral.' },
+      { title: 'Tích phân Suy rộng Loại 2 (Hàm không bị chặn) & Ứng dụng Xác suất', desc: 'Điểm kỳ dị, tiêu chuẩn hội tụ và ứng dụng trong hàm mật độ xác suất liên tục.' },
+      { title: 'Chuỗi Số Dương: Định nghĩa, Tính chất & Tiêu chuẩn Hội tụ (D\'Alembert, Cauchy)', desc: 'Chuỗi cấp số nhân, chuỗi điều hòa, tiêu chuẩn so sánh, tỉ số D\'Alembert và căn số Cauchy.' },
+      { title: 'Chuỗi Đan Dấu, Hội tụ Tuyệt đối & Chuỗi Lũy Thừa', desc: 'Tiêu chuẩn Leibniz, bán kính hội tụ, khoảng hội tụ của chuỗi lũy thừa sum a_n x^n.' },
+      { title: 'Phương trình Vi phân Cấp 1: Tuyến tính, Tách biến & Bernoulli', desc: 'Nghiệm tổng quát, bài toán Cauchy, thừa số tích phân và ứng dụng mô hình hóa tốc độ.' },
+      { title: 'Phương trình Vi phân Tuyến tính Cấp 2 Hệ số Hằng & Ôn tập Cuối kỳ', desc: 'Phương trình đặc trưng, nghiệm thuần nhất và nghiệm riêng mô hình hóa dao động điều hòa.' }
+    ];
+  } else if (courseCode === 'BA101') {
     weekTitles = [
       { title: 'Tổng quan về Kinh tế học Vi mô, Thị trường & Quy luật Cung Cầu', desc: 'Đường cung, đường cầu, điểm cân bằng thị trường và sự can thiệp của chính phủ.' },
       { title: 'Hệ số Co Giãn của Cầu và Cung (Elasticity Analysis)', desc: 'Co giãn theo giá, co giãn theo thu nhập, co giãn chéo và ứng dụng định giá doanh nghiệp.' },

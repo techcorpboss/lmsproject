@@ -81,7 +81,7 @@ export const HIERARCHY_DATA = {
     },
     {
       id: 2,
-      code: 'IT201_66.CNTT-2_HK1',
+      code: 'IT201_66.CNTT-1_HK1',
       name: 'Cơ sở Dữ liệu (Database Systems)',
       course_code: 'IT201',
       credits: 3,
@@ -89,14 +89,46 @@ export const HIERARCHY_DATA = {
       major_id: 'CNPM',
       cohort: 'K66 (2026-2030)',
       semester_id: 1,
-      class_name: '66.CNTT-2',
-      enrolled: 40,
+      class_name: '66.CNTT-1',
+      enrolled: 42,
       lecturer: 'TS. Hoàng Đức Em',
       lecturer_username: 'teacher',
       room: 'P.402 (Nhà A3)'
     },
     {
       id: 3,
+      code: 'ENG101_66.CNTT-1_HK1',
+      name: 'Tiếng Anh Học Thuật 1 (General English B1)',
+      course_code: 'ENG101',
+      credits: 3,
+      faculty_id: 'NN',
+      major_id: 'CNPM',
+      cohort: 'K66 (2026-2030)',
+      semester_id: 1,
+      class_name: '66.CNTT-1',
+      enrolled: 42,
+      lecturer: 'TS. Phạm Thu Hương',
+      lecturer_username: 'huong.pt',
+      room: 'P.301 (Nhà C)'
+    },
+    {
+      id: 4,
+      code: 'MAT101_66.CNTT-1_HK1',
+      name: 'Giải Tích 1 (Toán Cao Cấp 1)',
+      course_code: 'MAT101',
+      credits: 3,
+      faculty_id: 'CNTT',
+      major_id: 'CNPM',
+      cohort: 'K66 (2026-2030)',
+      semester_id: 1,
+      class_name: '66.CNTT-1',
+      enrolled: 42,
+      lecturer: 'TS. Trần Văn Bình',
+      lecturer_username: 'binh.tv',
+      room: 'Giảng đường A3-101'
+    },
+    {
+      id: 5,
       code: 'IT301_65.CNTT-1_HK1',
       name: 'Cấu trúc Dữ liệu & Giải thuật',
       course_code: 'IT301',
@@ -112,7 +144,7 @@ export const HIERARCHY_DATA = {
       room: 'Lab PM 02'
     },
     {
-      id: 4,
+      id: 6,
       code: 'BA101_66.QTKD-1_HK1',
       name: 'Kinh Tế Vi Mô (Microeconomics)',
       course_code: 'BA101',
@@ -128,7 +160,7 @@ export const HIERARCHY_DATA = {
       room: 'P.201 (Nhà B1)'
     },
     {
-      id: 5,
+      id: 7,
       code: 'BA102_66.QTKD-1_HK1',
       name: 'Quản Trị Học Đại Cương',
       course_code: 'BA102',
@@ -144,7 +176,7 @@ export const HIERARCHY_DATA = {
       room: 'P.202 (Nhà B1)'
     },
     {
-      id: 6,
+      id: 8,
       code: 'ENG101_66.NNA-1_HK1',
       name: 'Tiếng Anh Học Thuật 1 (General English B1)',
       course_code: 'ENG101',
@@ -160,7 +192,7 @@ export const HIERARCHY_DATA = {
       room: 'P.301 (Nhà C)'
     },
     {
-      id: 7,
+      id: 9,
       code: 'EE101_66.DDT-1_HK1',
       name: 'Kỹ Thuật Mạch Điện Tử & IoT',
       course_code: 'EE101',
@@ -176,7 +208,7 @@ export const HIERARCHY_DATA = {
       room: 'Lab Vi Mạch (Nhà E)'
     },
     {
-      id: 8,
+      id: 10,
       code: 'TOU101_66.DL-1_HK1',
       name: 'Tổng Quan Du Lịch & Dịch Vụ Lữ Hành',
       course_code: 'TOU101',
@@ -236,7 +268,7 @@ export default function CourseHierarchySelector({
       // Giảng viên: CHỈ thấy các lớp học phần được phân công
       const username = currentUser?.username;
       if (username === 'gv_cntt' || username === 'teacher') {
-        return s.faculty_id === 'CNTT' && (s.course_code === 'IT101' || s.course_code === 'IT201');
+        return s.faculty_id === 'CNTT';
       }
       if (username === 'gv_kinhte' || username === 'hong.nt') {
         return s.faculty_id === 'KT';

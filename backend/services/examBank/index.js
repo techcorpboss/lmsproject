@@ -8,10 +8,11 @@ const it301 = require('./it301.bank');
 const ba101 = require('./ba101.bank');
 const ba102 = require('./ba102.bank');
 const eng101 = require('./eng101.bank');
+const mat101 = require('./mat101.bank');
 const ee101 = require('./ee101.bank');
 const tou101 = require('./tou101.bank');
 
-const COURSE_BANKS = [it101, it201, it301, ba101, ba102, eng101, ee101, tou101];
+const COURSE_BANKS = [it101, it201, it301, ba101, ba102, eng101, mat101, ee101, tou101];
 
 // Seeded PRNG for deterministic, reproducible shuffling
 function createSeededRandom(seed) {
