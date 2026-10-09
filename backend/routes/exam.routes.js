@@ -284,6 +284,15 @@ router.post('/questions/import-multi', examAdvanced.importQuestionsMultiFormat);
 router.post('/ai/generate-from-syllabus', examAdvanced.generateQuestionsFromSyllabusAI);
 
 // 14. Cơ chế AI Thẩm Định & Kiểm Duyệt Đề Thi Bám Sát Đề Cương (Audit Engine)
-router.post('/ai/audit-syllabus-alignment', examAdvanced.auditExamSyllabusAlignment);
+// 15. Thuật toán Xếp Lịch Thi Tự Động & Phân Công Cán Bộ Coi Thi (Constraint Engine)
+const examSchedulerService = require('../services/examSchedulerService');
+router.post('/admin/auto-schedule', (req, res) => {
+  try {
+    const result = examSchedulerService.generateSchedule(req.body);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Lỗi xếp lịch thi: ' + err.message });
+  }
+});
 
 module.exports = router;

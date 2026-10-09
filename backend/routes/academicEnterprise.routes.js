@@ -230,4 +230,117 @@ router.get('/evaluations/stats/:courseCode', (req, res) => {
   }
 });
 
+// -------------------------------------------------------------
+// 10. ĐÁNH GIÁ ĐỒNG ĐẲNG (DOUBLE-BLIND PEER REVIEW) & RUBRICS AUN-QA
+// -------------------------------------------------------------
+const peerReviewService = require('../services/peerReviewService');
+
+// Lấy danh mục tiêu chí Rubric chuẩn AUN-QA/ABET
+router.get('/peer-review/rubric', (req, res) => {
+  try {
+    const criteria = peerReviewService.getRubricCriteria();
+    res.json({ success: true, data: criteria });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Giảng viên kích hoạt phân bổ bài nộp cho sinh viên chấm chéo
+router.post('/peer-review/distribute', (req, res) => {
+  try {
+    const { assignmentId, submissions, reviewsPerStudent } = req.body;
+    const result = peerReviewService.distributePeerReviews(assignmentId, submissions, reviewsPerStudent);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+// Lấy danh sách bài nộp mà sinh viên được phân công chấm chéo
+router.get('/peer-review/assigned/:studentId', (req, res) => {
+  try {
+    const { assignmentId } = req.query;
+    const assigned = peerReviewService.getAssignedReviewsForStudent(assignmentId, req.params.studentId);
+    res.json({ success: true, data: assigned });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Sinh viên nộp phiếu chấm chéo đồng đẳng
+router.post('/peer-review/submit', (req, res) => {
+  try {
+    const result = peerReviewService.submitPeerReview(req.body);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+// Giảng viên xem báo cáo tổng hợp điểm đồng đẳng
+router.get('/peer-review/summary/:submissionId', (req, res) => {
+  try {
+    const summary = peerReviewService.getPeerReviewSummaryForSubmission(req.params.submissionId);
+    res.json({ success: true, data: summary });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// 11. QUẢN LÝ ĐỒ ÁN / KHÓA LUẬN TỐT NGHIỆP & HỘI ĐỒNG BẢO VỆ
+// -------------------------------------------------------------
+const graduationThesisService = require('../services/graduationThesisService');
+
+// Lấy danh sách khóa luận
+router.get('/thesis', (req, res) => {
+  try {
+    const list = graduationThesisService.listTheses(req.query);
+    res.json({ success: true, data: list });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Đăng ký đề tài khóa luận mới
+router.post('/thesis/register', (req, res) => {
+  try {
+    const newThesis = graduationThesisService.registerThesis(req.body);
+    res.json({ success: true, message: 'Đăng ký đề tài khóa luận tốt nghiệp thành công!', data: newThesis });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+// Phê duyệt đề tài
+router.post('/thesis/:id/approve', (req, res) => {
+  try {
+    const updated = graduationThesisService.approveThesis(req.params.id, req.body.decision);
+    res.json({ success: true, message: 'Đã cập nhật trạng thái phê duyệt đề tài!', data: updated });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+// Nộp mốc tiến độ (20%, 50%, 100%)
+router.post('/thesis/:id/milestone', (req, res) => {
+  try {
+    const { milestoneKey, fileName } = req.body;
+    const updated = graduationThesisService.submitMilestone(req.params.id, milestoneKey, fileName);
+    res.json({ success: true, message: 'Nộp báo cáo mốc tiến độ thành công!', data: updated });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+// Nhập điểm Hội đồng chấm bảo vệ
+router.post('/thesis/:id/council-grade', (req, res) => {
+  try {
+    const updated = graduationThesisService.submitCouncilGrading(req.params.id, req.body.scores);
+    res.json({ success: true, message: 'Đã hoàn tất chấm điểm Hội đồng và lập biên bản bảo vệ!', data: updated });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
 module.exports = router;

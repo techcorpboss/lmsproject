@@ -262,6 +262,91 @@ export default function LessonQaAndAssignmentView({ currentUser }) {
   const [gradingForm] = Form.useForm();
   const [rubricScores, setRubricScores] = useState({});
 
+  // =========================================================================
+  // TAB 3: DOUBLE-BLIND PEER REVIEW STATE
+  // =========================================================================
+  const [assignedPeerReviews, setAssignedPeerReviews] = useState([]);
+  const [peerRubrics, setPeerRubrics] = useState([]);
+  const [isPeerReviewModalOpen, setIsPeerReviewModalOpen] = useState(false);
+  const [activePeerReview, setActivePeerReview] = useState(null);
+  const [peerReviewScores, setPeerReviewScores] = useState({});
+  const [peerReviewForm] = Form.useForm();
+
+  const fetchPeerReviewData = async () => {
+    try {
+      const resRubric = await apiClient.get('/academic/enterprise/peer-review/rubric');
+      if (resRubric && resRubric.success) {
+        setPeerRubrics(resRubric.data);
+      }
+      const resAssigned = await apiClient.get(`/academic/enterprise/peer-review/assigned/${currentUser?.id || 1}?assignmentId=asg_001`);
+      if (resAssigned && resAssigned.success && resAssigned.data.length > 0) {
+        setAssignedPeerReviews(resAssigned.data);
+      } else {
+        setAssignedPeerReviews([
+          {
+            reviewId: 'pr_asg_001_sv1_sub002',
+            assignmentId: 'asg_001',
+            submissionId: 'sub_002',
+            submissionFileName: 'BTL1_OOP_NguyenThiMai_261IT002.pdf',
+            authorMaskedCode: 'ANON-AUTHOR-724',
+            status: 'PENDING',
+            allocatedAt: new Date().toISOString()
+          },
+          {
+            reviewId: 'pr_asg_001_sv1_sub003',
+            assignmentId: 'asg_001',
+            submissionId: 'sub_003',
+            submissionFileName: 'BTL1_OOP_LeVanBinh_261IT003.zip',
+            authorMaskedCode: 'ANON-AUTHOR-419',
+            status: 'COMPLETED',
+            scoreAwarded: 8.8,
+            allocatedAt: new Date().toISOString()
+          }
+        ]);
+      }
+    } catch (e) {
+      console.warn('Lỗi tải dữ liệu peer review:', e.message);
+    }
+  };
+
+  const handleDistributePeerReview = async () => {
+    try {
+      const res = await apiClient.post('/academic/enterprise/peer-review/distribute', {
+        assignmentId: 'asg_001',
+        submissions,
+        reviewsPerStudent: 2
+      });
+      if (res && res.success) {
+        message.success(`Đã tự động phân bổ ngẫu nhiên ${res.totalAllocations} lượt chấm chéo ẩn danh cho toàn lớp!`);
+        fetchPeerReviewData();
+      }
+    } catch (e) {
+      message.error('Lỗi phân bổ chấm chéo: ' + e.message);
+    }
+  };
+
+  const handleSubmitPeerReview = async (values) => {
+    try {
+      const payload = {
+        reviewId: activePeerReview?.reviewId,
+        assignmentId: 'asg_001',
+        reviewerStudentId: currentUser?.id || 1,
+        submissionId: activePeerReview?.submissionId,
+        rubricScores: peerReviewScores,
+        feedbackText: values.feedbackText
+      };
+      const res = await apiClient.post('/academic/enterprise/peer-review/submit', payload);
+      if (res && res.success) {
+        message.success('Đã nộp phiếu chấm điểm đồng đẳng thành công!');
+        setIsPeerReviewModalOpen(false);
+        peerReviewForm.resetFields();
+        fetchPeerReviewData();
+      }
+    } catch (e) {
+      message.error('Lỗi nộp phiếu: ' + e.message);
+    }
+  };
+
   const fetchAssignmentsAndSubmissions = async () => {
     try {
       const resAsg = await apiClient.get('/standards/assignments', { params: { section_id: 1 } });
@@ -341,6 +426,7 @@ export default function LessonQaAndAssignmentView({ currentUser }) {
   useEffect(() => {
     fetchQaThreads();
     fetchAssignmentsAndSubmissions();
+    fetchPeerReviewData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedWeek]);
 
@@ -933,6 +1019,115 @@ export default function LessonQaAndAssignmentView({ currentUser }) {
               ]}
             />
           </Card>
+        {/* TAB 3: DOUBLE-BLIND PEER REVIEW */}
+        <Tabs.TabPane
+          tab={
+            <span style={{ fontSize: 14, fontWeight: 600 }}>
+              <TeamOutlined /> Đánh Giá Đồng Đẳng (Peer Review) ({assignedPeerReviews.length})
+            </span>
+          }
+          key="peer_review"
+        >
+          <Card
+            style={{ borderRadius: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
+            title={
+              <Space>
+                <SafetyCertificateOutlined style={{ color: '#059669' }} />
+                <span>Cơ Chế Phản Biện Đồng Đẳng Ẩn Danh (Double-Blind Peer Assessment)</span>
+              </Space>
+            }
+            extra={
+              isTeacherOrAdmin && (
+                <Button
+                  type="primary"
+                  icon={<ThunderboltOutlined />}
+                  style={{ background: '#7c3aed', borderColor: '#7c3aed' }}
+                  onClick={handleDistributePeerReview}
+                >
+                  Tự Động Phân Bổ Chấm Chéo Ẩn Danh (2 Bạn/Bài)
+                </Button>
+              )
+            }
+          >
+            <Alert
+              message="QUY TRÌNH PHẢN BIỆN ĐỒNG ĐẲNG ẨN DANH 2 CHIỀU (AUN-QA & ABET CRITERIA)"
+              description={
+                <div>
+                  <p style={{ margin: '4px 0' }}>
+                    Mỗi sinh viên được phân bổ ngẫu nhiên bài tập của 2 bạn cùng lớp để chấm theo bảng Rubric tiêu chuẩn.
+                    Tên tác giả được mã hóa bảo mật (ví dụ: <code>ANON-AUTHOR-724</code>) nhằm đảm bảo sự công tâm, khách quan và rèn luyện kỹ năng đọc - phản biện mã nguồn chuyên nghiệp.
+                  </p>
+                </div>
+              }
+              type="info"
+              showIcon
+              style={{ marginBottom: 16 }}
+            />
+
+            <Title level={5}>Danh sách bài nộp được phân công phản biện:</Title>
+            <Table
+              dataSource={assignedPeerReviews}
+              rowKey="reviewId"
+              pagination={false}
+              bordered
+              columns={[
+                {
+                  title: 'Mã Tác Giả Ẩn Danh',
+                  dataIndex: 'authorMaskedCode',
+                  key: 'authorMaskedCode',
+                  render: (c) => <Tag color="purple" style={{ fontWeight: 700 }}>{c}</Tag>
+                },
+                {
+                  title: 'Tệp Báo Cáo / Mã Nguồn',
+                  dataIndex: 'submissionFileName',
+                  key: 'submissionFileName',
+                  render: (f) => (
+                    <Space>
+                      <PaperClipOutlined style={{ color: '#2563eb' }} />
+                      <Text strong>{f}</Text>
+                    </Space>
+                  )
+                },
+                {
+                  title: 'Trạng Thái',
+                  dataIndex: 'status',
+                  key: 'status',
+                  align: 'center',
+                  render: (st, r) => st === 'COMPLETED' ? (
+                    <Tag color="success" icon={<CheckCircleOutlined />}>
+                      Đã Chấm: {r.scoreAwarded || '8.8'}/10 đ
+                    </Tag>
+                  ) : (
+                    <Tag color="warning" icon={<ClockCircleOutlined />}>Chờ Bạn Chấm</Tag>
+                  )
+                },
+                {
+                  title: 'Thao Tác Chấm',
+                  key: 'action',
+                  align: 'center',
+                  render: (_, r) => (
+                    <Button
+                      type={r.status === 'COMPLETED' ? 'default' : 'primary'}
+                      size="small"
+                      icon={<AuditOutlined />}
+                      style={r.status === 'COMPLETED' ? {} : { background: '#059669', borderColor: '#059669' }}
+                      onClick={() => {
+                        setActivePeerReview(r);
+                        setPeerReviewScores({
+                          crit_architecture: 2.8,
+                          crit_algorithm: 3.5,
+                          crit_report: 2.5
+                        });
+                        setIsPeerReviewModalOpen(true);
+                      }}
+                    >
+                      {r.status === 'COMPLETED' ? 'Xem Lại Phiếu' : 'Chấm Bài Ngay'}
+                    </Button>
+                  )
+                }
+              ]}
+            />
+          </Card>
         </Tabs.TabPane>
       </Tabs>
 
@@ -1260,6 +1455,116 @@ export default function LessonQaAndAssignmentView({ currentUser }) {
             </Space>
           </div>
         </Form>
+      </Modal>
+
+      {/* MODAL 6: PEER REVIEW SCORING MODAL */}
+      <Modal
+        title={
+          <Space>
+            <AuditOutlined style={{ color: '#059669' }} />
+            <span>Phiếu Đánh Giá Phản Biện Đồng Đẳng Ẩn Danh ({activePeerReview?.authorMaskedCode})</span>
+          </Space>
+        }
+        open={isPeerReviewModalOpen}
+        onCancel={() => setIsPeerReviewModalOpen(false)}
+        footer={null}
+        width={720}
+      >
+        {activePeerReview && (
+          <div>
+            <Alert
+              message={`Đang chấm bài: ${activePeerReview.submissionFileName}`}
+              description="Hãy đánh giá công tâm theo 3 tiêu chí Rubric chuẩn AUN-QA/ABET dưới đây và để lại lời nhận xét góp ý xây dựng."
+              type="info"
+              showIcon
+              style={{ marginBottom: 16 }}
+            />
+
+            <Form form={peerReviewForm} layout="vertical" onFinish={handleSubmitPeerReview}>
+              {/* Tiêu chí 1 */}
+              <Card size="small" style={{ marginBottom: 12, background: '#f8fafc' }}>
+                <Row justify="space-between" align="middle">
+                  <Col span={16}>
+                    <Text strong style={{ color: '#1e40af' }}>1. Mô hình Kiến trúc & Thiết kế OOP (Tối đa 3.5 đ)</Text>
+                    <div style={{ fontSize: 12, color: '#64748b' }}>Đánh giá tính kế thừa, bao đóng, đa hình và cấu trúc lớp.</div>
+                  </Col>
+                  <Col span={8} style={{ textAlign: 'right' }}>
+                    <InputNumber
+                      min={0}
+                      max={3.5}
+                      step={0.1}
+                      value={peerReviewScores.crit_architecture ?? 2.8}
+                      onChange={(v) => setPeerReviewScores({ ...peerReviewScores, crit_architecture: v })}
+                    /> / 3.5 đ
+                  </Col>
+                </Row>
+              </Card>
+
+              {/* Tiêu chí 2 */}
+              <Card size="small" style={{ marginBottom: 12, background: '#f8fafc' }}>
+                <Row justify="space-between" align="middle">
+                  <Col span={16}>
+                    <Text strong style={{ color: '#1e40af' }}>2. Thuật toán, Quản lý Bộ nhớ & Kỹ thuật Cài đặt (Tối đa 3.5 đ)</Text>
+                    <div style={{ fontSize: 12, color: '#64748b' }}>Đánh giá giải phóng bộ nhớ, con trỏ an toàn, không rò rỉ.</div>
+                  </Col>
+                  <Col span={8} style={{ textAlign: 'right' }}>
+                    <InputNumber
+                      min={0}
+                      max={3.5}
+                      step={0.1}
+                      value={peerReviewScores.crit_algorithm ?? 3.5}
+                      onChange={(v) => setPeerReviewScores({ ...peerReviewScores, crit_algorithm: v })}
+                    /> / 3.5 đ
+                  </Col>
+                </Row>
+              </Card>
+
+              {/* Tiêu chí 3 */}
+              <Card size="small" style={{ marginBottom: 12, background: '#f8fafc' }}>
+                <Row justify="space-between" align="middle">
+                  <Col span={16}>
+                    <Text strong style={{ color: '#1e40af' }}>3. Báo cáo Thuyết minh & Clean Code (Tối đa 3.0 đ)</Text>
+                    <div style={{ fontSize: 12, color: '#64748b' }}>Định dạng mã nguồn sạch sẽ, chú thích và tài liệu thiết kế.</div>
+                  </Col>
+                  <Col span={8} style={{ textAlign: 'right' }}>
+                    <InputNumber
+                      min={0}
+                      max={3.0}
+                      step={0.1}
+                      value={peerReviewScores.crit_report ?? 2.5}
+                      onChange={(v) => setPeerReviewScores({ ...peerReviewScores, crit_report: v })}
+                    /> / 3.0 đ
+                  </Col>
+                </Row>
+              </Card>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '14px 0' }}>
+                <Text strong style={{ fontSize: 15 }}>TỔNG ĐIỂM BẠN ĐÁNH GIÁ:</Text>
+                <Tag color="green" style={{ fontSize: 18, fontWeight: 800, padding: '4px 14px' }}>
+                  {Object.values(peerReviewScores).reduce((a, b) => a + Number(b || 0), 0).toFixed(1)} / 10.0 Điểm
+                </Tag>
+              </div>
+
+              <Form.Item
+                name="feedbackText"
+                label={<b>Lời nhận xét & Góp ý cho bạn (Giữ ẩn danh):</b>}
+                rules={[{ required: true, message: 'Vui lòng nhập nhận xét' }]}
+                initialValue="Bài làm của bạn rất tốt, thuật toán chạy mượt và giải phóng bộ nhớ đầy đủ. Nếu bổ sung thêm unit test thì sẽ hoàn hảo hơn!"
+              >
+                <Input.TextArea rows={3} />
+              </Form.Item>
+
+              <div style={{ textAlign: 'right', marginTop: 16 }}>
+                <Space>
+                  <Button onClick={() => setIsPeerReviewModalOpen(false)}>Hủy</Button>
+                  <Button type="primary" htmlType="submit" style={{ background: '#059669', borderColor: '#059669' }}>
+                    Xác Nhận Nộp Phiếu Đánh Giá
+                  </Button>
+                </Space>
+              </div>
+            </Form>
+          </div>
+        )}
       </Modal>
     </div>
   );

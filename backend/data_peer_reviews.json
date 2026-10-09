@@ -1,0 +1,111 @@
+{
+  "reviews": [
+    {
+      "reviewId": "pr_assign_test_it101_1_sub_2",
+      "assignmentId": "assign_test_it101",
+      "reviewerStudentId": 1,
+      "submissionId": "sub_2",
+      "rubricScores": {
+        "crit_architecture": 3.5,
+        "crit_algorithm": 2.8,
+        "crit_report": 2.4
+      },
+      "totalScore": 8.7,
+      "feedbackText": "Thiết kế kiến trúc rất sáng sủa, code module hóa tốt.",
+      "submittedAt": "2026-10-09T13:59:17.058Z"
+    }
+  ],
+  "distributions": {
+    "assign_test_it101": [
+      {
+        "reviewId": "pr_assign_test_it101_1_sub_2",
+        "assignmentId": "assign_test_it101",
+        "reviewerStudentId": 1,
+        "reviewerStudentName": "Nguyễn Văn An",
+        "submissionId": "sub_2",
+        "submissionFileName": "BTL_Nhom2.zip",
+        "authorMaskedCode": "ANON-AUTHOR-62",
+        "status": "COMPLETED",
+        "allocatedAt": "2026-10-09T13:59:17.055Z",
+        "scoreAwarded": 8.7
+      },
+      {
+        "reviewId": "pr_assign_test_it101_1_sub_3",
+        "assignmentId": "assign_test_it101",
+        "reviewerStudentId": 1,
+        "reviewerStudentName": "Nguyễn Văn An",
+        "submissionId": "sub_3",
+        "submissionFileName": "BTL_Nhom3.zip",
+        "authorMaskedCode": "ANON-AUTHOR-93",
+        "status": "PENDING",
+        "allocatedAt": "2026-10-09T13:59:17.056Z"
+      },
+      {
+        "reviewId": "pr_assign_test_it101_2_sub_3",
+        "assignmentId": "assign_test_it101",
+        "reviewerStudentId": 2,
+        "reviewerStudentName": "Trần Thị Bình",
+        "submissionId": "sub_3",
+        "submissionFileName": "BTL_Nhom3.zip",
+        "authorMaskedCode": "ANON-AUTHOR-93",
+        "status": "PENDING",
+        "allocatedAt": "2026-10-09T13:59:17.056Z"
+      },
+      {
+        "reviewId": "pr_assign_test_it101_2_sub_4",
+        "assignmentId": "assign_test_it101",
+        "reviewerStudentId": 2,
+        "reviewerStudentName": "Trần Thị Bình",
+        "submissionId": "sub_4",
+        "submissionFileName": "BTL_Nhom4.zip",
+        "authorMaskedCode": "ANON-AUTHOR-124",
+        "status": "PENDING",
+        "allocatedAt": "2026-10-09T13:59:17.056Z"
+      },
+      {
+        "reviewId": "pr_assign_test_it101_3_sub_4",
+        "assignmentId": "assign_test_it101",
+        "reviewerStudentId": 3,
+        "reviewerStudentName": "Lê Hoàng Cường",
+        "submissionId": "sub_4",
+        "submissionFileName": "BTL_Nhom4.zip",
+        "authorMaskedCode": "ANON-AUTHOR-124",
+        "status": "PENDING",
+        "allocatedAt": "2026-10-09T13:59:17.056Z"
+      },
+      {
+        "reviewId": "pr_assign_test_it101_3_sub_1",
+        "assignmentId": "assign_test_it101",
+        "reviewerStudentId": 3,
+        "reviewerStudentName": "Lê Hoàng Cường",
+        "submissionId": "sub_1",
+        "submissionFileName": "BTL_Nhom1.zip",
+        "authorMaskedCode": "ANON-AUTHOR-31",
+        "status": "PENDING",
+        "allocatedAt": "2026-10-09T13:59:17.056Z"
+      },
+      {
+        "reviewId": "pr_assign_test_it101_4_sub_1",
+        "assignmentId": "assign_test_it101",
+        "reviewerStudentId": 4,
+        "reviewerStudentName": "Phạm Thu Dung",
+        "submissionId": "sub_1",
+        "submissionFileName": "BTL_Nhom1.zip",
+        "authorMaskedCode": "ANON-AUTHOR-31",
+        "status": "PENDING",
+        "allocatedAt": "2026-10-09T13:59:17.056Z"
+      },
+      {
+        "reviewId": "pr_assign_test_it101_4_sub_2",
+        "assignmentId": "assign_test_it101",
+        "reviewerStudentId": 4,
+        "reviewerStudentName": "Phạm Thu Dung",
+        "submissionId": "sub_2",
+        "submissionFileName": "BTL_Nhom2.zip",
+        "authorMaskedCode": "ANON-AUTHOR-62",
+        "status": "PENDING",
+        "allocatedAt": "2026-10-09T13:59:17.056Z"
+      }
+    ]
+  }
+}

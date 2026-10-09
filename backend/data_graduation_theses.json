@@ -1,0 +1,216 @@
+[
+  {
+    "id": "thesis_2026_1791554357060",
+    "student_id": 101,
+    "student_code": "20260088",
+    "student_name": "Lê Minh Khang",
+    "class_name": "66.CNTT-2",
+    "major_name": "Kỹ thuật Phần mềm",
+    "title": "Nghiên cứu ứng dụng Large Language Model trong Chấm thi Tự luận Tự động",
+    "objective": "Xây dựng engine AI chấm điểm tự luận theo Rubrics chuẩn Bộ GD&ĐT",
+    "technologies": [
+      "Python",
+      "FastAPI",
+      "OpenAI",
+      "LangChain"
+    ],
+    "supervisor_id": 2,
+    "supervisor_name": "TS. Hoàng Đức Em",
+    "status": "SUBMITTED_FINAL",
+    "submission_milestones": [
+      {
+        "milestone": "OUTLINE_20",
+        "name": "Đề cương chi tiết (20%)",
+        "status": "PENDING",
+        "score": null,
+        "file": null
+      },
+      {
+        "milestone": "MIDTERM_50",
+        "name": "Báo cáo tiến độ giữa kỳ (50%)",
+        "status": "PENDING",
+        "score": null,
+        "file": null
+      },
+      {
+        "milestone": "FINAL_100",
+        "name": "Toàn văn Khóa luận (100%)",
+        "status": "SUBMITTED",
+        "score": null,
+        "file": "Bao_cao_toan_van_LeMinhKhang.pdf",
+        "submittedAt": "2026-10-09T13:59:17.061Z"
+      }
+    ],
+    "plagiarism_check": {
+      "tool": "TCU Anti-Plagiarism Engine",
+      "similarity_score": 6,
+      "status": "PASSED",
+      "checked_at": "2026-10-09T13:59:17.061Z"
+    },
+    "defense_council": null,
+    "created_at": "2026-10-09T13:59:17.060Z"
+  },
+  {
+    "id": "thesis_2026_1791554318500",
+    "student_id": 1,
+    "student_code": "261IT001",
+    "student_name": "Sinh viên",
+    "class_name": "66.CNTT-1",
+    "major_name": "Công nghệ Thông tin",
+    "title": "Nghiên cứu ứng dụng Large Language Model trong Chấm thi Tự luận Tự động",
+    "technologies": [
+      ""
+    ],
+    "supervisor_id": 2,
+    "supervisor_name": "TS. Hoàng Đức Em",
+    "status": "PROPOSED",
+    "submission_milestones": [
+      {
+        "milestone": "OUTLINE_20",
+        "name": "Đề cương chi tiết (20%)",
+        "status": "PENDING",
+        "score": null,
+        "file": null
+      },
+      {
+        "milestone": "MIDTERM_50",
+        "name": "Báo cáo tiến độ giữa kỳ (50%)",
+        "status": "PENDING",
+        "score": null,
+        "file": null
+      },
+      {
+        "milestone": "FINAL_100",
+        "name": "Toàn văn Khóa luận (100%)",
+        "status": "PENDING",
+        "score": null,
+        "file": null
+      }
+    ],
+    "plagiarism_check": {
+      "tool": "Turnitin",
+      "similarity_score": null,
+      "status": "NOT_CHECKED"
+    },
+    "defense_council": null,
+    "created_at": "2026-10-09T13:58:38.501Z"
+  },
+  {
+    "id": "thesis_2026_001",
+    "student_id": 1,
+    "student_code": "261IT001",
+    "student_name": "Trần Văn Nam",
+    "class_name": "66.CNTT-1",
+    "major_name": "Kỹ thuật Phần mềm (Software Engineering)",
+    "title": "Nghiên cứu và Triển khai Kiến trúc Vi Dịch vụ (Microservices) Cho Hệ thống Đào tạo Trực tuyến Chịu tải Cao",
+    "objective": "Thiết kế hệ sinh thái backend phân tán, áp dụng Sharding, Redis Cache Cluster và xác thực PKI chuẩn Thông tư 08/2021/TT-BGDĐT.",
+    "technologies": [
+      "Node.js",
+      "Docker",
+      "Kubernetes",
+      "MySQL 8.0",
+      "Redis",
+      "RSA-SHA256"
+    ],
+    "supervisor_id": 2,
+    "supervisor_name": "TS. Hoàng Đức Em",
+    "supervisor_department": "Bộ môn Kỹ thuật Phần mềm",
+    "status": "DEFENDED_PASSED",
+    "submission_milestones": [
+      {
+        "milestone": "OUTLINE_20",
+        "name": "Đề cương chi tiết (20%)",
+        "status": "APPROVED",
+        "score": 9,
+        "file": "De_cuong_BTL_TranVanNam.pdf"
+      },
+      {
+        "milestone": "MIDTERM_50",
+        "name": "Báo cáo tiến độ giữa kỳ (50%)",
+        "status": "APPROVED",
+        "score": 8.5,
+        "file": "Bao_cao_giua_ky_TranVanNam.pdf"
+      },
+      {
+        "milestone": "FINAL_100",
+        "name": "Toàn văn Khóa luận & Source Code (100%)",
+        "status": "APPROVED",
+        "score": 9.2,
+        "file": "Khoa_luan_tot_nghiep_Final_TranVanNam.pdf"
+      }
+    ],
+    "plagiarism_check": {
+      "tool": "Turnitin / TCU Anti-Plagiarism Engine",
+      "similarity_score": 4.2,
+      "status": "PASSED",
+      "checked_at": "2026-09-28T10:00:00Z"
+    },
+    "defense_council": {
+      "council_code": "HĐ-K66-CNPM-01",
+      "council_name": "Hội đồng Chấm Bảo vệ Khóa luận Tốt nghiệp Ngành Kỹ thuật Phần mềm Số 01",
+      "defense_date": "2026-10-25",
+      "defense_time": "08:30 - 09:30",
+      "room_code": "Phòng Hội thảo A2-302 (Trực tuyến Zoom/Jitsi)",
+      "members": [
+        {
+          "role": "CHAIRMAN",
+          "title": "Chủ tịch Hội đồng",
+          "name": "PGS. TS. Trần Mạnh Tuấn",
+          "score": 9.35,
+          "detailedScores": {
+            "research": 9.5,
+            "presentation": 9,
+            "qa": 9.5
+          }
+        },
+        {
+          "role": "SECRETARY",
+          "title": "Thư ký Hội đồng",
+          "name": "ThS. Lê Hoàng Yến",
+          "score": 9,
+          "detailedScores": {
+            "research": 9,
+            "presentation": 9,
+            "qa": 9
+          }
+        },
+        {
+          "role": "REVIEWER_1",
+          "title": "Ủy viên Phản biện 1",
+          "name": "TS. Nguyễn Văn An",
+          "score": 9.35,
+          "detailedScores": {
+            "research": 9.5,
+            "presentation": 9.5,
+            "qa": 9
+          }
+        },
+        {
+          "role": "REVIEWER_2",
+          "title": "Ủy viên Phản biện 2",
+          "name": "TS. Vũ Đình Trọng",
+          "score": 9.15,
+          "detailedScores": {
+            "research": 9,
+            "presentation": 9,
+            "qa": 9.5
+          }
+        }
+      ],
+      "rubric_weights": {
+        "research_quality": 0.4,
+        "presentation": 0.3,
+        "qa_defense": 0.3
+      },
+      "final_grade": 9.21,
+      "academic_rank": "XUẤT SẮC",
+      "defense_minutes": {
+        "minutes_code": "BB-BVKL-261IT001-2026",
+        "signed_at": "2026-10-09T13:59:17.062Z",
+        "council_conclusion": "Sinh viên Trần Văn Nam bảo vệ thành công Khóa luận tốt nghiệp với số điểm 9.21/10. Đề nghị Hiệu trưởng công nhận tốt nghiệp và cấp bằng Cử nhân.",
+        "is_signed": true
+      }
+    },
+    "created_at": "2026-08-15T08:00:00Z"
+  }
+]

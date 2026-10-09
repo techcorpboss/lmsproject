@@ -36,6 +36,8 @@ import LtiToolsHubView from './components/enterprise/LtiToolsHubView';
 import LessonQaAndAssignmentView from './components/enterprise/LessonQaAndAssignmentView';
 import ExamAdministrationView from './components/enterprise/ExamAdministrationView';
 import OpenBadgesShowcase from './components/enterprise/OpenBadgesShowcase';
+import GraduationThesisView from './components/enterprise/GraduationThesisView';
+import CloPloAssessmentView from './components/enterprise/CloPloAssessmentView';
 
 
 // Admin Views
@@ -319,6 +321,16 @@ function App() {
             key: 'open_badges',
             icon: <TrophyOutlined style={{ color: '#eab308' }} />,
             label: 'Huy Hiệu & Chứng Chỉ Số (Open Badges)'
+          },
+          {
+            key: 'graduation_thesis',
+            icon: <SolutionOutlined style={{ color: '#10b981' }} />,
+            label: '🎓 Đồ Án & Khóa Luận Tốt Nghiệp'
+          },
+          {
+            key: 'clo_plo_assessment',
+            icon: <SafetyCertificateOutlined style={{ color: '#8b5cf6' }} />,
+            label: '📊 Đo Lường Chuẩn Đầu Ra (CLO/PLO)'
           },
           ...(isAdmin ? [
             {
@@ -686,6 +698,16 @@ function App() {
           {/* Màn hình 5.1: Huy hiệu & Chứng chỉ số Open Badges v3.0 */}
           {activeMenuKey === 'open_badges' && (
             <OpenBadgesShowcase currentUser={currentUser} />
+          )}
+
+          {/* Màn hình 5.2: Quản lý Khóa Luận & Đồ Án Tốt Nghiệp */}
+          {activeMenuKey === 'graduation_thesis' && (
+            <GraduationThesisView currentUser={currentUser} />
+          )}
+
+          {/* Màn hình 5.3: Đo lường Chuẩn Đầu Ra CLO / PLO (AUN-QA / ABET) */}
+          {activeMenuKey === 'clo_plo_assessment' && (
+            <CloPloAssessmentView currentUser={currentUser} />
           )}
 
 

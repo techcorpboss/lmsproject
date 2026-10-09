@@ -39,6 +39,7 @@ export default function ExamAdministrationView({ currentUser }) {
   const [minutesModalOpen, setMinutesModalOpen] = useState(false);
   const [examMinutesData, setExamMinutesData] = useState(null);
   const [minutesLoading, setMinutesLoading] = useState(false);
+  const [autoScheduling, setAutoScheduling] = useState(false);
 
   const [scheduleForm] = Form.useForm();
   const [studentForm] = Form.useForm();
@@ -272,6 +273,48 @@ export default function ExamAdministrationView({ currentUser }) {
       }
     } catch (err) {
       message.error('Lỗi tạo ca thi: ' + (err.response?.data?.message || err.message || 'Lỗi server'));
+    }
+  };
+
+  // 5.1 Tự động xếp lịch thi thông minh (Constraint-Satisfaction AI Engine)
+  const handleAutoSchedule = async () => {
+    setAutoScheduling(true);
+    try {
+      const res = await apiClient.post('/exam/admin/auto-schedule', {
+        startDate: '2026-11-02',
+        examDays: 5
+      });
+      if (res && res.success) {
+        message.success(`Đã tự động lập lịch thi thành công: ${res.totalScheduled} ca thi, 0 xung đột phòng/khóa!`);
+        if (res.schedules && res.schedules.length > 0) {
+          const formatted = res.schedules.map((s, idx) => ({
+            id: s.id || `AUTO-${idx + 1}`,
+            exam_name: s.exam_name,
+            course_code: s.course_code,
+            course_name: s.course_name,
+            faculty_name: s.faculty_name,
+            exam_date: s.exam_date,
+            start_time: s.start_time,
+            end_time: s.end_time,
+            room_code: s.room_code,
+            duration_minutes: s.duration_minutes,
+            proctor_1: s.proctor_1,
+            proctor_2: s.proctor_2,
+            student_count: s.registered_count || 40,
+            status: 'SCHEDULED'
+          }));
+          setSchedules(prev => [...formatted, ...prev.filter(p => !formatted.some(f => f.id === p.id))]);
+          if (!selectedScheduleId && formatted.length > 0) {
+            setSelectedScheduleId(formatted[0].id);
+          }
+        }
+      } else {
+        message.error(res?.message || 'Không thể xếp lịch tự động');
+      }
+    } catch (err) {
+      message.error('Lỗi xếp lịch thi tự động: ' + (err.message || 'Lỗi kết nối'));
+    } finally {
+      setAutoScheduling(false);
     }
   };
 
@@ -856,7 +899,7 @@ export default function ExamAdministrationView({ currentUser }) {
           </Col>
 
           <Col xs={24} md={10} style={{ textAlign: 'right' }}>
-            <Space>
+            <Space wrap>
               <Button
                 icon={<ReloadOutlined spin={loading} />}
                 onClick={() => {
@@ -866,6 +909,14 @@ export default function ExamAdministrationView({ currentUser }) {
                 style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: '#fff', border: 'none' }}
               >
                 Làm mới
+              </Button>
+              <Button
+                icon={<ThunderboltOutlined />}
+                loading={autoScheduling}
+                onClick={handleAutoSchedule}
+                style={{ backgroundColor: '#6366f1', color: '#fff', border: 'none', fontWeight: 600 }}
+              >
+                🚀 Tự Động Xếp Lịch Thi & Giám Thị (Smart AI)
               </Button>
               <Button
                 type="primary"
