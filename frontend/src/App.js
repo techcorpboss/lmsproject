@@ -40,6 +40,9 @@ import GraduationThesisView from './components/enterprise/GraduationThesisView';
 import CloPloAssessmentView from './components/enterprise/CloPloAssessmentView';
 import TuitionPaymentView from './components/enterprise/TuitionPaymentView';
 import AiTutorDrawer from './components/enterprise/AiTutorDrawer';
+import AcademicPolicyAdvisorView from './components/enterprise/AcademicPolicyAdvisorView';
+import ExecutiveBiDashboardView from './components/enterprise/ExecutiveBiDashboardView';
+import UatAssessmentView from './components/enterprise/UatAssessmentView';
 
 
 // Admin Views
@@ -279,6 +282,16 @@ function App() {
               key: 'exam_administration',
               icon: <SolutionOutlined style={{ color: '#c084fc' }} />,
               label: 'Quản Lý Tổ Chức Thi & Cấp Quyền'
+            },
+            {
+              key: 'executive_bi',
+              icon: <DashboardOutlined style={{ color: '#a855f7' }} />,
+              label: 'Executive BI Dashboard (Chiến Lược BGH)'
+            },
+            {
+              key: 'uat_assessment',
+              icon: <TrophyOutlined style={{ color: '#f59e0b' }} />,
+              label: 'Nghiệm Thu UAT Chuẩn Bộ (>95%)'
             }
           ]
         }
@@ -339,6 +352,11 @@ function App() {
             key: 'tuition_payment',
             icon: <CreditCardOutlined style={{ color: '#059669' }} />,
             label: '💳 Học Phí & Lệ Phí Điện Tử (VietQR)'
+          },
+          {
+            key: 'academic_policy',
+            icon: <BookOutlined style={{ color: '#0284c7' }} />,
+            label: '📜 Tra Cứu Quy Chế Học Vụ (AI Policy)'
           },
           ...(isAdmin ? [
             {
@@ -721,6 +739,21 @@ function App() {
           {/* Màn hình 5.4: Học phí & Lệ phí điện tử VietQR NAPAS 24/7 */}
           {activeMenuKey === 'tuition_payment' && (
             <TuitionPaymentView currentUser={currentUser} />
+          )}
+
+          {/* Màn hình 5.5: Tra cứu quy chế học vụ RAG AI */}
+          {activeMenuKey === 'academic_policy' && (
+            <AcademicPolicyAdvisorView />
+          )}
+
+          {/* Màn hình 5.6: Executive BI Dashboard BGH */}
+          {activeMenuKey === 'executive_bi' && (
+            <ExecutiveBiDashboardView />
+          )}
+
+          {/* Màn hình 5.7: Nghiệm thu UAT Chuẩn Bộ GD&ĐT */}
+          {activeMenuKey === 'uat_assessment' && (
+            <UatAssessmentView />
           )}
 
 

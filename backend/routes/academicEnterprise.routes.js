@@ -422,4 +422,73 @@ router.get('/payments/e-invoice/:id', (req, res) => {
   }
 });
 
+// -------------------------------------------------------------
+// 13. TRỢ LÝ TRA CỨU QUY CHẾ HỌC VỤ & ĐÀO TẠO TÍN CHỈ (RAG POLICY)
+// -------------------------------------------------------------
+const academicPolicyService = require('../services/academicPolicyService');
+
+router.get('/academic-policy/all', (req, res) => {
+  try {
+    const policies = academicPolicyService.getAllPolicies();
+    res.json({ success: true, data: policies });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.get('/academic-policy/search', (req, res) => {
+  try {
+    const results = academicPolicyService.searchPolicies(req.query.q);
+    res.json({ success: true, data: results });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.post('/academic-policy/advise', (req, res) => {
+  try {
+    const advice = academicPolicyService.adviseQuestion(req.body.question);
+    res.json(advice);
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// 14. EXECUTIVE BI DASHBOARD (BAN GIÁM HIỆU & LÃNH ĐẠO ĐÀO TẠO)
+// -------------------------------------------------------------
+const executiveBiService = require('../services/executiveBiService');
+
+router.get('/executive-bi/overview', (req, res) => {
+  try {
+    const overview = executiveBiService.getExecutiveKpiOverview();
+    res.json(overview);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// 15. BỘ CÔNG CỤ NGHIỆM THU UAT CHUẨN BỘ GD&ĐT (>95%)
+// -------------------------------------------------------------
+const uatAssessmentService = require('../services/uatAssessmentService');
+
+router.get('/uat/checklist', (req, res) => {
+  try {
+    const checklist = uatAssessmentService.getChecklist();
+    res.json(checklist);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.get('/uat/handover-minutes', (req, res) => {
+  try {
+    const minutes = uatAssessmentService.generateHandoverMinutes();
+    res.json(minutes);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 module.exports = router;
