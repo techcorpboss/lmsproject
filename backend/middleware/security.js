@@ -150,6 +150,9 @@ function wafInspectorMiddleware(req, res, next) {
   const inspectObject = (obj) => {
     if (!obj || typeof obj !== 'object') return false;
     for (const key of Object.keys(obj)) {
+      if (['public_key_pem', 'signature_base64', 'certificate_pem', 'signatureEnvelope'].includes(key)) {
+        continue;
+      }
       const val = obj[key];
       if (typeof val === 'string') {
         const threat = checkString(val);
@@ -162,8 +165,12 @@ function wafInspectorMiddleware(req, res, next) {
     return false;
   };
 
-  // Ngoại trừ các trường nội dung bài giảng HTML / Markdown hợp lệ của Giảng viên
-  if (req.path.startsWith('/api/elearning') || req.path.startsWith('/api/academic/lms')) {
+  // Bỏ qua kiểm tra các trường nội dung bài giảng HTML / Markdown hợp lệ hoặc gói xác thực chữ ký số PKI
+  if (
+    req.path.startsWith('/api/elearning') || 
+    req.path.startsWith('/api/academic/lms') ||
+    req.path.startsWith('/api/academic/enterprise/gradebook')
+  ) {
     return next();
   }
 

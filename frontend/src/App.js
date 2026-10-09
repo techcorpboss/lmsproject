@@ -175,7 +175,7 @@ function App() {
           <div style={{ padding: '4px 0' }}>
             <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>VAI TRÒ & ĐƠN VỊ CSDL</Text>
             <b>
-              {currentUser.role === 'superadmin' ? '👑 Chủ Dự Án (SuperAdmin)' :
+              {currentUser.role === 'superadmin' ? '👑 SuperAdmin' :
                currentUser.role === 'admin' ? '⚡ Quản trị viên (Admin)' :
                currentUser.role === 'teacher' ? '👨‍🏫 Giảng Viên' : '🎓 Sinh Viên'}
             </b>
@@ -243,7 +243,7 @@ function App() {
         {
           key: 'sub_superadmin',
           icon: <CrownOutlined style={{ color: '#c084fc', fontSize: 16 }} />,
-          label: <span style={{ fontWeight: 700, color: '#e9d5ff' }}>👑 Đặc Quyền Chủ Dự Án</span>,
+          label: <span style={{ fontWeight: 700, color: '#e9d5ff' }}>👑 Đặc Quyền SuperAdmin</span>,
           children: [
             {
               key: 'user_management',
