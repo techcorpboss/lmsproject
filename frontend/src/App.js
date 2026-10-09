@@ -12,7 +12,7 @@ import {
   HistoryOutlined, CheckCircleOutlined, ExclamationCircleOutlined,
   BankOutlined, SolutionOutlined, SettingOutlined, CrownOutlined,
   CommentOutlined, RocketOutlined, PlaySquareOutlined, LinkOutlined,
-  TrophyOutlined
+  TrophyOutlined, CreditCardOutlined
 } from '@ant-design/icons';
 import apiClient from './services/apiClient';
 import LoginPage from './components/LoginPage';
@@ -38,6 +38,8 @@ import ExamAdministrationView from './components/enterprise/ExamAdministrationVi
 import OpenBadgesShowcase from './components/enterprise/OpenBadgesShowcase';
 import GraduationThesisView from './components/enterprise/GraduationThesisView';
 import CloPloAssessmentView from './components/enterprise/CloPloAssessmentView';
+import TuitionPaymentView from './components/enterprise/TuitionPaymentView';
+import AiTutorDrawer from './components/enterprise/AiTutorDrawer';
 
 
 // Admin Views
@@ -62,6 +64,7 @@ function App() {
   const [collapsed, setCollapsed] = useState(false);
   const [activeMenuKey, setActiveMenuKey] = useState('lms_workspace');
   const [selectedSectionId, setSelectedSectionId] = useState(1);
+  const [isAiTutorOpen, setIsAiTutorOpen] = useState(false);
   const [openKeys, setOpenKeys] = useState([
     'sub_superadmin',
     'sub_academic',
@@ -331,6 +334,11 @@ function App() {
             key: 'clo_plo_assessment',
             icon: <SafetyCertificateOutlined style={{ color: '#8b5cf6' }} />,
             label: '📊 Đo Lường Chuẩn Đầu Ra (CLO/PLO)'
+          },
+          {
+            key: 'tuition_payment',
+            icon: <CreditCardOutlined style={{ color: '#059669' }} />,
+            label: '💳 Học Phí & Lệ Phí Điện Tử (VietQR)'
           },
           ...(isAdmin ? [
             {
@@ -710,6 +718,11 @@ function App() {
             <CloPloAssessmentView currentUser={currentUser} />
           )}
 
+          {/* Màn hình 5.4: Học phí & Lệ phí điện tử VietQR NAPAS 24/7 */}
+          {activeMenuKey === 'tuition_payment' && (
+            <TuitionPaymentView currentUser={currentUser} />
+          )}
+
 
           {/* Màn hình 6: Khung đào tạo độc lập */}
           {activeMenuKey === 'curriculum_framework' && (
@@ -784,6 +797,38 @@ function App() {
 
       {/* BANNER THÔNG MINH CÀI ĐẶT PWA & BẬT THÔNG BÁO ĐẨY */}
       <PwaInstallPrompt currentUser={currentUser} />
+
+      {/* NÚT NỔI GIA SƯ AI HỌC THUẬT 24/7 */}
+      <div style={{ position: 'fixed', bottom: 28, right: 28, zIndex: 999 }}>
+        <Button
+          type="primary"
+          shape="round"
+          size="large"
+          icon={<RobotOutlined style={{ fontSize: 18 }} />}
+          onClick={() => setIsAiTutorOpen(true)}
+          style={{
+            backgroundColor: '#7c3aed',
+            borderColor: '#7c3aed',
+            height: 48,
+            padding: '0 20px',
+            fontSize: 14,
+            fontWeight: 700,
+            boxShadow: '0 4px 16px rgba(124, 58, 237, 0.45)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8
+          }}
+        >
+          Gia Sư AI 24/7
+        </Button>
+      </div>
+
+      {/* NGĂN KÉO GIA SƯ AI */}
+      <AiTutorDrawer
+        open={isAiTutorOpen}
+        onClose={() => setIsAiTutorOpen(false)}
+        currentUser={currentUser}
+      />
     </Layout>
   );
 }

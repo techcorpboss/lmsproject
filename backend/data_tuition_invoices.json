@@ -1,0 +1,71 @@
+[
+  {
+    "invoiceId": "INV-2026-001",
+    "studentId": 1,
+    "studentCode": "261IT001",
+    "studentName": "Trần Văn Nam",
+    "className": "66.CNTT-1",
+    "semester": "Học kỳ 1 • 2026-2027",
+    "items": [
+      {
+        "code": "HP_IT101",
+        "title": "Học phí HP: Nhập môn Lập trình C/C++ (4 tín chỉ)",
+        "amount": 1800000
+      },
+      {
+        "code": "HP_MATH101",
+        "title": "Học phí HP: Toán Cao Cấp 1 (3 tín chỉ)",
+        "amount": 1350000
+      },
+      {
+        "code": "HP_ENG101",
+        "title": "Học phí HP: Tiếng Anh Học Thuật 1 (3 tín chỉ)",
+        "amount": 1350000
+      },
+      {
+        "code": "LP_SEB_EXAM",
+        "title": "Lệ phí Khảo thí Trực tuyến Phòng Lab SEB",
+        "amount": 150000
+      }
+    ],
+    "totalAmount": 4650000,
+    "status": "PAID",
+    "paymentMethod": "VIETQR_NAPAS247",
+    "transactionId": "FT26281982736411",
+    "paidAt": "2026-09-25T14:32:10Z",
+    "einvoiceNumber": "HDDT-TCU-2026-001892",
+    "einvoiceTaxCode": "0109998888"
+  },
+  {
+    "invoiceId": "INV-2026-002",
+    "studentId": 2,
+    "studentCode": "261IT002",
+    "studentName": "Nguyễn Thị Mai",
+    "className": "66.CNTT-1",
+    "semester": "Học kỳ 1 • 2026-2027",
+    "items": [
+      {
+        "code": "HP_IT101",
+        "title": "Học phí HP: Nhập môn Lập trình C/C++ (4 tín chỉ)",
+        "amount": 1800000
+      },
+      {
+        "code": "HP_IT201",
+        "title": "Học phí HP: Cơ sở Dữ liệu (3 tín chỉ)",
+        "amount": 1350000
+      },
+      {
+        "code": "LP_CERT_AUNQA",
+        "title": "Lệ phí Cấp Chứng chỉ Số Open Badges AUN-QA",
+        "amount": 200000
+      }
+    ],
+    "totalAmount": 3350000,
+    "status": "PAID",
+    "paymentMethod": "VIETQR_NAPAS247",
+    "transactionId": "FT262899881122",
+    "paidAt": "2026-10-09T14:25:41.804Z",
+    "einvoiceNumber": "HDDT-TCU-2026-639372",
+    "einvoiceTaxCode": "0109998888"
+  }
+]

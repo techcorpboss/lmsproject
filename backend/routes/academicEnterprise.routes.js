@@ -343,4 +343,83 @@ router.post('/thesis/:id/council-grade', (req, res) => {
   }
 });
 
+// -------------------------------------------------------------
+// 11. TRỢ LÝ GIA SƯ AI HỌC THUẬT (RAG AI COURSE TUTOR 24/7)
+// -------------------------------------------------------------
+const aiTutorService = require('../services/aiTutorService');
+
+router.get('/ai-tutor/prompts', (req, res) => {
+  try {
+    const result = aiTutorService.getPrompts(req.query);
+    res.json({ success: true, data: result });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.post('/ai-tutor/ask', (req, res) => {
+  try {
+    const result = aiTutorService.answerStudentQuestion({
+      ...req.body,
+      studentId: req.user ? req.user.id : req.body.studentId,
+      studentName: req.user ? req.user.full_name : req.body.studentName
+    });
+    res.json({ success: true, data: result });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// 12. CỔNG THANH TOÁN HỌC PHÍ VIETQR (NAPAS 24/7) & HÓA ĐƠN ĐIỆN TỬ
+// -------------------------------------------------------------
+const tuitionPaymentService = require('../services/tuitionPaymentService');
+
+router.get('/payments/invoices', (req, res) => {
+  try {
+    const studentId = req.query.studentId || (req.user ? req.user.id : null);
+    const invoices = tuitionPaymentService.getInvoices(studentId);
+    res.json({ success: true, data: invoices });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.get('/payments/invoices/:id', (req, res) => {
+  try {
+    const invoice = tuitionPaymentService.getInvoiceById(req.params.id);
+    if (!invoice) return res.status(404).json({ success: false, message: 'Không tìm thấy hóa đơn.' });
+    res.json({ success: true, data: invoice });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.post('/payments/generate-qr', (req, res) => {
+  try {
+    const result = tuitionPaymentService.generateVietQr(req.body.invoiceId);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+router.post('/payments/webhook-ipn', (req, res) => {
+  try {
+    const result = tuitionPaymentService.processIpnWebhook(req.body);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.get('/payments/e-invoice/:id', (req, res) => {
+  try {
+    const result = tuitionPaymentService.getEInvoice(req.params.id);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
 module.exports = router;
