@@ -466,6 +466,40 @@ AcademicAssignmentSubmission.belongsTo(AcademicAssignment, { foreignKey: 'assign
 AcademicAttendanceSession.hasMany(AcademicAttendanceRecord, { foreignKey: 'session_id', as: 'records' });
 AcademicAttendanceRecord.belongsTo(AcademicAttendanceSession, { foreignKey: 'session_id', as: 'session' });
 
+// 27. Academic Material Model (Học liệu, Video, Slide, PDF & Bài giảng số)
+const AcademicMaterial = sequelize.define('AcademicMaterial', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  section_id: { type: DataTypes.INTEGER, allowNull: false },
+  module_id: { type: DataTypes.INTEGER, allowNull: false },
+  title: { type: DataTypes.STRING(255), allowNull: false },
+  material_type: { type: DataTypes.STRING(50), defaultValue: 'DOCUMENT' },
+  category: { type: DataTypes.STRING(50), defaultValue: 'MAIN_TEXTBOOK' },
+  url: { type: DataTypes.STRING(500) },
+  file_path: { type: DataTypes.STRING(500) },
+  file_size: { type: DataTypes.STRING(50) },
+  rich_content: { type: DataTypes.TEXT('long') },
+  duration_mins: { type: DataTypes.INTEGER, defaultValue: 45 },
+  is_mandatory: { type: DataTypes.BOOLEAN, defaultValue: true },
+  is_published: { type: DataTypes.BOOLEAN, defaultValue: true },
+  release_date: { type: DataTypes.DATE },
+  anti_skipping: { type: DataTypes.BOOLEAN, defaultValue: false },
+  min_completion_pct: { type: DataTypes.INTEGER, defaultValue: 80 },
+  sort_order: { type: DataTypes.INTEGER, defaultValue: 1 }
+}, { tableName: 'academic_materials', underscored: true, timestamps: true });
+
+// 28. Academic Notification Model (Thông báo đẩy thời gian thực)
+const AcademicNotification = sequelize.define('AcademicNotification', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  recipient_type: { type: DataTypes.ENUM('USER', 'CLASS', 'ALL'), defaultValue: 'USER' },
+  recipient_id: { type: DataTypes.STRING(100), defaultValue: 'ALL' },
+  title: { type: DataTypes.STRING(255), allowNull: false },
+  message: { type: DataTypes.TEXT, allowNull: false },
+  type: { type: DataTypes.ENUM('ASSIGNMENT', 'GRADE', 'ATTENDANCE', 'COURSE', 'SYSTEM'), defaultValue: 'SYSTEM' },
+  action_url: { type: DataTypes.STRING(255) },
+  is_read: { type: DataTypes.BOOLEAN, defaultValue: false },
+  created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
+}, { tableName: 'academic_notifications', underscored: true, timestamps: true });
+
 module.exports = {
   sequelize,
   User,
@@ -493,5 +527,7 @@ module.exports = {
   AcademicAssignment,
   AcademicAssignmentSubmission,
   AcademicAttendanceSession,
-  AcademicAttendanceRecord
+  AcademicAttendanceRecord,
+  AcademicMaterial,
+  AcademicNotification
 };

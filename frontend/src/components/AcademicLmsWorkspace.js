@@ -28,6 +28,9 @@ import academicTrainingApi from '../services/academicTrainingApi';
 import AcademicRichLectureEditorModal from './common/AcademicRichLectureEditorModal';
 import AcademicAssignmentRubricModal from './common/AcademicAssignmentRubricModal';
 import AcademicAttendanceModal from './common/AcademicAttendanceModal';
+import AcademicNotificationBell from './common/AcademicNotificationBell';
+import { exportMoetGradebookExcel } from '../services/moetGradebookExporter';
+import apiClient from '../services/apiClient';
 import AcademicContentRenderer from './common/AcademicContentRenderer';
 
 const { Title, Text, Paragraph } = Typography;
@@ -3222,6 +3225,36 @@ int main() {
                   </Space>
                 </Tooltip>
               )}
+              <Button
+                icon={<FileExcelOutlined style={{ color: '#16a34a' }} />}
+                onClick={async () => {
+                  try {
+                    const res = await apiClient.get('/academic/enterprise/classes/1/grades');
+                    const students = res.data?.data?.students || [];
+                    exportMoetGradebookExcel({
+                      courseCode: lmsData.course?.code || 'IT101',
+                      courseName: lmsData.course?.name || 'Nhập môn Lập trình C/C++',
+                      credits: lmsData.course?.credits || 4,
+                      className: lmsData.section?.code || '66.CNTT-1',
+                      lecturerName: lmsData.section?.lecturer_name || lecturerName,
+                      grades: students
+                    });
+                    message.success('Đã xuất Bảng điểm học phần chuẩn Bộ GD&ĐT (TT 08/2021) thành công!');
+                  } catch (e) {
+                    message.error('Không thể tải dữ liệu bảng điểm');
+                  }
+                }}
+              >
+                Xuất Bảng Điểm MOET
+              </Button>
+              <AcademicNotificationBell
+                studentCode={studentId || '261IT001'}
+                className={lmsData.section?.code || '66.CNTT-1'}
+                onNotificationClick={(n) => {
+                  if (n.type === 'ASSIGNMENT') setIsAssignmentModalOpen(true);
+                  else if (n.type === 'ATTENDANCE') setIsAttendanceModalOpen(true);
+                }}
+              />
               <Button icon={<ReloadOutlined />} onClick={() => { loadLmsData(); loadDiscussions(); loadAnalytics(); }}>
                 Làm Mới Dữ Liệu
               </Button>

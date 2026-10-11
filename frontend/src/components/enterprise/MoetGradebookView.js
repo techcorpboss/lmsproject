@@ -12,6 +12,7 @@ import {
 } from '@ant-design/icons';
 import apiClient from '../../services/apiClient';
 import { exportToExcel, exportToWord, parseCsvFile } from '../../services/exportImportService';
+import { exportMoetGradebookExcel } from '../../services/moetGradebookExporter';
 import StudentEvaluationModal from './StudentEvaluationModal';
 
 const { Title, Text, Paragraph } = Typography;
@@ -312,30 +313,17 @@ export default function MoetGradebookView({ currentUser, selectedSectionId = 1 }
       message.success('Đã xuất Bảng điểm cá nhân chuẩn Excel UTF-8 BOM thành công!');
     } else {
       const students = classData?.students || [];
-      const headers = ['STT', 'MSSV', 'Họ và Tên', 'Chuyên Cần (10%)', 'Thực Hành/BT (20%)', 'Giữa Kỳ (20%)', 'Thi Kết Thúc (50%)', 'Điểm HP (10)', 'Điểm Chữ', 'Điểm Hệ 4', 'Xếp Loại Học Vụ'];
-      const dataRows = students.map((s, idx) => [
-        idx + 1,
-        s.student_code,
-        s.full_name,
-        s.attendance_score,
-        s.assignment_score,
-        s.midterm_score,
-        s.final_exam_score,
-        s.course_score_10,
-        s.course_score_letter,
-        s.course_score_4,
-        s.academic_rank
-      ]);
-      const meta = {
-        'Học phần': classData?.course_name || '',
-        'Lớp học phần': classData?.class_name || '',
-        'Học kỳ': classData?.semester || '',
-        'Khoa phụ trách': classData?.faculty || '',
-        'Giảng viên phụ trách': classData?.lecturer || '',
-        'Sĩ số': `${students.length} học viên`
-      };
-      exportToExcel(`so_diem_lop_${classData?.class_name || 'hp'}`, headers, dataRows, 'SỔ ĐIỂM ĐÁNH GIÁ HỌC PHẦN (CHUẨN BỘ GD&ĐT)', meta);
-      message.success('Đã xuất Sổ điểm lớp học phần chuẩn Excel UTF-8 BOM thành công!');
+      exportMoetGradebookExcel({
+        courseCode: classData?.course_code || 'IT101',
+        courseName: classData?.course_name || 'Nhập môn Lập trình C/C++',
+        credits: classData?.credits || 3,
+        className: classData?.class_name || '66.CNTT-1',
+        lecturerName: classData?.lecturer || 'TS. Hoàng Đức Em',
+        semester: classData?.semester || 'Học kỳ 1',
+        facultyName: classData?.faculty || 'Khoa Công Nghệ Thông Tin',
+        grades: students
+      });
+      message.success('Đã xuất Bảng điểm học phần chuẩn Bộ GD&ĐT (TT 08/2021) kèm chữ ký thành công!');
     }
   };
 
