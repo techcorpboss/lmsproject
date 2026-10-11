@@ -33,13 +33,29 @@ const {
 const { SECTION_METADATA, generateStandard15Weeks } = require('../controllers/sectionData');
 const examBank = require('../services/examBank');
 
-// Danh sách 5 sinh viên demo chuẩn của Lớp 66.CNTT-1
+// Danh sách 10 sinh viên chuẩn của Lớp 66.CNTT-1 (Khoa Công Nghệ Thông Tin)
 const STUDENTS_66CNTT1 = [
-  { id: 1, code: '261IT001', name: 'Trần Văn Nam', birth_date: '15/08/2004', gender: 'Nam', email: 'nam.tv@techcorp.edu.vn' },
-  { id: 2, code: '261IT002', name: 'Nguyễn Thị Mai', birth_date: '20/11/2004', gender: 'Nữ', email: 'mai.nt@techcorp.edu.vn' },
-  { id: 3, code: '261IT003', name: 'Lê Hoàng Long', birth_date: '02/05/2004', gender: 'Nam', email: 'long.lh@techcorp.edu.vn' },
-  { id: 4, code: '261IT004', name: 'Phạm Quỳnh Như', birth_date: '18/07/2004', gender: 'Nữ', email: 'nhu.pq@techcorp.edu.vn' },
-  { id: 5, code: '261IT005', name: 'Vũ Hải Đăng', birth_date: '10/10/2004', gender: 'Nam', email: 'dang.vh@techcorp.edu.vn' }
+  { id: 1, code: '261IT001', name: 'Trần Văn Nam', birth_date: '15/08/2004', gender: 'Nam', email: 'nam.tv@techcorp.edu.vn', phone: '0912.001.001', gpa: 3.87, cpa: 3.85, credits: 95, rank: 'XUẤT SẮC', role_desc: 'Lớp trưởng' },
+  { id: 2, code: '261IT002', name: 'Nguyễn Thị Mai', birth_date: '20/11/2004', gender: 'Nữ', email: 'mai.nt@techcorp.edu.vn', phone: '0912.001.002', gpa: 3.82, cpa: 3.80, credits: 95, rank: 'XUẤT SẮC', role_desc: 'Bí thư Chi đoàn' },
+  { id: 3, code: '261IT003', name: 'Lê Hoàng Long', birth_date: '02/05/2004', gender: 'Nam', email: 'long.lh@techcorp.edu.vn', phone: '0912.001.003', gpa: 3.35, cpa: 3.20, credits: 95, rank: 'GIỎI', role_desc: 'Lớp phó Học tập' },
+  { id: 4, code: '261IT004', name: 'Phạm Quỳnh Như', birth_date: '18/07/2004', gender: 'Nữ', email: 'nhu.pq@techcorp.edu.vn', phone: '0912.001.004', gpa: 3.55, cpa: 3.50, credits: 92, rank: 'GIỎI', role_desc: 'Thành viên' },
+  { id: 5, code: '261IT005', name: 'Vũ Hải Đăng', birth_date: '10/10/2004', gender: 'Nam', email: 'dang.vh@techcorp.edu.vn', phone: '0912.001.005', gpa: 1.95, cpa: 1.90, credits: 72, rank: 'CẢNH BÁO HỌC VỤ 1', role_desc: 'Thành viên (Cảnh báo vắng học)' },
+  { id: 6, code: '261IT006', name: 'Hoàng Gia Bảo', birth_date: '12/03/2004', gender: 'Nam', email: 'bao.hg@techcorp.edu.vn', phone: '0912.001.006', gpa: 3.45, cpa: 3.40, credits: 92, rank: 'GIỎI', role_desc: 'Thành viên' },
+  { id: 7, code: '261IT007', name: 'Đỗ Phương Thảo', birth_date: '25/09/2004', gender: 'Nữ', email: 'thao.dp@techcorp.edu.vn', phone: '0912.001.007', gpa: 3.75, cpa: 3.70, credits: 95, rank: 'XUẤT SẮC', role_desc: 'Thành viên' },
+  { id: 8, code: '261IT008', name: 'Bùi Anh Tuấn', birth_date: '08/01/2004', gender: 'Nam', email: 'tuan.ba@techcorp.edu.vn', phone: '0912.001.008', gpa: 2.95, cpa: 2.90, credits: 88, rank: 'KHÁ', role_desc: 'Thành viên' },
+  { id: 9, code: '261IT009', name: 'Ngô Minh Châu', birth_date: '14/06/2004', gender: 'Nữ', email: 'chau.nm@techcorp.edu.vn', phone: '0912.001.009', gpa: 3.65, cpa: 3.60, credits: 95, rank: 'GIỎI', role_desc: 'Thành viên' },
+  { id: 10, code: '261IT010', name: 'Đặng Quốc Huy', birth_date: '30/12/2004', gender: 'Nam', email: 'huy.dq@techcorp.edu.vn', phone: '0912.001.010', gpa: 2.68, cpa: 2.65, credits: 85, rank: 'TRUNG BÌNH', role_desc: 'Thành viên' }
+];
+
+// Danh sách Cán bộ coi thi & Giảng viên phụ trách
+const PROCTORS_DATA = [
+  { code: 'GV001', username: 'em.hd', name: 'TS. Hoàng Đức Em', gender: 'Nam', title: 'Tiến sĩ', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', department: 'Bộ môn Kỹ thuật Phần mềm', email: 'em.hd@techcorp.edu.vn', phone: '0912.345.678', spec: 'Kỹ thuật Phần mềm & Kiến trúc Hệ thống Phân tán', role: 'teacher' },
+  { code: 'GV002', username: 'anh.cq', name: 'ThS. Chu Quỳnh Anh', gender: 'Nữ', title: 'Thạc sĩ', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', department: 'Bộ môn Kỹ thuật Phần mềm', email: 'anh.cq@techcorp.edu.vn', phone: '0912.345.679', spec: 'Lập trình Hướng đối tượng & Công nghệ Web', role: 'teacher' },
+  { code: 'GV003', username: 'dang.lh', name: 'TS. Lê Hải Đăng', gender: 'Nam', title: 'Tiến sĩ', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin', department: 'Bộ môn Hệ thống Thông tin & CSDL', email: 'dang.lh@techcorp.edu.vn', phone: '0912.345.680', spec: 'Hệ Quản trị Cơ sở Dữ liệu & Big Data', role: 'teacher' },
+  { code: 'GV004', username: 'huong.pt', name: 'TS. Phạm Thu Hương', gender: 'Nữ', title: 'Tiến sĩ', faculty_id: 'NN', faculty_name: 'Khoa Ngoại Ngữ & Đào tạo Chung', department: 'Bộ môn Tiếng Anh Chuyên ngành', email: 'huong.pt@techcorp.edu.vn', phone: '0912.345.681', spec: 'Ngôn ngữ học Ứng dụng & Tiếng Anh Học thuật', role: 'teacher' },
+  { code: 'GV005', username: 'ha.ntt', name: 'ThS. Nguyễn Thị Thu Hà', gender: 'Nữ', title: 'Thạc sĩ', faculty_id: 'NN', faculty_name: 'Khoa Ngoại Ngữ & Đào tạo Chung', department: 'Bộ môn Tiếng Anh Học thuật', email: 'ha.ntt@techcorp.edu.vn', phone: '0912.345.682', spec: 'Phương pháp Giảng dạy Tiếng Anh (TESOL)', role: 'teacher' },
+  { code: 'GV006', username: 'binh.tv', name: 'TS. Trần Văn Bình', gender: 'Nam', title: 'Tiến sĩ', faculty_id: 'CNTT', faculty_name: 'Khoa Công Nghệ Thông Tin & Cơ Bản', department: 'Bộ môn Toán Ứng dụng', email: 'binh.tv@techcorp.edu.vn', phone: '0912.345.683', spec: 'Giải tích Toán học & Phương pháp Tính', role: 'teacher' },
+  { code: 'CB001', username: 'kien.bt', name: 'ThS. Bùi Trung Kiên', gender: 'Nam', title: 'Thạc sĩ', faculty_id: 'KTDBCL', faculty_name: 'Phòng Khảo thí & Đảm bảo Chất lượng Giáo dục', department: 'Ban Tổ chức Thi & Khảo thí', email: 'kien.bt@techcorp.edu.vn', phone: '0912.345.684', spec: 'Đo lường & Đánh giá trong Giáo dục', role: 'proctor' }
 ];
 
 // 4 môn của Lớp 66.CNTT-1
@@ -644,6 +660,116 @@ async function runFullSeed() {
     } catch (e) {}
 
     // -------------------------------------------------------------------------
+    // BƯỚC 0: ĐỒNG BỘ 10 SINH VIÊN LỚP 66.CNTT-1 & HỘI ĐỒNG CÁN BỘ COI THI
+    // -------------------------------------------------------------------------
+    console.log('--- BƯỚC 0: ĐỒNG BỘ 10 SINH VIÊN LỚP 66.CNTT-1 & HỘI ĐỒNG CÁN BỘ COI THI ---');
+    const defaultPasswordHash = '$2b$10$7ZalmpS3TnKHWrV6HcCEJ.nCKMnl.p0MXbnEJyS7BHZITl3C3EpYa';
+
+    // 0.1 Nạp 10 sinh viên vào USERS và ACADEMIC_STUDENTS
+    for (const stu of STUDENTS_66CNTT1) {
+      // 1. users table
+      const [uRows] = await sequelize.query(`SELECT id FROM users WHERE username = '${stu.code}' OR email = '${stu.email}' LIMIT 1`);
+      if (uRows && uRows[0]) {
+        await sequelize.query(`
+          UPDATE users 
+          SET full_name = '${stu.name.replace(/'/g, "''")}', email = '${stu.email}', student_code = '${stu.code}',
+              class_name = '66.CNTT-1', faculty_id = 'CNTT', faculty_name = 'Khoa Công Nghệ Thông Tin',
+              major_id = '7480103', major_name = 'Kỹ thuật Phần mềm', cohort = 'K66', phone = '${stu.phone}',
+              role = 'student', status = '${stu.code === '261IT005' ? 'ACADEMIC_WARNING_1' : 'ACTIVE'}', updated_at = NOW()
+          WHERE id = ${uRows[0].id}
+        `);
+      } else {
+        await sequelize.query(`
+          INSERT INTO users (
+            username, email, password, full_name, role, student_code, class_name,
+            faculty_id, faculty_name, major_id, major_name, cohort, phone, status, created_at, updated_at
+          ) VALUES (
+            '${stu.code}', '${stu.email}', '${defaultPasswordHash}', '${stu.name.replace(/'/g, "''")}', 'student',
+            '${stu.code}', '66.CNTT-1', 'CNTT', 'Khoa Công Nghệ Thông Tin', '7480103', 'Kỹ thuật Phần mềm', 'K66',
+            '${stu.phone}', '${stu.code === '261IT005' ? 'ACADEMIC_WARNING_1' : 'ACTIVE'}', NOW(), NOW()
+          )
+        `);
+      }
+
+      // 2. academic_students table
+      const [stdRows] = await sequelize.query(`SELECT id FROM academic_students WHERE student_code = '${stu.code}' LIMIT 1`);
+      const stdStatus = (stu.code === '261IT005' ? 'ACADEMIC_WARNING_1' : 'ACTIVE');
+      if (stdRows && stdRows[0]) {
+        await sequelize.query(`
+          UPDATE academic_students
+          SET full_name = '${stu.name.replace(/'/g, "''")}', birth_date = '${stu.birth_date}', gender = '${stu.gender}',
+              email = '${stu.email}', phone = '${stu.phone}', gpa = ${stu.gpa}, cpa = ${stu.cpa}, credits_accumulated = ${stu.credits},
+              academic_rank = '${stu.rank}', status = '${stdStatus}', advisor = 'TS. Hoàng Đức Em', updated_at = NOW()
+          WHERE id = ${stdRows[0].id}
+        `);
+      } else {
+        await sequelize.query(`
+          INSERT INTO academic_students (
+            student_code, full_name, birth_date, gender, faculty_id, faculty_name,
+            major_id, major_name, cohort, class_name, email, phone, gpa, cpa,
+            credits_accumulated, academic_rank, status, training_system, advisor, created_at, updated_at
+          ) VALUES (
+            '${stu.code}', '${stu.name.replace(/'/g, "''")}', '${stu.birth_date}', '${stu.gender}', 'CNTT', 'Khoa Công Nghệ Thông Tin',
+            '7480103', 'Kỹ thuật Phần mềm', 'K66', '66.CNTT-1', '${stu.email}', '${stu.phone}', ${stu.gpa}, ${stu.cpa},
+            ${stu.credits}, '${stu.rank}', '${stdStatus}', 'Đại học Chính quy (Tín chỉ TT 08/2021)', 'TS. Hoàng Đức Em', NOW(), NOW()
+          )
+        `);
+      }
+    }
+    console.log('  ✅ Đã đồng bộ đầy đủ 10 sinh viên Lớp 66.CNTT-1 vào USERS và ACADEMIC_STUDENTS!');
+
+    // 0.2 Nạp Cán bộ coi thi & Giảng viên
+    for (const pr of PROCTORS_DATA) {
+      // 1. users table
+      const [puRows] = await sequelize.query(`SELECT id FROM users WHERE username = '${pr.username}' OR email = '${pr.email}' LIMIT 1`);
+      if (puRows && puRows[0]) {
+        await sequelize.query(`
+          UPDATE users 
+          SET full_name = '${pr.name.replace(/'/g, "''")}', email = '${pr.email}', role = '${pr.role}',
+              faculty_id = '${pr.faculty_id}', faculty_name = '${pr.faculty_name.replace(/'/g, "''")}',
+              department = '${pr.department.replace(/'/g, "''")}', title = '${pr.title}', phone = '${pr.phone}', updated_at = NOW()
+          WHERE id = ${puRows[0].id}
+        `);
+      } else {
+        await sequelize.query(`
+          INSERT INTO users (
+            username, email, password, full_name, role, faculty_id, faculty_name,
+            department, title, phone, status, created_at, updated_at
+          ) VALUES (
+            '${pr.username}', '${pr.email}', '${defaultPasswordHash}', '${pr.name.replace(/'/g, "''")}', '${pr.role}',
+            '${pr.faculty_id}', '${pr.faculty_name.replace(/'/g, "''")}', '${pr.department.replace(/'/g, "''")}',
+            '${pr.title}', '${pr.phone}', 'ACTIVE', NOW(), NOW()
+          )
+        `);
+      }
+
+      // 2. academic_lecturers table
+      const [lecRows] = await sequelize.query(`SELECT id FROM academic_lecturers WHERE code = '${pr.code}' OR email = '${pr.email}' LIMIT 1`);
+      if (lecRows && lecRows[0]) {
+        await sequelize.query(`
+          UPDATE academic_lecturers
+          SET full_name = '${pr.name.replace(/'/g, "''")}', gender = '${pr.gender}', title = '${pr.title}',
+              faculty_id = '${pr.faculty_id}', faculty_name = '${pr.faculty_name.replace(/'/g, "''")}',
+              department = '${pr.department.replace(/'/g, "''")}', email = '${pr.email}', phone = '${pr.phone}',
+              specialization = '${pr.spec.replace(/'/g, "''")}', updated_at = NOW()
+          WHERE id = ${lecRows[0].id}
+        `);
+      } else {
+        await sequelize.query(`
+          INSERT INTO academic_lecturers (
+            code, username, full_name, gender, birth_date, title, academic_rank,
+            faculty_id, faculty_name, department, email, phone, specialization, experience_years, status, created_at, updated_at
+          ) VALUES (
+            '${pr.code}', '${pr.username}', '${pr.name.replace(/'/g, "''")}', '${pr.gender}', '15/08/1982', '${pr.title}', 'Không',
+            '${pr.faculty_id}', '${pr.faculty_name.replace(/'/g, "''")}', '${pr.department.replace(/'/g, "''")}',
+            '${pr.email}', '${pr.phone}', '${pr.spec.replace(/'/g, "''")}', 12, 'Đang công tác', NOW(), NOW()
+          )
+        `);
+      }
+    }
+    console.log('  ✅ Đã đồng bộ Hội đồng Cán bộ coi thi & Giảng viên vào USERS và ACADEMIC_LECTURERS!');
+
+    // -------------------------------------------------------------------------
     // BƯỚC 1: XỬ LÝ KHUNG CHƯƠNG TRÌNH 15 TUẦN & HỌC LIỆU BỀN VỮNG (JSON + MYSQL)
     // -------------------------------------------------------------------------
     console.log('--- BƯỚC 1: CẬP NHẬT ĐỀ CƯƠNG 15 TUẦN & BÀI GIẢNG SỐ KATEX ---');
@@ -830,14 +956,13 @@ async function runFullSeed() {
 
           if (isGraded) {
             status = 'GRADED';
-            if (stu.code === '261IT001') { // Trần Văn Nam - SV xuất sắc
+            if (stu.code === '261IT001') { // Trần Văn Nam - SV xuất sắc (Lớp trưởng)
               score = 9.5;
               rubricScores = {
                 'Tính đúng đắn của giải thuật & Chức năng hệ thống': 3.8,
                 'Kiến trúc mã nguồn & Quy chuẩn Clean Code': 2.5,
                 'Kiểm soát ca biên & Quản lý bộ nhớ an toàn': 1.9,
                 'Báo cáo thuyết minh kỹ thuật & Video Demo': 1.3,
-                // General
                 'Content & Critical Depth of Evaluation': 3.4,
                 'Academic Style, AWL Vocabulary & Syntax': 2.4,
                 'Structural Cohesion (MEAL) & Transitions': 1.9,
@@ -852,7 +977,7 @@ async function runFullSeed() {
                 'Trình bày toán học chuẩn LaTeX & Lập luận chặt chẽ': 1.3
               };
               feedback = `[ĐÁNH GIÁ SƯ PHẠM - ${sec.lecturer}]\nBài làm của sinh viên ${stu.name} (${stu.code}) đạt chất lượng xuất sắc. Cấu trúc mã nguồn/bài viết mạch lạc, tuân thủ chặt chẽ yêu cầu đề bài. Các ca kiểm thử biên (Edge Cases) được xử lý toàn diện, không phát hiện lỗi rò rỉ vùng nhớ. Khuyến khích tiếp tục phát huy năng lực nghiên cứu!`;
-            } else if (stu.code === '261IT002') { // Nguyễn Thị Mai - Xuất sắc
+            } else if (stu.code === '261IT002') { // Nguyễn Thị Mai - Xuất sắc (Bí thư)
               score = 9.6;
               feedback = `[ĐÁNH GIÁ SƯ PHẠM - ${sec.lecturer}]\nLời giải mẫu mực, trình bày khoa học và lập luận sâu sắc. Đạt chuẩn đầu ra CLO tuyệt đối.`;
             } else if (stu.code === '261IT003') { // Lê Hoàng Long - Khá Giỏi
@@ -861,9 +986,24 @@ async function runFullSeed() {
             } else if (stu.code === '261IT004') { // Phạm Quỳnh Như - Giỏi
               score = 8.8;
               feedback = `[ĐÁNH GIÁ SƯ PHẠM - ${sec.lecturer}]\nNội dung đầy đủ, kiểm thử cẩn thận. Báo cáo kỹ thuật trình bày đẹp, đúng định dạng.`;
-            } else { // Vũ Hải Đăng - Cảnh báo học vụ
+            } else if (stu.code === '261IT005') { // Vũ Hải Đăng - Cảnh báo học vụ
               score = 4.5;
               feedback = `[ĐÁNH GIÁ SƯ PHẠM - ${sec.lecturer}]\nBài làm còn thiếu nhiều ca kiểm thử quan trọng. Cần chủ động gặp Giảng viên tại phòng bộ môn trong giờ tiếp sinh viên để được hướng dẫn bổ sung kiến thức.`;
+            } else if (stu.code === '261IT006') { // Hoàng Gia Bảo - Giỏi
+              score = 8.5;
+              feedback = `[ĐÁNH GIÁ SƯ PHẠM - ${sec.lecturer}]\nCấu trúc thuật toán tốt, mã nguồn viết rõ ràng. Cần chú ý thêm phần phân tích độ phức tạp thời gian O(n).`;
+            } else if (stu.code === '261IT007') { // Đỗ Phương Thảo - Xuất sắc
+              score = 9.2;
+              feedback = `[ĐÁNH GIÁ SƯ PHẠM - ${sec.lecturer}]\nBài làm rất chỉn chu, tài liệu tham khảo phong phú và trình bày chuẩn học thuật. Hoàn thành xuất sắc các yêu cầu.`;
+            } else if (stu.code === '261IT008') { // Bùi Anh Tuấn - Khá
+              score = 7.5;
+              feedback = `[ĐÁNH GIÁ SƯ PHẠM - ${sec.lecturer}]\nĐáp ứng đầy đủ các yêu cầu cơ bản. Cần bổ sung thêm phần kiểm thử các trường hợp dữ liệu lớn.`;
+            } else if (stu.code === '261IT009') { // Ngô Minh Châu - Giỏi
+              score = 9.0;
+              feedback = `[ĐÁNH GIÁ SƯ PHẠM - ${sec.lecturer}]\nKhả năng phân tích tốt, giải thuật xử lý chính xác và trực quan. Tiếp tục duy trì phong độ.`;
+            } else { // 261IT010 - Đặng Quốc Huy - Trung bình khá
+              score = 6.8;
+              feedback = `[ĐÁNH GIÁ SƯ PHẠM - ${sec.lecturer}]\nĐạt yêu cầu mức trung bình khá. Cần củng cố thêm kiến thức lý thuyết nền tảng và viết tài liệu hướng dẫn chi tiết hơn.`;
             }
           }
 
@@ -934,9 +1074,9 @@ async function runFullSeed() {
           room: sec.room,
           status: 'CLOSED',
           qr_code_token: `ATTENDANCE_SEC${sec.section_id}_W${sNum}_${Math.random().toString(36).substring(7).toUpperCase()}`,
-          total_present: 4,
+          total_present: 9,
           total_excused: 0,
-          total_absent: (sNum % 4 === 0) ? 1 : 0, // Vũ Hải Đăng vắng các buổi 4, 8, 12...
+          total_absent: ([4, 8, 11, 14].includes(sNum)) ? 1 : 0, // Vũ Hải Đăng vắng các buổi 4, 8, 11, 14
           total_late: 0
         };
 
@@ -947,12 +1087,12 @@ async function runFullSeed() {
         }
         totalAttendanceSessions++;
 
-        // Điểm danh chi tiết 5 sinh viên
+        // Điểm danh chi tiết 10 sinh viên
         for (const stu of STUDENTS_66CNTT1) {
           let attStatus = 'PRESENT';
           let note = 'Có mặt đúng giờ';
 
-          if (stu.code === '261IT005') { // Vũ Hải Đăng - Vắng 4/15 buổi
+          if (stu.code === '261IT005') { // Vũ Hải Đăng - Vắng 4/15 buổi (26.7% > 20% -> Bị cấm thi theo Đ14 TT 08/2021)
             if ([4, 8, 11, 14].includes(sNum)) {
               attStatus = 'ABSENT';
               note = 'Vắng mặt không phép (Gắn cờ cảnh báo TT 08/2021)';
@@ -963,6 +1103,18 @@ async function runFullSeed() {
           } else if (stu.code === '261IT004' && sNum === 9) { // Như đi muộn 1 buổi
             attStatus = 'LATE';
             note = 'Đến muộn 15 phút do thời tiết';
+          } else if (stu.code === '261IT006' && sNum === 5) { // Bảo có phép 1 buổi
+            attStatus = 'EXCUSED';
+            note = 'Nghỉ có phép đi khám sức khỏe';
+          } else if (stu.code === '261IT008' && [7, 12].includes(sNum)) { // Tuấn có phép 2 buổi
+            attStatus = 'EXCUSED';
+            note = 'Có đơn xin phép tham gia công tác Đoàn Thanh niên';
+          } else if (stu.code === '261IT010' && [3, 10].includes(sNum)) { // Huy có phép 2 buổi
+            attStatus = 'EXCUSED';
+            note = 'Có đơn xin nghỉ phép việc gia đình';
+          } else if (stu.code === '261IT010' && sNum === 13) {
+            attStatus = 'LATE';
+            note = 'Đến muộn 10 phút';
           }
 
           let rec = await AcademicAttendanceRecord.findOne({
@@ -1004,28 +1156,48 @@ async function runFullSeed() {
         { code: '261IT002', name: 'Nguyễn Thị Mai', att: 10.0, btl: 9.5, gk: 9.5, ck: 9.0, s10: 9.30, let: 'A+', s4: 4.0, res: 'ĐẠT (PASS)', rank: 'XUẤT SẮC' },
         { code: '261IT003', name: 'Lê Hoàng Long', att: 8.5, btl: 8.0, gk: 8.0, ck: 8.5, s10: 8.35, let: 'B+', s4: 3.5, res: 'ĐẠT (PASS)', rank: 'GIỎI' },
         { code: '261IT004', name: 'Phạm Quỳnh Như', att: 9.0, btl: 8.5, gk: 9.0, ck: 8.5, s10: 8.70, let: 'A', s4: 4.0, res: 'ĐẠT (PASS)', rank: 'GIỎI' },
-        { code: '261IT005', name: 'Vũ Hải Đăng', att: 4.5, btl: 4.0, gk: 5.0, ck: 4.0, s10: 4.35, let: 'D', s4: 1.0, res: 'ĐẠT (PASS)', rank: 'CẢNH BÁO HỌC VỤ 1' }
+        { code: '261IT005', name: 'Vũ Hải Đăng', att: 4.5, btl: 4.0, gk: 5.0, ck: 4.0, s10: 4.35, let: 'D', s4: 1.0, res: 'ĐẠT (PASS)', rank: 'CẢNH BÁO HỌC VỤ 1' },
+        { code: '261IT006', name: 'Hoàng Gia Bảo', att: 9.0, btl: 8.5, gk: 8.5, ck: 8.5, s10: 8.55, let: 'A', s4: 4.0, res: 'ĐẠT (PASS)', rank: 'GIỎI' },
+        { code: '261IT007', name: 'Đỗ Phương Thảo', att: 10.0, btl: 9.0, gk: 9.0, ck: 9.0, s10: 9.10, let: 'A+', s4: 4.0, res: 'ĐẠT (PASS)', rank: 'XUẤT SẮC' },
+        { code: '261IT008', name: 'Bùi Anh Tuấn', att: 8.0, btl: 7.5, gk: 7.0, ck: 7.5, s10: 7.45, let: 'B', s4: 3.0, res: 'ĐẠT (PASS)', rank: 'KHÁ' },
+        { code: '261IT009', name: 'Ngô Minh Châu', att: 9.5, btl: 9.0, gk: 8.5, ck: 9.0, s10: 8.95, let: 'A', s4: 4.0, res: 'ĐẠT (PASS)', rank: 'GIỎI' },
+        { code: '261IT010', name: 'Đặng Quốc Huy', att: 7.5, btl: 7.0, gk: 6.5, ck: 6.5, s10: 6.70, let: 'C+', s4: 2.5, res: 'ĐẠT (PASS)', rank: 'TRUNG BÌNH' }
       ],
       2: [ // IT201
         { code: '261IT001', name: 'Trần Văn Nam', att: 10.0, btl: 9.5, gk: 9.0, ck: 9.5, s10: 9.45, let: 'A+', s4: 4.0, res: 'ĐẠT (PASS)', rank: 'XUẤT SẮC' },
         { code: '261IT002', name: 'Nguyễn Thị Mai', att: 9.5, btl: 9.0, gk: 9.0, ck: 9.0, s10: 9.05, let: 'A', s4: 4.0, res: 'ĐẠT (PASS)', rank: 'XUẤT SẮC' },
         { code: '261IT003', name: 'Lê Hoàng Long', att: 9.0, btl: 8.5, gk: 8.5, ck: 8.5, s10: 8.60, let: 'A', s4: 4.0, res: 'ĐẠT (PASS)', rank: 'GIỎI' },
         { code: '261IT004', name: 'Phạm Quỳnh Như', att: 9.5, btl: 9.0, gk: 8.5, ck: 9.0, s10: 8.95, let: 'A', s4: 4.0, res: 'ĐẠT (PASS)', rank: 'GIỎI' },
-        { code: '261IT005', name: 'Vũ Hải Đăng', att: 5.0, btl: 5.5, gk: 4.5, ck: 5.0, s10: 5.00, let: 'D', s4: 1.0, res: 'ĐẠT (PASS)', rank: 'TRUNG BÌNH' }
+        { code: '261IT005', name: 'Vũ Hải Đăng', att: 5.0, btl: 5.5, gk: 4.5, ck: 5.0, s10: 5.00, let: 'D', s4: 1.0, res: 'ĐẠT (PASS)', rank: 'TRUNG BÌNH' },
+        { code: '261IT006', name: 'Hoàng Gia Bảo', att: 9.0, btl: 8.5, gk: 8.0, ck: 8.5, s10: 8.45, let: 'B+', s4: 3.5, res: 'ĐẠT (PASS)', rank: 'GIỎI' },
+        { code: '261IT007', name: 'Đỗ Phương Thảo', att: 9.5, btl: 9.0, gk: 9.0, ck: 9.5, s10: 9.30, let: 'A+', s4: 4.0, res: 'ĐẠT (PASS)', rank: 'XUẤT SẮC' },
+        { code: '261IT008', name: 'Bùi Anh Tuấn', att: 8.5, btl: 7.5, gk: 7.5, ck: 7.0, s10: 7.35, let: 'B', s4: 3.0, res: 'ĐẠT (PASS)', rank: 'KHÁ' },
+        { code: '261IT009', name: 'Ngô Minh Châu', att: 9.5, btl: 9.0, gk: 9.0, ck: 9.0, s10: 9.05, let: 'A', s4: 4.0, res: 'ĐẠT (PASS)', rank: 'XUẤT SẮC' },
+        { code: '261IT010', name: 'Đặng Quốc Huy', att: 8.0, btl: 6.5, gk: 6.5, ck: 6.5, s10: 6.65, let: 'C+', s4: 2.5, res: 'ĐẠT (PASS)', rank: 'TRUNG BÌNH' }
       ],
       3: [ // ENG101
         { code: '261IT001', name: 'Trần Văn Nam', att: 9.5, btl: 9.0, gk: 8.5, ck: 9.0, s10: 8.95, let: 'A', s4: 4.0, res: 'ĐẠT (PASS)', rank: 'GIỎI' },
         { code: '261IT002', name: 'Nguyễn Thị Mai', att: 10.0, btl: 9.5, gk: 9.5, ck: 9.5, s10: 9.60, let: 'A+', s4: 4.0, res: 'ĐẠT (PASS)', rank: 'XUẤT SẮC' },
         { code: '261IT003', name: 'Lê Hoàng Long', att: 8.5, btl: 8.0, gk: 8.0, ck: 8.0, s10: 8.10, let: 'B', s4: 3.0, res: 'ĐẠT (PASS)', rank: 'KHÁ' },
         { code: '261IT004', name: 'Phạm Quỳnh Như', att: 9.0, btl: 9.0, gk: 8.5, ck: 9.0, s10: 8.90, let: 'A', s4: 4.0, res: 'ĐẠT (PASS)', rank: 'GIỎI' },
-        { code: '261IT005', name: 'Vũ Hải Đăng', att: 4.0, btl: 4.0, gk: 4.5, ck: 4.0, s10: 4.15, let: 'D', s4: 1.0, res: 'ĐẠT (PASS)', rank: 'CẢNH BÁO HỌC VỤ 1' }
+        { code: '261IT005', name: 'Vũ Hải Đăng', att: 4.0, btl: 4.0, gk: 4.5, ck: 4.0, s10: 4.15, let: 'D', s4: 1.0, res: 'ĐẠT (PASS)', rank: 'CẢNH BÁO HỌC VỤ 1' },
+        { code: '261IT006', name: 'Hoàng Gia Bảo', att: 9.5, btl: 8.5, gk: 8.5, ck: 8.5, s10: 8.60, let: 'A', s4: 4.0, res: 'ĐẠT (PASS)', rank: 'GIỎI' },
+        { code: '261IT007', name: 'Đỗ Phương Thảo', att: 10.0, btl: 9.5, gk: 9.0, ck: 9.5, s10: 9.45, let: 'A+', s4: 4.0, res: 'ĐẠT (PASS)', rank: 'XUẤT SẮC' },
+        { code: '261IT008', name: 'Bùi Anh Tuấn', att: 8.0, btl: 7.0, gk: 7.5, ck: 7.0, s10: 7.20, let: 'B', s4: 3.0, res: 'ĐẠT (PASS)', rank: 'KHÁ' },
+        { code: '261IT009', name: 'Ngô Minh Châu', att: 10.0, btl: 9.0, gk: 9.5, ck: 9.0, s10: 9.20, let: 'A+', s4: 4.0, res: 'ĐẠT (PASS)', rank: 'XUẤT SẮC' },
+        { code: '261IT010', name: 'Đặng Quốc Huy', att: 7.5, btl: 6.5, gk: 7.0, ck: 6.5, s10: 6.70, let: 'C+', s4: 2.5, res: 'ĐẠT (PASS)', rank: 'TRUNG BÌNH' }
       ],
       4: [ // MAT101
         { code: '261IT001', name: 'Trần Văn Nam', att: 9.0, btl: 9.0, gk: 9.0, ck: 9.0, s10: 9.00, let: 'A', s4: 4.0, res: 'ĐẠT (PASS)', rank: 'XUẤT SẮC' },
         { code: '261IT002', name: 'Nguyễn Thị Mai', att: 10.0, btl: 9.0, gk: 9.5, ck: 9.0, s10: 9.25, let: 'A+', s4: 4.0, res: 'ĐẠT (PASS)', rank: 'XUẤT SẮC' },
         { code: '261IT003', name: 'Lê Hoàng Long', att: 8.5, btl: 8.5, gk: 8.0, ck: 8.5, s10: 8.40, let: 'B+', s4: 3.5, res: 'ĐẠT (PASS)', rank: 'GIỎI' },
         { code: '261IT004', name: 'Phạm Quỳnh Như', att: 9.0, btl: 8.5, gk: 8.5, ck: 8.5, s10: 8.60, let: 'A', s4: 4.0, res: 'ĐẠT (PASS)', rank: 'GIỎI' },
-        { code: '261IT005', name: 'Vũ Hải Đăng', att: 4.5, btl: 5.0, gk: 4.0, ck: 4.5, s10: 4.50, let: 'D', s4: 1.0, res: 'ĐẠT (PASS)', rank: 'CẢNH BÁO HỌC VỤ 1' }
+        { code: '261IT005', name: 'Vũ Hải Đăng', att: 4.5, btl: 5.0, gk: 4.0, ck: 4.5, s10: 4.50, let: 'D', s4: 1.0, res: 'ĐẠT (PASS)', rank: 'CẢNH BÁO HỌC VỤ 1' },
+        { code: '261IT006', name: 'Hoàng Gia Bảo', att: 8.5, btl: 8.0, gk: 8.5, ck: 8.0, s10: 8.15, let: 'B', s4: 3.0, res: 'ĐẠT (PASS)', rank: 'KHÁ' },
+        { code: '261IT007', name: 'Đỗ Phương Thảo', att: 9.5, btl: 9.0, gk: 9.0, ck: 9.0, s10: 9.05, let: 'A', s4: 4.0, res: 'ĐẠT (PASS)', rank: 'XUẤT SẮC' },
+        { code: '261IT008', name: 'Bùi Anh Tuấn', att: 8.0, btl: 7.5, gk: 7.0, ck: 7.0, s10: 7.20, let: 'B', s4: 3.0, res: 'ĐẠT (PASS)', rank: 'KHÁ' },
+        { code: '261IT009', name: 'Ngô Minh Châu', att: 9.0, btl: 8.5, gk: 8.5, ck: 9.0, s10: 8.80, let: 'A', s4: 4.0, res: 'ĐẠT (PASS)', rank: 'GIỎI' },
+        { code: '261IT010', name: 'Đặng Quốc Huy', att: 7.5, btl: 6.5, gk: 6.0, ck: 6.5, s10: 6.50, let: 'C+', s4: 2.5, res: 'ĐẠT (PASS)', rank: 'TRUNG BÌNH' }
       ]
     };
 
@@ -1079,7 +1251,8 @@ async function runFullSeed() {
         start_time: '08:00',
         end_time: '09:30',
         room: 'Phòng Máy Lab 401 (Nhà A3)',
-        proctor: 'TS. Hoàng Đức Em'
+        proctor_1: 'TS. Hoàng Đức Em',
+        proctor_2: 'ThS. Chu Quỳnh Anh'
       },
       {
         section_id: 2,
@@ -1090,7 +1263,8 @@ async function runFullSeed() {
         start_time: '08:00',
         end_time: '09:30',
         room: 'Phòng Máy Lab 402 (Nhà A3)',
-        proctor: 'TS. Hoàng Đức Em'
+        proctor_1: 'TS. Hoàng Đức Em',
+        proctor_2: 'TS. Lê Hải Đăng'
       },
       {
         section_id: 3,
@@ -1101,7 +1275,8 @@ async function runFullSeed() {
         start_time: '13:30',
         end_time: '15:00',
         room: 'Phòng Lab Ngoại Ngữ C301 (Nhà C)',
-        proctor: 'TS. Phạm Thu Hương'
+        proctor_1: 'TS. Phạm Thu Hương',
+        proctor_2: 'ThS. Nguyễn Thị Thu Hà'
       },
       {
         section_id: 4,
@@ -1112,7 +1287,8 @@ async function runFullSeed() {
         start_time: '08:00',
         end_time: '09:30',
         room: 'Giảng đường A3-101',
-        proctor: 'TS. Trần Văn Bình'
+        proctor_1: 'TS. Trần Văn Bình',
+        proctor_2: 'ThS. Bùi Trung Kiên'
       }
     ];
 
@@ -1124,28 +1300,41 @@ async function runFullSeed() {
         const [insertRes] = await sequelize.query(`
           INSERT INTO academic_exam_schedules (
             course_id, course_code, course_name, exam_code, exam_name, exam_date, start_time, end_time,
-            room_code, proctor_1, status, duration_minutes, faculty_name, major_name, notes, created_at, updated_at
+            room_code, proctor_1, proctor_2, status, duration_minutes, faculty_name, major_name, notes, created_at, updated_at
           ) VALUES (
             ${sch.course_id}, '${sch.course_code}', '${sch.course_name.replace(/'/g, "''")}', 'EXAM-${sch.course_code}-66CNTT1', 'Thi Kết Thúc Học Phần: ${sch.course_name.replace(/'/g, "''")} (Lớp 66.CNTT-1)',
             '${sch.exam_date}', '${sch.start_time}:00', '${sch.end_time}:00',
-            '${sch.room}', '${sch.proctor}', 'SCHEDULED',
+            '${sch.room}', '${sch.proctor_1}', '${sch.proctor_2}', 'SCHEDULED',
             90, 'Khoa Công Nghệ Thông Tin', 'Kỹ thuật Phần mềm', 'AI Proctoring Webcam trực tiếp', NOW(), NOW()
           )
         `);
         schedId = insertRes;
+      } else {
+        await sequelize.query(`
+          UPDATE academic_exam_schedules
+          SET course_id = ${sch.course_id}, course_name = '${sch.course_name.replace(/'/g, "''")}',
+              exam_name = 'Thi Kết Thúc Học Phần: ${sch.course_name.replace(/'/g, "''")} (Lớp 66.CNTT-1)',
+              exam_date = '${sch.exam_date}', start_time = '${sch.start_time}:00', end_time = '${sch.end_time}:00',
+              room_code = '${sch.room}', proctor_1 = '${sch.proctor_1}', proctor_2 = '${sch.proctor_2}',
+              status = 'SCHEDULED', duration_minutes = 90, faculty_name = 'Khoa Công Nghệ Thông Tin',
+              major_name = 'Kỹ thuật Phần mềm', notes = 'AI Proctoring Webcam trực tiếp', updated_at = NOW()
+          WHERE id = ${schedId}
+        `);
       }
 
       if (schedId) {
-        // Cấp quyền cho toàn bộ sinh viên Lớp 66.CNTT-1 tham gia thi
+        // Cấp quyền cho toàn bộ 10 sinh viên Lớp 66.CNTT-1 tham gia thi
         for (const stu of STUDENTS_66CNTT1) {
           const isBarred = (stu.code === '261IT005'); // Vũ Hải Đăng vắng nhiều bị cấm thi
           const authStatus = isBarred ? 'DENIED' : 'GRANTED';
           const condPassed = isBarred ? 0 : 1;
           const notes = isBarred
-            ? 'Cấm thi theo Điều 14 TT 08/2021 (Vắng > 20% số tiết học)'
+            ? 'Cấm thi theo Điều 14 TT 08/2021 (Vắng 4/15 buổi = 26.7% > 20% số tiết học)'
             : 'Đủ điều kiện dự thi chuẩn Thông tư 08/2021/TT-BGDĐT';
+          const seatNum = `SBD-66CNTT-${stu.id < 10 ? '0' + stu.id : stu.id}`;
+          const attRate = isBarred ? 73.3 : (stu.id === 8 ? 86.7 : (stu.id === 10 ? 80.0 : 96.0));
 
-          await sequelize.query(`DELETE FROM exam_candidate_authorizations WHERE schedule_id = ${schedId} AND student_code = '${stu.code}'`);
+          await sequelize.query(`DELETE FROM exam_candidate_authorizations WHERE schedule_id = ${schedId} AND (student_code = '${stu.code}' OR student_id = ${stu.id})`);
           await sequelize.query(`
             INSERT INTO exam_candidate_authorizations (
               schedule_id, student_id, student_code, student_name, class_name,
@@ -1154,7 +1343,7 @@ async function runFullSeed() {
               authorized_at, notes, created_at, updated_at
             ) VALUES (
               ${schedId}, ${stu.id}, '${stu.code}', '${stu.name.replace(/'/g, "''")}', '66.CNTT-1',
-              'SBD-66CNTT-0${stu.id}', '${sch.course_code}', '${sch.course_name.replace(/'/g, "''")}', ${isBarred ? 73.3 : 95.0},
+              '${seatNum}', '${sch.course_code}', '${sch.course_name.replace(/'/g, "''")}', ${attRate},
               1, ${condPassed}, '${authStatus}', 'Hội đồng Khảo thí TCU',
               NOW(), '${notes}', NOW(), NOW()
             )
