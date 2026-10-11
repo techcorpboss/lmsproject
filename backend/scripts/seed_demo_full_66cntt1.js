@@ -631,6 +631,18 @@ async function runFullSeed() {
   try {
     await sequelize.query('SET FOREIGN_KEY_CHECKS = 0;');
 
+    // Gỡ bỏ các ràng buộc khóa ngoại cũ tham chiếu tới bảng không tồn tại (như academic_courses, employees)
+    try {
+      await sequelize.query('ALTER TABLE academic_exam_schedules DROP FOREIGN KEY academic_exam_schedules_ibfk_2;');
+      console.log('  -> Đã gỡ bỏ ràng buộc academic_exam_schedules_ibfk_2');
+    } catch (e) {}
+    try {
+      await sequelize.query('ALTER TABLE academic_exam_schedules DROP FOREIGN KEY academic_exam_schedules_ibfk_1;');
+    } catch (e) {}
+    try {
+      await sequelize.query('ALTER TABLE courses DROP FOREIGN KEY courses_ibfk_1;');
+    } catch (e) {}
+
     // -------------------------------------------------------------------------
     // BƯỚC 1: XỬ LÝ KHUNG CHƯƠNG TRÌNH 15 TUẦN & HỌC LIỆU BỀN VỮNG (JSON + MYSQL)
     // -------------------------------------------------------------------------
@@ -719,7 +731,7 @@ async function runFullSeed() {
 
     // Đồng bộ vào bảng MySQL academic_materials
     console.log('\n--- BƯỚC 2: ĐỒNG BỘ HỌC LIỆU VÀO BẢNG MYSQL ACADEMIC_MATERIALS ---');
-    await AcademicMaterial.sync({ alter: true });
+    await AcademicMaterial.sync().catch(() => {});
     let totalMaterialsCount = 0;
 
     for (const sec of SECTIONS_CONFIG) {
@@ -768,8 +780,8 @@ async function runFullSeed() {
     // BƯỚC 3: BÀI TẬP TỰ LUẬN, RUBRICS & BÀI NỘP SINH VIÊN DEMO
     // -------------------------------------------------------------------------
     console.log('\n--- BƯỚC 3: NẠP BÀI TẬP TỰ LUẬN, TIÊU CHÍ RUBRICS & BÀI NỘP MẪU ---');
-    await AcademicAssignment.sync({ alter: true });
-    await AcademicAssignmentSubmission.sync({ alter: true });
+    await AcademicAssignment.sync().catch(() => {});
+    await AcademicAssignmentSubmission.sync().catch(() => {});
 
     let totalAssignmentsCreated = 0;
     let totalSubmissionsCreated = 0;
@@ -894,8 +906,8 @@ async function runFullSeed() {
     // BƯỚC 4: ĐIỂM DANH 15 BUỔI HỌC (THEO THÔNG TƯ 08/2021/TT-BGDĐT)
     // -------------------------------------------------------------------------
     console.log('\n--- BƯỚC 4: KHỞI TẠO 15 BUỔI ĐIỂM DANH HỌC KỲ CHO CẢ 4 MÔN ---');
-    await AcademicAttendanceSession.sync({ alter: true });
-    await AcademicAttendanceRecord.sync({ alter: true });
+    await AcademicAttendanceSession.sync().catch(() => {});
+    await AcademicAttendanceRecord.sync().catch(() => {});
 
     let totalAttendanceSessions = 0;
     let totalAttendanceRecords = 0;
@@ -984,7 +996,7 @@ async function runFullSeed() {
     // BƯỚC 5: SỔ ĐIỂM HỌC PHẦN (ACADEMIC_SECTION_GRADES) CHUẨN BỘ GD&ĐT
     // -------------------------------------------------------------------------
     console.log('\n--- BƯỚC 5: NẠP SỔ ĐIỂM HỌC PHẦN 4 MÔN VÀO ACADEMIC_SECTION_GRADES ---');
-    await AcademicSectionGrade.sync({ alter: true });
+    await AcademicSectionGrade.sync().catch(() => {});
 
     const GRADE_PRESETS = {
       1: [ // IT101
@@ -1056,7 +1068,6 @@ async function runFullSeed() {
     // BƯỚC 6: ĐỀ THI KẾT THÚC HỌC PHẦN & LỊCH THI TRỰC TUYẾN
     // -------------------------------------------------------------------------
     console.log('\n--- BƯỚC 6: ĐỒNG BỘ LỊCH THI & CẤP QUYỀN PHÒNG THI ONLINE ---');
-    await AcademicExamSchedule.sync({ alter: true });
 
     const EXAM_SCHEDULES = [
       {
@@ -1205,7 +1216,7 @@ async function runFullSeed() {
     // BƯỚC 7: NẠP BÀI LÀM QUIZ MẪU CỦA SINH VIÊN TRẦN VĂN NAM (261IT001)
     // -------------------------------------------------------------------------
     console.log('\n--- BƯỚC 7: NẠP LỊCH SỬ LÀM BÀI QUIZ MẪU CỦA SINH VIÊN DEMO ---');
-    await QuizSubmission.sync({ alter: true });
+    await QuizSubmission.sync().catch(() => {});
 
     // Lấy danh sách quiz_assessments hiện có
     const quizzes = await QuizAssessment.findAll({
