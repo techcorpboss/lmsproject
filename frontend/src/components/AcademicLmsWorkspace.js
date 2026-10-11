@@ -25,6 +25,8 @@ import {
   WindowsOutlined, FileExcelOutlined
 } from '@ant-design/icons';
 import academicTrainingApi from '../services/academicTrainingApi';
+import AcademicRichLectureEditorModal from './common/AcademicRichLectureEditorModal';
+import AcademicContentRenderer from './common/AcademicContentRenderer';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -66,6 +68,11 @@ function AcademicLmsWorkspace({
   const [videoUploadPreviewUrl, setVideoUploadPreviewUrl] = useState('');
   const [materialTypeSelected, setMaterialTypeSelected] = useState('DOCUMENT');
   const [strictProgression, setStrictProgression] = useState(true);
+
+  // Trình Soạn Bài Giảng Học Thuật Trực Tiếp (KaTeX & Code)
+  const [isRichLectureModalOpen, setIsRichLectureModalOpen] = useState(false);
+  const [selectedModuleIdForRichLecture, setSelectedModuleIdForRichLecture] = useState(null);
+  const [editingRichLectureMaterial, setEditingRichLectureMaterial] = useState(null);
   
   // Real File Upload States (Tải tệp tin Video, Slide, PDF, Docs, Code từ thiết bị)
   const [materialSourceMode, setMaterialSourceMode] = useState('UPLOAD'); // 'UPLOAD' or 'LINK'
@@ -1464,12 +1471,94 @@ function AcademicLmsWorkspace({
           const isPlaceholder = isMockPlaceholderUrl(m.file_url);
           const hasRealFile = Boolean(m.file_url && m.file_url.trim() && !isPlaceholder);
 
-          const isVideo = m.material_type === 'VIDEO' || urlLower.includes('youtube') || urlLower.includes('.mp4') || urlLower.includes('.webm') || urlLower.includes('.mov') || titleLower.includes('video') || !!activeVideoUrl;
-          const isSlide = m.material_type === 'SLIDE' || m.category === 'LECTURE_SLIDE' || urlLower.includes('.ppt') || urlLower.includes('.pptx') || titleLower.includes('slide') || titleLower.includes('powerpoint');
-          const isWord = m.material_type === 'WORD' || urlLower.includes('.doc') || urlLower.includes('.docx') || titleLower.includes('word') || titleLower.includes('đề cương') || titleLower.includes('kế hoạch');
-          const isCode = m.material_type === 'CODE' || m.category === 'SOURCE_CODE' || urlLower.includes('.cpp') || urlLower.includes('.java') || urlLower.includes('.py') || urlLower.includes('github') || titleLower.includes('code');
+          const isRichText = m.material_type === 'RICH_TEXT' || Boolean(m.rich_content || (m.file_url === 'INTERNAL_RICH_TEXT') || (m.content_text && m.content_text.length > 80 && !m.file_url));
+          const isVideo = !isRichText && (m.material_type === 'VIDEO' || urlLower.includes('youtube') || urlLower.includes('.mp4') || urlLower.includes('.webm') || urlLower.includes('.mov') || titleLower.includes('video') || !!activeVideoUrl);
+          const isSlide = !isRichText && (m.material_type === 'SLIDE' || m.category === 'LECTURE_SLIDE' || urlLower.includes('.ppt') || urlLower.includes('.pptx') || titleLower.includes('slide') || titleLower.includes('powerpoint'));
+          const isWord = !isRichText && (m.material_type === 'WORD' || urlLower.includes('.doc') || urlLower.includes('.docx') || titleLower.includes('word') || titleLower.includes('đề cương') || titleLower.includes('kế hoạch'));
+          const isCode = !isRichText && (m.material_type === 'CODE' || m.category === 'SOURCE_CODE' || urlLower.includes('.cpp') || urlLower.includes('.java') || urlLower.includes('.py') || urlLower.includes('github') || titleLower.includes('code'));
           // Mặc định là PDF nếu không rơi vào các trường hợp trên
-          const isPdf = !isVideo && !isSlide && !isWord && !isCode;
+          const isPdf = !isRichText && !isVideo && !isSlide && !isWord && !isCode;
+
+          // ==================== 0. CHẾ ĐỘ BÀI GIẢNG SỐ HỌC THUẬT (RICH TEXT / KATEX / CODE) ====================
+          if (isRichText) {
+            return (
+              <div style={{ maxWidth: 960, margin: '0 auto', background: '#fff', borderRadius: 12, padding: '24px 32px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0' }}>
+                <div style={{ borderBottom: '2px solid #2563eb', paddingBottom: 14, marginBottom: 20 }}>
+                  <Row justify="space-between" align="middle">
+                    <Col xs={24} md={18}>
+                      <Space wrap style={{ marginBottom: 6 }}>
+                        <Tag color="blue" style={{ fontSize: 13, padding: '2px 8px', fontWeight: 'bold' }}>📖 BÀI GIẢNG HỌC THUẬT SỐ</Tag>
+                        {m.category && <Tag color="purple">{m.category}</Tag>}
+                        {m.is_published === false && <Tag color="warning">✎ BẢN NHÁP (CHƯA XUẤT BẢN)</Tag>}
+                        <Tag color="cyan">⏱️ Thời lượng: {m.duration_mins || 45} phút</Tag>
+                      </Space>
+                      <Title level={2} style={{ margin: '8px 0 4px 0', color: '#0f172a' }}>
+                        {m.title}
+                      </Title>
+                      <Text type="secondary" style={{ fontSize: 13 }}>
+                        Biên soạn bởi: <strong>{lecturerName}</strong> • Học phần: <strong>{lmsData.course?.name || 'Môn học'}</strong>
+                      </Text>
+                    </Col>
+                    {isStaff && (
+                      <Col xs={24} md={6} style={{ textAlign: 'right', marginTop: 8 }}>
+                        <Button
+                          type="primary"
+                          icon={<EditOutlined />}
+                          onClick={() => {
+                            setSelectedModuleIdForRichLecture(m.module_id || 1);
+                            setEditingRichLectureMaterial(m);
+                            setIsRichLectureModalOpen(true);
+                          }}
+                          style={{ background: '#2563eb', borderColor: '#2563eb' }}
+                        >
+                          Chỉnh Sửa Bài Giảng
+                        </Button>
+                      </Col>
+                    )}
+                  </Row>
+                </div>
+
+                {/* Nội dung Render KaTeX & Code Blocks */}
+                <AcademicContentRenderer content={m.content_text || m.rich_content || '# Bài giảng số chưa có nội dung.'} />
+
+                {/* Footer hoàn thành bài học */}
+                <Divider style={{ margin: '30px 0 20px 0' }} />
+                <div style={{ textAlign: 'center', background: '#f8fafc', padding: 20, borderRadius: 8, border: '1px dashed #cbd5e1' }}>
+                  {role === 'STUDENT' ? (
+                    <Space direction="vertical" size={10}>
+                      <Text strong style={{ fontSize: 14, color: '#1e293b' }}>
+                        Bạn đã hoàn thành nghiên cứu lý thuyết, công thức và mã nguồn bài giảng này?
+                      </Text>
+                      <Button
+                        type="primary"
+                        size="large"
+                        icon={<CheckCircleOutlined />}
+                        style={{
+                          background: m.is_completed ? '#16a34a' : '#2563eb',
+                          borderColor: m.is_completed ? '#16a34a' : '#2563eb',
+                          padding: '0 32px',
+                          fontWeight: 600,
+                          borderRadius: 8
+                        }}
+                        onClick={() => {
+                          handleToggleProgress(m.id, m.is_completed);
+                          if (!m.is_completed) {
+                            message.success('🎉 Chúc mừng bạn đã hoàn thành bài giảng số! Điểm chuyên cần đã tự động cập nhật.');
+                          }
+                        }}
+                      >
+                        {m.is_completed ? '✓ Đã Hoàn Thành Bài Học' : 'Xác Nhận Đã Đọc & Hoàn Thành Bài Học'}
+                      </Button>
+                    </Space>
+                  ) : (
+                    <Text type="secondary" style={{ fontStyle: 'italic' }}>
+                      (Chế độ Giảng viên: Sinh viên sẽ thấy nút xác nhận hoàn thành bài học tại đây sau khi đọc)
+                    </Text>
+                  )}
+                </div>
+              </div>
+            );
+          }
 
           // ==================== 1. CHẾ ĐỘ VIDEO BÀI GIẢNG ====================
           if (isVideo) {
@@ -1518,37 +1607,35 @@ function AcademicLmsWorkspace({
                           </Space>
                         </Col>
                         <Col span={9} style={{ textAlign: 'right' }}>
-                          <Space>
-                            <Button
-                              size="small"
-                              type="text"
-                              style={{ color: '#cbd5e1' }}
-                              onClick={() => {
-                                const nextPct = Math.min(100, videoProgressPercent + 20);
-                                setVideoProgressPercent(nextPct);
-                                if (nextPct >= 80 && role === 'STUDENT' && m.id && !m.is_completed) {
-                                  handleToggleProgress(m.id, false);
-                                  message.success('🎉 Bạn đã theo dõi đạt 80% bài giảng! Điểm chuyên cần đã tự động cập nhật.');
-                                }
-                              }}
-                            >
-                              +20% Đã Xem
-                            </Button>
-                            <Button
-                              size="small"
-                              type="primary"
-                              style={{ background: '#16a34a', borderColor: '#16a34a' }}
-                              onClick={() => {
-                                setVideoProgressPercent(100);
-                                if (role === 'STUDENT' && m.id && !m.is_completed) {
-                                  handleToggleProgress(m.id, false);
-                                  message.success('🎉 Bạn đã hoàn thành 100% video bài giảng! Điểm chuyên cần đã ghi nhận.');
-                                }
-                              }}
-                            >
-                              ✓ Xem Hết (100%)
-                            </Button>
-                          </Space>
+                          {isStaff ? (
+                            <Space>
+                              <Button
+                                size="small"
+                                type="text"
+                                style={{ color: '#cbd5e1' }}
+                                onClick={() => {
+                                  const nextPct = Math.min(100, videoProgressPercent + 20);
+                                  setVideoProgressPercent(nextPct);
+                                }}
+                              >
+                                +20% (Test GV)
+                              </Button>
+                              <Button
+                                size="small"
+                                type="primary"
+                                style={{ background: '#16a34a', borderColor: '#16a34a' }}
+                                onClick={() => {
+                                  setVideoProgressPercent(100);
+                                }}
+                              >
+                                Xem Hết (Test GV)
+                              </Button>
+                            </Space>
+                          ) : (
+                            <Tag color="success" icon={<CheckCircleOutlined />} style={{ padding: '4px 10px', fontSize: 12 }}>
+                              🛡️ Chế độ Chống tua: BẬT (Xem liên tục ≥80%)
+                            </Tag>
+                          )}
                         </Col>
                       </Row>
                     </div>
@@ -3158,6 +3245,18 @@ int main() {
                                     <Space onClick={e => e.stopPropagation()}>
                                       <Button
                                         size="small"
+                                        style={{ background: '#2563eb', borderColor: '#2563eb', color: '#fff', fontWeight: 600 }}
+                                        icon={<EditOutlined />}
+                                        onClick={() => {
+                                          setSelectedModuleIdForRichLecture(m.id);
+                                          setEditingRichLectureMaterial(null);
+                                          setIsRichLectureModalOpen(true);
+                                        }}
+                                      >
+                                        ✍️ Soạn Bài Giảng (KaTeX)
+                                      </Button>
+                                      <Button
+                                        size="small"
                                         icon={<VideoCameraOutlined />}
                                         style={{ color: '#ef4444', borderColor: '#fca5a5' }}
                                         onClick={() => {
@@ -3290,7 +3389,21 @@ int main() {
                                   </Button>
                                 );
 
-                                if (isVideo) {
+                                const isRichText = mat.material_type === 'RICH_TEXT' || Boolean(mat.rich_content || (mat.file_url === 'INTERNAL_RICH_TEXT') || (mat.content_text && mat.content_text.length > 80 && !mat.file_url));
+                                if (isRichText) {
+                                  avatarIcon = <FileTextOutlined style={{ fontSize: 24, color: '#2563eb' }} />;
+                                  actionBtn = (
+                                    <Button
+                                      size="small"
+                                      type="primary"
+                                      icon={<ReadOutlined />}
+                                      style={{ background: '#2563eb', borderColor: '#2563eb' }}
+                                      onClick={() => handleOpenContentViewer(mat)}
+                                    >
+                                      Học Bài Giảng Số
+                                    </Button>
+                                  );
+                                } else if (isVideo) {
                                   avatarIcon = <VideoCameraOutlined style={{ fontSize: 24, color: '#ef4444' }} />;
                                   actionBtn = (
                                     <Button
@@ -3396,6 +3509,8 @@ int main() {
                                             {mat.title}
                                           </Text>
                                           {renderCategoryTag(mat.category)}
+                                          {isRichText && <Tag color="blue">✍️ Bài Giảng Học Thuật</Tag>}
+                                          {mat.is_published === false && <Tag color="warning">✎ Bản nháp</Tag>}
                                           {isVideo && <Tag color="error">🎥 Video Bài Giảng</Tag>}
                                           {isSlide && <Tag color="warning">📊 Slide Trình Chiếu</Tag>}
                                           {isWord && <Tag color="blue">📝 Văn Bản Word</Tag>}
@@ -4929,6 +5044,20 @@ int main() {
           </div>
         </Form>
       </Modal>
+      <AcademicRichLectureEditorModal
+        open={isRichLectureModalOpen}
+        onClose={() => {
+          setIsRichLectureModalOpen(false);
+          setEditingRichLectureMaterial(null);
+        }}
+        moduleId={selectedModuleIdForRichLecture}
+        sectionId={sectionId}
+        existingMaterial={editingRichLectureMaterial}
+        onSaveSuccess={() => {
+          loadLmsData();
+          message.success('Đã làm mới dữ liệu bài giảng học phần!');
+        }}
+      />
     </div>
   );
 }

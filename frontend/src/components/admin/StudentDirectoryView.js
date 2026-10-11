@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons';
 import apiClient from '../../services/apiClient';
 import { exportToExcel, exportToWord, parseCsvFile } from '../../services/exportImportService';
+import UniversalExcelHubModal from '../common/UniversalExcelHubModal';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -20,6 +21,7 @@ export default function StudentDirectoryView() {
   const [searchText, setSearchText] = useState('');
   const [selectedCohort, setSelectedCohort] = useState('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isExcelHubOpen, setIsExcelHubOpen] = useState(false);
   const [form] = Form.useForm();
 
   const fetchStudents = async () => {
@@ -388,10 +390,10 @@ export default function StudentDirectoryView() {
             />
             <Button
               icon={<UploadOutlined />}
-              onClick={handleTriggerImport}
-              style={{ borderColor: '#10b981', color: '#10b981' }}
+              onClick={() => setIsExcelHubOpen(true)}
+              style={{ background: '#059669', color: '#fff', borderColor: '#059669', fontWeight: 600 }}
             >
-              Nhập Excel (.xlsx)
+              Nhập Excel Vạn Năng (.xlsx)
             </Button>
             <Button icon={<DownloadOutlined />} onClick={handleExportExcel}>
               Xuất File Excel (.xlsx)
@@ -501,6 +503,13 @@ export default function StudentDirectoryView() {
           </Row>
         </Form>
       </Modal>
+
+      <UniversalExcelHubModal
+        open={isExcelHubOpen}
+        onClose={() => setIsExcelHubOpen(false)}
+        initialTarget="STUDENTS"
+        onSuccess={fetchStudents}
+      />
     </div>
   );
 }

@@ -11,6 +11,7 @@ const { protect, authorize } = require('../middleware/auth');
 // 1. Danh mục quản trị cơ sở & Hồ sơ Giảng viên (CRUD)
 router.get('/lecturers', controller.getLecturers);
 router.post('/lecturers', controller.createLecturer);
+router.post('/lecturers/batch', controller.createLecturersBatch);
 router.put('/lecturers/:id', controller.updateLecturer);
 router.delete('/lecturers/:id', controller.deleteLecturer);
 
@@ -23,6 +24,7 @@ router.delete('/catalogs/majors/:id', controller.deleteMajor);
 router.post('/catalogs/cohorts', controller.saveCohort);
 router.delete('/catalogs/cohorts/:id', controller.deleteCohort);
 router.post('/catalogs/classes', controller.saveClass);
+router.post('/classes/batch', controller.createClassesBatch);
 router.delete('/catalogs/classes/:id', controller.deleteClass);
 
 router.get('/classes', controller.getClasses);

@@ -12,6 +12,7 @@ import {
   CheckCircleOutlined, StarOutlined
 } from '@ant-design/icons';
 import apiClient from '../../services/apiClient';
+import UniversalExcelHubModal from '../common/UniversalExcelHubModal';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -26,6 +27,7 @@ export default function LecturerDirectoryView() {
 
   // Modal / Drawer state
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isExcelHubOpen, setIsExcelHubOpen] = useState(false);
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
   const [editingLecturer, setEditingLecturer] = useState(null);
   const [viewingLecturer, setViewingLecturer] = useState(null);
@@ -303,6 +305,13 @@ export default function LecturerDirectoryView() {
             <Space wrap>
               <Button icon={<ReloadOutlined />} onClick={fetchLecturers} loading={loading}>
                 Làm mới
+              </Button>
+              <Button
+                icon={<UploadOutlined />}
+                style={{ borderColor: '#059669', color: '#059669', fontWeight: 600 }}
+                onClick={() => setIsExcelHubOpen(true)}
+              >
+                Nhập Excel Giảng Viên (.xlsx)
               </Button>
               <Button
                 type="primary"
@@ -586,6 +595,13 @@ export default function LecturerDirectoryView() {
           </div>
         )}
       </Drawer>
+
+      <UniversalExcelHubModal
+        open={isExcelHubOpen}
+        onClose={() => setIsExcelHubOpen(false)}
+        initialTarget="LECTURERS"
+        onSuccess={fetchLecturers}
+      />
     </div>
   );
 }

@@ -92,7 +92,7 @@ function getSectionCurriculum(sectionId) {
 function findModuleAcrossSections(moduleId) {
   for (const [secId, modules] of Object.entries(curriculumStore)) {
     if (Array.isArray(modules)) {
-      const mod = modules.find(m => String(m.id) === String(moduleId));
+      const mod = modules.find(m => String(m.id) === String(moduleId) || String(m.week_number) === String(moduleId));
       if (mod) return { sectionId: secId, module: mod };
     }
   }
@@ -858,7 +858,12 @@ exports.saveMaterial = async (req, res) => {
         file_size_mb: Number(data.file_size_mb) || 0,
         suggested_time_minutes: Number(data.duration_mins) || 45,
         duration_mins: Number(data.duration_mins) || 45,
-        content_text: data.content_text || '',
+        content_text: data.content_text || data.rich_content || '',
+        rich_content: data.rich_content || data.content_text || '',
+        is_published: data.is_published !== false,
+        release_date: data.release_date || null,
+        anti_skipping: data.anti_skipping !== false,
+        min_completion_pct: Number(data.min_completion_pct) || 80,
         is_completed: false,
         created_at: new Date().toISOString()
       };

@@ -525,6 +525,56 @@ exports.deleteLecturer = async (req, res) => {
   }
 };
 
+exports.createLecturersBatch = async (req, res) => {
+  try {
+    const { lecturers } = req.body;
+    if (!lecturers || !Array.isArray(lecturers)) {
+      return res.status(400).json({ success: false, message: 'Dữ liệu giảng viên không hợp lệ' });
+    }
+    const createdList = [];
+    for (const l of lecturers) {
+      try {
+        const item = await AcademicLecturer.create({
+          code: l.code || `GV00${lecturersCatalog.length + 1}`,
+          username: l.username || `gv_${Date.now().toString().slice(-4)}`,
+          full_name: l.full_name,
+          gender: l.gender || 'Nam',
+          birth_date: l.birth_date || '01/01/1985',
+          title: l.title || 'Thạc sĩ',
+          academic_rank: l.academic_rank || 'Không',
+          faculty_id: l.faculty_id || 'CNTT',
+          faculty_name: l.faculty_name || 'Khoa Công Nghệ Thông Tin',
+          department: l.department || 'Bộ môn Kỹ thuật Phần mềm',
+          email: l.email || 'giangvien@techcorp.edu.vn',
+          phone: l.phone || '0900.000.000',
+          specialization: l.specialization || 'Công nghệ Thông tin',
+          experience_years: Number(l.experience_years) || 5,
+          assigned_courses: l.assigned_courses || [],
+          research_interests: l.research_interests || '',
+          status: l.status || 'Đang công tác',
+          active_courses_count: 1
+        }).catch(() => null);
+
+        const memoryItem = (item && item.toJSON) ? item.toJSON() : (item || {
+          id: Date.now() + Math.floor(Math.random() * 1000),
+          ...l,
+          status: l.status || 'Đang công tác'
+        });
+        lecturersCatalog.unshift(memoryItem);
+        createdList.push(memoryItem);
+      } catch (e) {}
+    }
+    res.json({
+      success: true,
+      message: `Đã nạp thành công ${createdList.length}/${lecturers.length} hồ sơ giảng viên vào CSDL!`,
+      saved_count: createdList.length,
+      data: createdList
+    });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
 // 2.2. Quản lý Cơ cấu & Danh mục Cơ sở (Khoa, Ngành, Khóa, Lớp)
 exports.getInstitutionalCatalogs = async (req, res) => {
   try {
@@ -680,6 +730,42 @@ exports.deleteClass = async (req, res) => {
     const { id } = req.params;
     classesCatalog = classesCatalog.filter(c => String(c.id) !== String(id));
     res.json({ success: true, message: 'Đã xóa Lớp học!', data: classesCatalog });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+};
+
+exports.createClassesBatch = async (req, res) => {
+  try {
+    const { classes } = req.body;
+    if (!classes || !Array.isArray(classes)) {
+      return res.status(400).json({ success: false, message: 'Dữ liệu lớp học không hợp lệ' });
+    }
+    const createdList = [];
+    for (const c of classes) {
+      const newClass = {
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        class_code: c.class_code || `L_${Date.now().toString().slice(-4)}`,
+        class_name: c.class_name || c.class_code,
+        faculty_id: c.faculty_id || 'CNTT',
+        faculty_name: c.faculty_name || 'Khoa Công Nghệ Thông Tin',
+        major_id: c.major_id || 'CNPM',
+        major_name: c.major_name || 'Kỹ thuật Phần mềm',
+        cohort: c.cohort || 'K66',
+        academic_year: c.academic_year || '2026-2027',
+        total_students: Number(c.total_students) || 40,
+        advisor: c.advisor || 'Chưa phân công',
+        room: c.room || 'P.401-A3'
+      };
+      classesCatalog.push(newClass);
+      createdList.push(newClass);
+    }
+    res.json({
+      success: true,
+      message: `Đã nạp thành công ${createdList.length}/${classes.length} lớp học vào hệ thống!`,
+      saved_count: createdList.length,
+      data: classesCatalog
+    });
   } catch (err) {
     res.status(400).json({ success: false, message: err.message });
   }

@@ -17,12 +17,14 @@ export default function InteractiveVideoPlayer({
   mediaUrl,
   lessonTitle,
   isTeacher = false,
+  antiSkipping = true,
   currentUser,
   onProgressUpdate
 }) {
   const [checkpoints, setCheckpoints] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+  const [maxWatchedTime, setMaxWatchedTime] = useState(0);
   const [duration, setDuration] = useState(120); // Mặc định 120s nếu chưa load metadata
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -76,12 +78,27 @@ export default function InteractiveVideoPlayer({
     fetchStudentProgress();
   }, [lessonId]);
 
+  // Theo dõi chuyển tab để tự động tạm dừng khi chống tua được bật
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && isPlaying && !isTeacher && antiSkipping) {
+        setIsPlaying(false);
+        if (videoRef.current) videoRef.current.pause();
+        message.info('Bài giảng đã tạm dừng do bạn vừa rời tab học tập.');
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isPlaying, isTeacher, antiSkipping]);
+
   // Bộ đếm giả lập thời gian nếu dùng iframe nhúng (như YouTube) hoặc đồng bộ video thật
   useEffect(() => {
     if (isPlaying) {
       timerRef.current = setInterval(() => {
         setCurrentTime(prev => {
           const nextTime = prev + 1;
+          setMaxWatchedTime(oldMax => Math.max(oldMax, nextTime));
+
           // Kiểm tra xem giây hiện tại có trùng với checkpoint nào chưa trả lời không
           const cp = checkpoints.find(c => Math.abs(c.timestamp_seconds - nextTime) < 1);
           if (cp && !answeredIds.has(cp.id) && !activeCheckpoint) {
@@ -228,10 +245,15 @@ export default function InteractiveVideoPlayer({
       {/* HEADER: TIÊU ĐỀ & THÔNG SỐ ĐIỂM TƯƠNG TÁC */}
       <Row justify="space-between" align="middle" style={{ marginBottom: 12 }}>
         <Col>
-          <Space>
+          <Space wrap>
             <Tag color="#7c3aed" style={{ fontWeight: 600, padding: '2px 8px' }}>
               ⚡ H5P INTERACTIVE VIDEO
             </Tag>
+            {antiSkipping && (
+              <Tag color="success" style={{ fontWeight: 600 }}>
+                🛡️ Chống tua: ĐANG BẬT
+              </Tag>
+            )}
             <Text strong style={{ fontSize: 16 }}>{lessonTitle || 'Bài giảng Video Tương tác'}</Text>
           </Space>
         </Col>
@@ -265,7 +287,17 @@ export default function InteractiveVideoPlayer({
             ref={videoRef}
             src={mediaUrl}
             style={{ width: '100%', height: 'auto', display: 'block', maxHeight: 420 }}
-            onTimeUpdate={(e) => setCurrentTime(e.target.currentTime)}
+            onTimeUpdate={(e) => {
+              const cur = e.target.currentTime;
+              setCurrentTime(cur);
+              if (cur > maxWatchedTime) setMaxWatchedTime(cur);
+            }}
+            onSeeking={(e) => {
+              if (!isTeacher && antiSkipping && e.target.currentTime > maxWatchedTime + 3) {
+                e.target.currentTime = maxWatchedTime;
+                message.warning('⚠️ Chế độ Chống tua: Bạn không thể tua nhanh bài giảng vượt quá thời lượng đã học!');
+              }
+            }}
             onLoadedMetadata={(e) => setDuration(e.target.duration || 120)}
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
@@ -326,6 +358,10 @@ export default function InteractiveVideoPlayer({
                   <div
                     onClick={(e) => {
                       e.stopPropagation();
+                      if (!isTeacher && antiSkipping && cp.timestamp_seconds > maxWatchedTime + 3) {
+                        message.warning('⚠️ Chế độ Chống tua: Bạn chưa học đến mốc thời gian của câu hỏi này!');
+                        return;
+                      }
                       setCurrentTime(cp.timestamp_seconds);
                       handleTriggerCheckpoint(cp);
                     }}

@@ -36,6 +36,26 @@
           "suggested_time_minutes": 45,
           "duration_mins": 45,
           "is_completed": false
+        },
+        {
+          "id": 1791685956766,
+          "module_id": 1,
+          "title": "Bài Giảng KaTeX: Tối Ưu Giải Thuật Học Máy",
+          "material_type": "RICH_TEXT",
+          "file_url": "INTERNAL_RICH_TEXT",
+          "category": "MAIN_TEXTBOOK",
+          "external_source": "TCU Media",
+          "file_size_mb": 0,
+          "suggested_time_minutes": 45,
+          "duration_mins": 45,
+          "content_text": "# Bài Giảng Mẫu KaTeX\nHàm mất mát: $$L(\\theta) = \\frac{1}{2m}\\sum_{i=1}^m (h_\\theta(x^{(i)}) - y^{(i)})^2$$",
+          "rich_content": "# Bài Giảng Mẫu KaTeX\nHàm mất mát: $$L(\\theta) = \\frac{1}{2m}\\sum_{i=1}^m (h_\\theta(x^{(i)}) - y^{(i)})^2$$",
+          "is_published": true,
+          "release_date": null,
+          "anti_skipping": true,
+          "min_completion_pct": 80,
+          "is_completed": false,
+          "created_at": "2026-10-11T02:32:36.766Z"
         }
       ],
       "quizzes": [
