@@ -148,10 +148,13 @@ function loadCurriculumFromDisk() {
   curriculumStore = {
     "1": generateStandard15Weeks('IT101', 1),
     "2": generateStandard15Weeks('IT201', 2),
-    "4": generateStandard15Weeks('BA101', 4),
-    "6": generateStandard15Weeks('ENG101', 6),
-    "7": generateStandard15Weeks('EE101', 7),
-    "8": generateStandard15Weeks('TOU101', 8)
+    "3": generateStandard15Weeks('ENG101', 3),
+    "4": generateStandard15Weeks('MAT101', 4),
+    "5": generateStandard15Weeks('IT301', 5),
+    "6": generateStandard15Weeks('BA101', 6),
+    "7": generateStandard15Weeks('BA102', 7),
+    "8": generateStandard15Weeks('EE101', 8),
+    "9": generateStandard15Weeks('TOU101', 9)
   };
   saveCurriculumToDisk();
 }

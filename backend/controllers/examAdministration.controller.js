@@ -710,17 +710,17 @@ exports.getStudentEligibleExams = async (req, res) => {
 
     const result = [];
     for (const s of schedules) {
-      // Tìm xem sinh viên này có bản ghi cấp quyền trong ca thi này không
-      const authRecord = await ExamCandidateAuthorization.findOne({
+      const orConditions = [];
+      if (studentCode) orConditions.push({ student_code: studentCode });
+      if (user.id) orConditions.push({ student_id: user.id });
+      if (user.full_name) orConditions.push({ student_name: user.full_name });
+
+      const authRecord = orConditions.length > 0 ? await ExamCandidateAuthorization.findOne({
         where: {
           schedule_id: s.id,
-          [sequelize.Sequelize.Op.or]: [
-            { student_code: studentCode },
-            { student_id: user.id },
-            { student_name: user.full_name }
-          ]
+          [sequelize.Sequelize.Op.or]: orConditions
         }
-      });
+      }) : null;
 
       // Nếu user là superadmin hoặc admin thì luôn có quyền truy cập toàn bộ
       const isPrivileged = user.role === 'superadmin' || user.role === 'admin';

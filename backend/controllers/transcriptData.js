@@ -317,7 +317,7 @@ const sectionClassTranscripts = {
     section_id: 2,
     course_name: 'Cơ sở Dữ liệu (IT201)',
     course_code: 'IT201',
-    class_name: '66.CNTT-2',
+    class_name: '66.CNTT-1',
     semester: 'Học kỳ 1 - Năm học 2026-2027',
     faculty: 'Khoa Công Nghệ Thông Tin',
     faculty_id: 'CNTT',
@@ -325,13 +325,56 @@ const sectionClassTranscripts = {
     head_of_department: 'TS. Nguyễn Văn An',
     dean: 'PGS. TS. Trần Mạnh Tuấn',
     students: [
-      { student_id: 21, student_code: '261IT041', full_name: 'Đặng Tuấn Kiệt', birth_date: '11/03/2004', class_name: '66.CNTT-2', attendance_score: 9.0, assignment_score: 9.0, midterm_score: 8.5, final_exam_score: 9.0, course_score_10: 8.90, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'GIỎI' },
-      { student_id: 22, student_code: '261IT042', full_name: 'Nguyễn Bích Ngọc', birth_date: '25/08/2004', class_name: '66.CNTT-2', attendance_score: 10.0, assignment_score: 9.5, midterm_score: 9.5, final_exam_score: 9.5, course_score_10: 9.60, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'XUẤT SẮC' }
+      { student_id: 1, student_code: '261IT001', full_name: 'Trần Văn Nam', birth_date: '15/08/2004', class_name: '66.CNTT-1', attendance_score: 10.0, assignment_score: 9.5, midterm_score: 9.0, final_exam_score: 9.5, course_score_10: 9.45, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'XUẤT SẮC' },
+      { student_id: 2, student_code: '261IT002', full_name: 'Nguyễn Thị Mai', birth_date: '20/11/2004', class_name: '66.CNTT-1', attendance_score: 9.5, assignment_score: 9.0, midterm_score: 9.0, final_exam_score: 9.0, course_score_10: 9.05, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'XUẤT SẮC' },
+      { student_id: 3, student_code: '261IT003', full_name: 'Lê Hoàng Long', birth_date: '02/05/2004', class_name: '66.CNTT-1', attendance_score: 9.0, assignment_score: 8.5, midterm_score: 8.5, final_exam_score: 8.5, course_score_10: 8.60, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'GIỎI' },
+      { student_id: 4, student_code: '261IT004', full_name: 'Phạm Quỳnh Như', birth_date: '18/07/2004', class_name: '66.CNTT-1', attendance_score: 9.5, assignment_score: 9.0, midterm_score: 8.5, final_exam_score: 9.0, course_score_10: 8.95, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'GIỎI' },
+      { student_id: 5, student_code: '261IT005', full_name: 'Vũ Hải Đăng', birth_date: '10/10/2004', class_name: '66.CNTT-1', attendance_score: 5.0, assignment_score: 5.5, midterm_score: 4.5, final_exam_score: 5.0, course_score_10: 5.00, course_score_letter: 'D', course_score_4: 1.0, course_result: 'ĐẠT (PASS)', academic_rank: 'TRUNG BÌNH' }
     ]
   },
 
   3: {
     section_id: 3,
+    course_name: 'Tiếng Anh Học Thuật 1 (ENG101)',
+    course_code: 'ENG101',
+    class_name: '66.CNTT-1',
+    semester: 'Học kỳ 1 - Năm học 2026-2027',
+    faculty: 'Khoa Ngoại Ngữ & Đào tạo Chung',
+    faculty_id: 'NN',
+    lecturer: 'TS. Phạm Thu Hương',
+    head_of_department: 'TS. Phạm Thu Hương',
+    dean: 'TS. Phạm Thu Hương',
+    students: [
+      { student_id: 1, student_code: '261IT001', full_name: 'Trần Văn Nam', birth_date: '15/08/2004', class_name: '66.CNTT-1', attendance_score: 9.5, assignment_score: 9.0, midterm_score: 8.5, final_exam_score: 9.0, course_score_10: 8.95, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'GIỎI' },
+      { student_id: 2, student_code: '261IT002', full_name: 'Nguyễn Thị Mai', birth_date: '20/11/2004', class_name: '66.CNTT-1', attendance_score: 10.0, assignment_score: 9.5, midterm_score: 9.5, final_exam_score: 9.5, course_score_10: 9.60, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'XUẤT SẮC' },
+      { student_id: 3, student_code: '261IT003', full_name: 'Lê Hoàng Long', birth_date: '02/05/2004', class_name: '66.CNTT-1', attendance_score: 8.5, assignment_score: 8.0, midterm_score: 8.0, final_exam_score: 8.0, course_score_10: 8.10, course_score_letter: 'B', course_score_4: 3.0, course_result: 'ĐẠT (PASS)', academic_rank: 'KHÁ' },
+      { student_id: 4, student_code: '261IT004', full_name: 'Phạm Quỳnh Như', birth_date: '18/07/2004', class_name: '66.CNTT-1', attendance_score: 9.0, assignment_score: 9.0, midterm_score: 8.5, final_exam_score: 9.0, course_score_10: 8.90, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'GIỎI' },
+      { student_id: 5, student_code: '261IT005', full_name: 'Vũ Hải Đăng', birth_date: '10/10/2004', class_name: '66.CNTT-1', attendance_score: 4.0, assignment_score: 4.0, midterm_score: 4.5, final_exam_score: 4.0, course_score_10: 4.15, course_score_letter: 'D', course_score_4: 1.0, course_result: 'ĐẠT (PASS)', academic_rank: 'CẢNH BÁO HỌC VỤ 1' }
+    ]
+  },
+
+  4: {
+    section_id: 4,
+    course_name: 'Giải Tích 1 (MAT101)',
+    course_code: 'MAT101',
+    class_name: '66.CNTT-1',
+    semester: 'Học kỳ 1 - Năm học 2026-2027',
+    faculty: 'Khoa Công Nghệ Thông Tin & Cơ Bản',
+    faculty_id: 'CNTT',
+    lecturer: 'TS. Trần Văn Bình',
+    head_of_department: 'TS. Trần Văn Bình',
+    dean: 'PGS. TS. Trần Mạnh Tuấn',
+    students: [
+      { student_id: 1, student_code: '261IT001', full_name: 'Trần Văn Nam', birth_date: '15/08/2004', class_name: '66.CNTT-1', attendance_score: 9.0, assignment_score: 9.0, midterm_score: 9.0, final_exam_score: 9.0, course_score_10: 9.00, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'XUẤT SẮC' },
+      { student_id: 2, student_code: '261IT002', full_name: 'Nguyễn Thị Mai', birth_date: '20/11/2004', class_name: '66.CNTT-1', attendance_score: 10.0, assignment_score: 9.0, midterm_score: 9.5, final_exam_score: 9.0, course_score_10: 9.25, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'XUẤT SẮC' },
+      { student_id: 3, student_code: '261IT003', full_name: 'Lê Hoàng Long', birth_date: '02/05/2004', class_name: '66.CNTT-1', attendance_score: 8.5, assignment_score: 8.5, midterm_score: 8.0, final_exam_score: 8.5, course_score_10: 8.40, course_score_letter: 'B+', course_score_4: 3.5, course_result: 'ĐẠT (PASS)', academic_rank: 'GIỎI' },
+      { student_id: 4, student_code: '261IT004', full_name: 'Phạm Quỳnh Như', birth_date: '18/07/2004', class_name: '66.CNTT-1', attendance_score: 9.0, assignment_score: 8.5, midterm_score: 8.5, final_exam_score: 8.5, course_score_10: 8.60, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'GIỎI' },
+      { student_id: 5, student_code: '261IT005', full_name: 'Vũ Hải Đăng', birth_date: '10/10/2004', class_name: '66.CNTT-1', attendance_score: 4.5, assignment_score: 5.0, midterm_score: 4.0, final_exam_score: 4.5, course_score_10: 4.50, course_score_letter: 'D', course_score_4: 1.0, course_result: 'ĐẠT (PASS)', academic_rank: 'CẢNH BÁO HỌC VỤ 1' }
+    ]
+  },
+
+  5: {
+    section_id: 5,
     course_name: 'Cấu trúc Dữ liệu & Giải thuật (IT301)',
     course_code: 'IT301',
     class_name: '65.CNTT-1',
@@ -346,8 +389,8 @@ const sectionClassTranscripts = {
     ]
   },
 
-  4: {
-    section_id: 4,
+  6: {
+    section_id: 6,
     course_name: 'Kinh Tế Vi Mô (BA101)',
     course_code: 'BA101',
     class_name: '66.QTKD-1',
@@ -359,13 +402,12 @@ const sectionClassTranscripts = {
     dean: 'TS. Nguyễn Thị Hồng',
     students: [
       { student_id: 7, student_code: '261BA001', full_name: 'Lê Thị Mỹ Duyên', birth_date: '10/05/2004', class_name: '66.QTKD-1', attendance_score: 9.5, assignment_score: 9.0, midterm_score: 9.0, final_exam_score: 9.0, course_score_10: 9.05, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'XUẤT SẮC' },
-      { student_id: 42, student_code: '261BA002', full_name: 'Nguyễn Hoài An', birth_date: '12/12/2004', class_name: '66.QTKD-1', attendance_score: 9.0, assignment_score: 8.5, midterm_score: 8.5, final_exam_score: 8.5, course_score_10: 8.60, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'GIỎI' },
-      { student_id: 43, student_code: '261BA003', full_name: 'Phạm Minh Đức', birth_date: '04/09/2004', class_name: '66.QTKD-1', attendance_score: 9.0, assignment_score: 8.0, midterm_score: 8.5, final_exam_score: 8.5, course_score_10: 8.45, course_score_letter: 'B+', course_score_4: 3.5, course_result: 'ĐẠT (PASS)', academic_rank: 'GIỎI' }
+      { student_id: 42, student_code: '261BA002', full_name: 'Nguyễn Hoài An', birth_date: '12/12/2004', class_name: '66.QTKD-1', attendance_score: 9.0, assignment_score: 8.5, midterm_score: 8.5, final_exam_score: 8.5, course_score_10: 8.60, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'GIỎI' }
     ]
   },
 
-  5: {
-    section_id: 5,
+  7: {
+    section_id: 7,
     course_name: 'Quản Trị Học Đại Cương (BA102)',
     course_code: 'BA102',
     class_name: '66.QTKD-1',
@@ -376,31 +418,12 @@ const sectionClassTranscripts = {
     head_of_department: 'ThS. Vũ Nam',
     dean: 'TS. Nguyễn Thị Hồng',
     students: [
-      { student_id: 7, student_code: '261BA001', full_name: 'Lê Thị Mỹ Duyên', birth_date: '10/05/2004', class_name: '66.QTKD-1', attendance_score: 10.0, assignment_score: 9.5, midterm_score: 9.0, final_exam_score: 9.5, course_score_10: 9.45, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'XUẤT SẮC' },
-      { student_id: 42, student_code: '261BA002', full_name: 'Nguyễn Hoài An', birth_date: '12/12/2004', class_name: '66.QTKD-1', attendance_score: 9.0, assignment_score: 8.5, midterm_score: 9.0, final_exam_score: 8.5, course_score_10: 8.70, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'GIỎI' }
+      { student_id: 7, student_code: '261BA001', full_name: 'Lê Thị Mỹ Duyên', birth_date: '10/05/2004', class_name: '66.QTKD-1', attendance_score: 10.0, assignment_score: 9.5, midterm_score: 9.0, final_exam_score: 9.5, course_score_10: 9.45, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'XUẤT SẮC' }
     ]
   },
 
-  6: {
-    section_id: 6,
-    course_name: 'Tiếng Anh Học Thuật 1 (ENG101)',
-    course_code: 'ENG101',
-    class_name: '66.NNA-1',
-    semester: 'Học kỳ 1 - Năm học 2026-2027',
-    faculty: 'Khoa Ngoại Ngữ',
-    faculty_id: 'NN',
-    lecturer: 'TS. Phạm Thu Hương',
-    head_of_department: 'TS. Phạm Thu Hương',
-    dean: 'TS. Phạm Thu Hương',
-    students: [
-      { student_id: 9, student_code: '261NN001', full_name: 'Hoàng Thùy Linh', birth_date: '28/02/2004', class_name: '66.NNA-1', attendance_score: 10.0, assignment_score: 9.5, midterm_score: 9.5, final_exam_score: 9.5, course_score_10: 9.60, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'XUẤT SẮC' },
-      { student_id: 62, student_code: '261NN002', full_name: 'Đỗ Tuấn Anh', birth_date: '17/06/2004', class_name: '66.NNA-1', attendance_score: 9.5, assignment_score: 9.0, midterm_score: 8.5, final_exam_score: 9.0, course_score_10: 8.95, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'GIỎI' },
-      { student_id: 63, student_code: '261NN003', full_name: 'Trần Mai Phương', birth_date: '03/11/2004', class_name: '66.NNA-1', attendance_score: 9.0, assignment_score: 9.0, midterm_score: 8.5, final_exam_score: 8.5, course_score_10: 8.65, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'GIỎI' }
-    ]
-  },
-
-  7: {
-    section_id: 7,
+  8: {
+    section_id: 8,
     course_name: 'Kỹ Thuật Mạch Điện Tử & IoT (EE101)',
     course_code: 'EE101',
     class_name: '66.DDT-1',
@@ -411,14 +434,12 @@ const sectionClassTranscripts = {
     head_of_department: 'TS. Bùi Quốc Thái',
     dean: 'TS. Bùi Quốc Thái',
     students: [
-      { student_id: 11, student_code: '261DT001', full_name: 'Nguyễn Văn Cường', birth_date: '19/09/2004', class_name: '66.DDT-1', attendance_score: 9.5, assignment_score: 9.0, midterm_score: 9.0, final_exam_score: 9.0, course_score_10: 9.05, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'XUẤT SẮC' },
-      { student_id: 72, student_code: '261DT002', full_name: 'Bùi Anh Tuấn', birth_date: '08/04/2004', class_name: '66.DDT-1', attendance_score: 9.0, assignment_score: 8.5, midterm_score: 8.5, final_exam_score: 8.5, course_score_10: 8.60, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'GIỎI' },
-      { student_id: 73, student_code: '261DT003', full_name: 'Đặng Hải Long', birth_date: '15/12/2004', class_name: '66.DDT-1', attendance_score: 9.0, assignment_score: 8.0, midterm_score: 8.0, final_exam_score: 8.5, course_score_10: 8.35, course_score_letter: 'B+', course_score_4: 3.5, course_result: 'ĐẠT (PASS)', academic_rank: 'GIỎI' }
+      { student_id: 11, student_code: '261DT001', full_name: 'Nguyễn Văn Cường', birth_date: '19/09/2004', class_name: '66.DDT-1', attendance_score: 9.5, assignment_score: 9.0, midterm_score: 9.0, final_exam_score: 9.0, course_score_10: 9.05, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'XUẤT SẮC' }
     ]
   },
 
-  8: {
-    section_id: 8,
+  9: {
+    section_id: 9,
     course_name: 'Tổng Quan Du Lịch & Dịch Vụ Lữ Hành (TOU101)',
     course_code: 'TOU101',
     class_name: '66.DL-1',
@@ -429,9 +450,7 @@ const sectionClassTranscripts = {
     head_of_department: 'ThS. Đỗ Quang Vinh',
     dean: 'ThS. Đỗ Quang Vinh',
     students: [
-      { student_id: 13, student_code: '261DL001', full_name: 'Phan Quỳnh Trang', birth_date: '05/04/2004', class_name: '66.DL-1', attendance_score: 10.0, assignment_score: 9.5, midterm_score: 9.5, final_exam_score: 9.5, course_score_10: 9.60, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'XUẤT SẮC' },
-      { student_id: 82, student_code: '261DL002', full_name: 'Lê Hoàng Yến', birth_date: '21/08/2004', class_name: '66.DL-1', attendance_score: 9.5, assignment_score: 9.0, midterm_score: 9.0, final_exam_score: 9.0, course_score_10: 9.05, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'GIỎI' },
-      { student_id: 83, student_code: '261DL003', full_name: 'Trịnh Ngọc Ánh', birth_date: '14/10/2004', class_name: '66.DL-1', attendance_score: 9.0, assignment_score: 8.5, midterm_score: 8.5, final_exam_score: 8.5, course_score_10: 8.60, course_score_letter: 'A', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'GIỎI' }
+      { student_id: 13, student_code: '261DL001', full_name: 'Phan Quỳnh Trang', birth_date: '05/04/2004', class_name: '66.DL-1', attendance_score: 10.0, assignment_score: 9.5, midterm_score: 9.5, final_exam_score: 9.5, course_score_10: 9.60, course_score_letter: 'A+', course_score_4: 4.0, course_result: 'ĐẠT (PASS)', academic_rank: 'XUẤT SẮC' }
     ]
   }
 };
