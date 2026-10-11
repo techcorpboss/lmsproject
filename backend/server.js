@@ -17,6 +17,8 @@ const academicEnterpriseRoutes = require('./routes/academicEnterprise.routes');
 const lmsStandardsRoutes = require('./routes/lmsStandards.routes');
 const notificationRoutes = require('./routes/notification.routes');
 const badgeRoutes = require('./routes/badge.routes');
+const academicAssignmentRoutes = require('./routes/academicAssignment.routes');
+const academicAttendanceRoutes = require('./routes/academicAttendance.routes');
 
 const app = express();
 const server = http.createServer(app);
@@ -75,6 +77,10 @@ app.use('/api/standards', lmsStandardsRoutes);
 app.use('/api/academic/lms/standards', lmsStandardsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/badges', badgeRoutes);
+app.use('/api/academic/assignments', academicAssignmentRoutes);
+app.use('/api/v1/academic/assignments', academicAssignmentRoutes);
+app.use('/api/academic/attendance', academicAttendanceRoutes);
+app.use('/api/v1/academic/attendance', academicAttendanceRoutes);
 
 // Socket.io Real-time Proctoring Hub (Trung tâm Giám sát thi thời gian thực)
 const activeExamRooms = new Map(); // roomId -> Set of student sockets

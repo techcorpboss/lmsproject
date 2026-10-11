@@ -360,6 +360,74 @@ const AcademicSectionGrade = sequelize.define('AcademicSectionGrade', {
   notes: { type: DataTypes.STRING(255) }
 }, { tableName: 'academic_section_grades', underscored: true, timestamps: true });
 
+// 23. Academic Assignment Model (Bài tập tự luận & Tiểu luận học phần)
+const AcademicAssignment = sequelize.define('AcademicAssignment', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  section_id: { type: DataTypes.INTEGER, allowNull: false },
+  module_id: { type: DataTypes.INTEGER, allowNull: true },
+  title: { type: DataTypes.STRING(255), allowNull: false },
+  description: { type: DataTypes.TEXT },
+  due_date: { type: DataTypes.DATE, allowNull: true },
+  max_score: { type: DataTypes.DECIMAL(4, 2), defaultValue: 10.00 },
+  allowed_file_types: { type: DataTypes.STRING(255), defaultValue: '.pdf,.zip,.docx,.cpp,.py,.sql' },
+  max_file_size_mb: { type: DataTypes.INTEGER, defaultValue: 50 },
+  rubric_criteria: { type: DataTypes.JSON },
+  status: { type: DataTypes.ENUM('DRAFT', 'PUBLISHED'), defaultValue: 'PUBLISHED' },
+  created_by: { type: DataTypes.INTEGER, defaultValue: 1 }
+}, { tableName: 'academic_assignments', underscored: true, timestamps: true });
+
+// 24. Academic Assignment Submission Model (Bài nộp của sinh viên & Điểm chấm Rubric)
+const AcademicAssignmentSubmission = sequelize.define('AcademicAssignmentSubmission', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  assignment_id: { type: DataTypes.INTEGER, allowNull: false },
+  student_id: { type: DataTypes.INTEGER, allowNull: true },
+  student_code: { type: DataTypes.STRING(50), allowNull: false },
+  student_name: { type: DataTypes.STRING(150), allowNull: false },
+  class_name: { type: DataTypes.STRING(50), defaultValue: '66.CNTT-1' },
+  submission_text: { type: DataTypes.TEXT },
+  attachment_url: { type: DataTypes.STRING(500) },
+  attachment_name: { type: DataTypes.STRING(255) },
+  attachment_size: { type: DataTypes.INTEGER, defaultValue: 0 },
+  submitted_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+  status: { type: DataTypes.ENUM('SUBMITTED', 'GRADED', 'LATE'), defaultValue: 'SUBMITTED' },
+  score: { type: DataTypes.DECIMAL(4, 2), allowNull: true },
+  rubric_scores: { type: DataTypes.JSON },
+  feedback: { type: DataTypes.TEXT },
+  graded_by: { type: DataTypes.STRING(150) },
+  graded_at: { type: DataTypes.DATE }
+}, { tableName: 'academic_assignment_submissions', underscored: true, timestamps: true });
+
+// 25. Academic Attendance Session Model (Buổi điểm danh học phần)
+const AcademicAttendanceSession = sequelize.define('AcademicAttendanceSession', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  section_id: { type: DataTypes.INTEGER, allowNull: false },
+  session_number: { type: DataTypes.INTEGER, defaultValue: 1 },
+  session_date: { type: DataTypes.DATEONLY, allowNull: false },
+  start_time: { type: DataTypes.STRING(10), defaultValue: '07:30' },
+  end_time: { type: DataTypes.STRING(10), defaultValue: '09:00' },
+  topic: { type: DataTypes.STRING(255), defaultValue: 'Buổi học lý thuyết / thực hành' },
+  room: { type: DataTypes.STRING(100), defaultValue: 'P.401 (Nhà A3)' },
+  status: { type: DataTypes.ENUM('OPEN', 'CLOSED'), defaultValue: 'CLOSED' },
+  qr_code_token: { type: DataTypes.STRING(100) },
+  total_present: { type: DataTypes.INTEGER, defaultValue: 0 },
+  total_excused: { type: DataTypes.INTEGER, defaultValue: 0 },
+  total_absent: { type: DataTypes.INTEGER, defaultValue: 0 },
+  total_late: { type: DataTypes.INTEGER, defaultValue: 0 }
+}, { tableName: 'academic_attendance_sessions', underscored: true, timestamps: true });
+
+// 26. Academic Attendance Record Model (Chi tiết điểm danh sinh viên)
+const AcademicAttendanceRecord = sequelize.define('AcademicAttendanceRecord', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  session_id: { type: DataTypes.INTEGER, allowNull: false },
+  student_id: { type: DataTypes.INTEGER, allowNull: true },
+  student_code: { type: DataTypes.STRING(50), allowNull: false },
+  student_name: { type: DataTypes.STRING(150), allowNull: false },
+  class_name: { type: DataTypes.STRING(50), defaultValue: '66.CNTT-1' },
+  status: { type: DataTypes.ENUM('PRESENT', 'EXCUSED', 'ABSENT', 'LATE'), defaultValue: 'PRESENT' },
+  checkin_time: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+  notes: { type: DataTypes.STRING(255) }
+}, { tableName: 'academic_attendance_records', underscored: true, timestamps: true });
+
 // Associations
 Course.hasMany(CourseSection, { foreignKey: 'course_id', as: 'sections' });
 CourseSection.belongsTo(Course, { foreignKey: 'course_id' });
@@ -392,6 +460,12 @@ AcademicExamSchedule.hasMany(ExamCandidateAuthorization, { foreignKey: 'schedule
 ExamCandidateAuthorization.belongsTo(AcademicExamSchedule, { foreignKey: 'schedule_id', as: 'schedule' });
 ExamCandidateAuthorization.belongsTo(User, { foreignKey: 'student_id', as: 'student' });
 
+AcademicAssignment.hasMany(AcademicAssignmentSubmission, { foreignKey: 'assignment_id', as: 'submissions' });
+AcademicAssignmentSubmission.belongsTo(AcademicAssignment, { foreignKey: 'assignment_id', as: 'assignment' });
+
+AcademicAttendanceSession.hasMany(AcademicAttendanceRecord, { foreignKey: 'session_id', as: 'records' });
+AcademicAttendanceRecord.belongsTo(AcademicAttendanceSession, { foreignKey: 'session_id', as: 'session' });
+
 module.exports = {
   sequelize,
   User,
@@ -415,5 +489,9 @@ module.exports = {
   AcademicLecturer,
   AcademicStudent,
   SystemAuditLog,
-  AcademicSectionGrade
+  AcademicSectionGrade,
+  AcademicAssignment,
+  AcademicAssignmentSubmission,
+  AcademicAttendanceSession,
+  AcademicAttendanceRecord
 };

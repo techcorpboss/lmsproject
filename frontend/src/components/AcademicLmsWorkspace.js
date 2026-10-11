@@ -22,10 +22,12 @@ import {
   FilePptOutlined, SoundOutlined, ForwardOutlined, LockOutlined,
   UnlockOutlined, UploadOutlined, SaveOutlined, ArrowUpOutlined,
   ArrowDownOutlined, BulbOutlined, ExportOutlined, CloudDownloadOutlined,
-  WindowsOutlined, FileExcelOutlined
+  WindowsOutlined, FileExcelOutlined, CalendarOutlined
 } from '@ant-design/icons';
 import academicTrainingApi from '../services/academicTrainingApi';
 import AcademicRichLectureEditorModal from './common/AcademicRichLectureEditorModal';
+import AcademicAssignmentRubricModal from './common/AcademicAssignmentRubricModal';
+import AcademicAttendanceModal from './common/AcademicAttendanceModal';
 import AcademicContentRenderer from './common/AcademicContentRenderer';
 
 const { Title, Text, Paragraph } = Typography;
@@ -56,8 +58,16 @@ function AcademicLmsWorkspace({
   const [analytics, setAnalytics] = useState(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
-  const isStaff = (role === 'LECTURER' || role === 'ADMIN' || role === 'admin' || role === 'teacher');
-  const isStudent = (role === 'STUDENT' || role === 'student');
+  // Chế độ Xem trước với vai trò Sinh viên (Student Preview Mode)
+  const [studentPreviewMode, setStudentPreviewMode] = useState(false);
+  const isStaffReal = (role === 'LECTURER' || role === 'ADMIN' || role === 'admin' || role === 'teacher');
+  const isStaff = isStaffReal && !studentPreviewMode;
+  const isStudent = (role === 'STUDENT' || role === 'student') || studentPreviewMode;
+
+  // Modal Bài tập Rubrics & Điểm danh TT 08/2021
+  const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
+  const [selectedAssignmentModuleId, setSelectedAssignmentModuleId] = useState(null);
+  const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false);
 
   // Modals for Lecturer & Admin
   const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
@@ -1524,7 +1534,7 @@ function AcademicLmsWorkspace({
                 {/* Footer hoàn thành bài học */}
                 <Divider style={{ margin: '30px 0 20px 0' }} />
                 <div style={{ textAlign: 'center', background: '#f8fafc', padding: 20, borderRadius: 8, border: '1px dashed #cbd5e1' }}>
-                  {role === 'STUDENT' ? (
+                  {isStudent ? (
                     <Space direction="vertical" size={10}>
                       <Text strong style={{ fontSize: 14, color: '#1e293b' }}>
                         Bạn đã hoàn thành nghiên cứu lý thuyết, công thức và mã nguồn bài giảng này?
@@ -3038,6 +3048,24 @@ int main() {
 
   return (
     <div>
+      {/* BANNER XEM TRƯỚC VAI TRÒ SINH VIÊN */}
+      {studentPreviewMode && (
+        <Alert
+          type="warning"
+          showIcon
+          message={
+            <Row justify="space-between" align="middle" style={{ width: '100%' }}>
+              <span>
+                <b>👁️ Đang ở Chế độ Xem trước với vai trò Sinh viên (Student Preview Mode).</b> Bạn đang trải nghiệm giao diện học tập, hạn nộp bài tập và bài giảng dưới góc nhìn của người học.
+              </span>
+              <Button size="small" type="primary" danger onClick={() => setStudentPreviewMode(false)}>
+                Quay Lại Chế Độ Giảng Viên
+              </Button>
+            </Row>
+          }
+          style={{ marginBottom: 16, border: '2px solid #f59e0b' }}
+        />
+      )}
       {/* 1. BANNER HỌC PHẦN E-LEARNING CHUẨN BỘ GD&ĐT */}
       <Card
         style={{
@@ -3149,6 +3177,38 @@ int main() {
           </Col>
           <Col xs={24} sm={10} style={{ textAlign: 'right' }}>
             <Space wrap>
+              {isStaffReal && (
+                <Space style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: 6 }}>
+                  <span style={{ fontSize: 12, color: '#334155', fontWeight: 600 }}>👁️ Xem trước SV:</span>
+                  <Switch
+                    checkedChildren="BẬT"
+                    unCheckedChildren="TẮT"
+                    checked={studentPreviewMode}
+                    onChange={setStudentPreviewMode}
+                  />
+                </Space>
+              )}
+              <Button
+                type="primary"
+                icon={<FileTextOutlined />}
+                style={{ background: '#2563eb', borderColor: '#2563eb' }}
+                onClick={() => {
+                  setSelectedAssignmentModuleId(null);
+                  setIsAssignmentModalOpen(true);
+                }}
+              >
+                📋 {isStudent ? 'Bài Tập Tự Luận' : 'Quản Lý Bài Tập (Rubrics)'}
+              </Button>
+              {isStaff && (
+                <Button
+                  type="primary"
+                  icon={<CalendarOutlined />}
+                  style={{ background: '#7c3aed', borderColor: '#7c3aed' }}
+                  onClick={() => setIsAttendanceModalOpen(true)}
+                >
+                  📅 Điểm Danh (TT 08)
+                </Button>
+              )}
               {isStaff && (
                 <Tooltip title="Khi bật, sinh viên bắt buộc phải hoàn thành và đạt bài Quiz của tuần trước thì tuần tiếp theo mới được mở khóa (Quy chế đào tạo TT 08/2021)">
                   <Space>
@@ -3243,6 +3303,17 @@ int main() {
                                   <Badge count={`${(m.quizzes || []).length} Bài kiểm tra`} style={{ backgroundColor: '#fef3c7', color: '#b45309' }} />
                                   {isStaff && (
                                     <Space onClick={e => e.stopPropagation()}>
+                                      <Button
+                                        size="small"
+                                        style={{ background: '#059669', borderColor: '#059669', color: '#fff', fontWeight: 600 }}
+                                        icon={<FileTextOutlined />}
+                                        onClick={() => {
+                                          setSelectedAssignmentModuleId(m.id);
+                                          setIsAssignmentModalOpen(true);
+                                        }}
+                                      >
+                                        📋 Giao Bài Tập
+                                      </Button>
                                       <Button
                                         size="small"
                                         style={{ background: '#2563eb', borderColor: '#2563eb', color: '#fff', fontWeight: 600 }}
@@ -5056,6 +5127,29 @@ int main() {
         onSaveSuccess={() => {
           loadLmsData();
           message.success('Đã làm mới dữ liệu bài giảng học phần!');
+        }}
+      />
+      <AcademicAssignmentRubricModal
+        open={isAssignmentModalOpen}
+        onClose={() => setIsAssignmentModalOpen(false)}
+        sectionId={sectionId}
+        moduleId={selectedAssignmentModuleId || 1001}
+        isStudent={isStudent}
+        studentCode={studentId || '261IT001'}
+        studentName={studentName}
+        onSuccess={() => {
+          loadLmsData();
+          loadAnalytics();
+        }}
+      />
+      <AcademicAttendanceModal
+        open={isAttendanceModalOpen}
+        onClose={() => setIsAttendanceModalOpen(false)}
+        sectionId={sectionId}
+        className={lmsData.section?.code || '66.CNTT-1'}
+        onSuccess={() => {
+          loadLmsData();
+          loadAnalytics();
         }}
       />
     </div>
