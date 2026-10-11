@@ -663,16 +663,20 @@ async function runFullSeed() {
     // BƯỚC 0: ĐỒNG BỘ 10 SINH VIÊN LỚP 66.CNTT-1 & HỘI ĐỒNG CÁN BỘ COI THI
     // -------------------------------------------------------------------------
     console.log('--- BƯỚC 0: ĐỒNG BỘ 10 SINH VIÊN LỚP 66.CNTT-1 & HỘI ĐỒNG CÁN BỘ COI THI ---');
-    const defaultPasswordHash = '$2b$10$7ZalmpS3TnKHWrV6HcCEJ.nCKMnl.p0MXbnEJyS7BHZITl3C3EpYa';
+    const defaultPasswordHash = '$2b$10$ERbI7mUbc6yfKtFFoZoQ3O5wszVznOgzA06WPHlwf2dp6BGKSL/Fm'; // Bcrypt của '123456'
 
     // 0.1 Nạp 10 sinh viên vào USERS và ACADEMIC_STUDENTS
     for (const stu of STUDENTS_66CNTT1) {
-      // 1. users table
-      const [uRows] = await sequelize.query(`SELECT id FROM users WHERE username = '${stu.code}' OR email = '${stu.email}' LIMIT 1`);
+      // 1. users table: ưu tiên tìm theo username mã SV, nếu chưa có thì tìm theo email
+      let [uRows] = await sequelize.query(`SELECT id FROM users WHERE username = '${stu.code}' LIMIT 1`);
+      if (!uRows || !uRows[0]) {
+        [uRows] = await sequelize.query(`SELECT id FROM users WHERE email = '${stu.email}' LIMIT 1`);
+      }
       if (uRows && uRows[0]) {
         await sequelize.query(`
           UPDATE users 
-          SET full_name = '${stu.name.replace(/'/g, "''")}', email = '${stu.email}', student_code = '${stu.code}',
+          SET username = '${stu.code}', full_name = '${stu.name.replace(/'/g, "''")}', email = '${stu.email}', student_code = '${stu.code}',
+              password = '${defaultPasswordHash}',
               class_name = '66.CNTT-1', faculty_id = 'CNTT', faculty_name = 'Khoa Công Nghệ Thông Tin',
               major_id = '7480103', major_name = 'Kỹ thuật Phần mềm', cohort = 'K66', phone = '${stu.phone}',
               role = 'student', status = '${stu.code === '261IT005' ? 'ACADEMIC_WARNING_1' : 'ACTIVE'}', updated_at = NOW()
